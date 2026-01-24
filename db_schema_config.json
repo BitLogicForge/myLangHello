@@ -1,0 +1,5 @@
+{
+  "users": "Contains user information. Columns: id (primary key), name (full name), email, created_at (registration date)",
+  "orders": "Contains order records. Columns: id, user_id (foreign key to users), product_id (foreign key to products), quantity, order_date, status (pending/completed/cancelled)",
+  "products": "Contains product catalog. Columns: id, name, description, price, category (electronics/clothing/food), stock_quantity"
+}
