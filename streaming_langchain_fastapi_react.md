@@ -1,10 +1,601 @@
 # Streaming LangChain Responses: FastAPI → React
 
+## Table of Contents
+
+- [Streaming LangChain Responses: FastAPI → React](#streaming-langchain-responses-fastapi--react)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Option A: Simple Way - Using LangServe (RECOMMENDED)](#option-a-simple-way---using-langserve-recommended)
+    - [Backend Setup (LangServe)](#backend-setup-langserve)
+      - [Install Dependencies](#install-dependencies)
+      - [FastAPI Server (20 lines!)](#fastapi-server-20-lines)
+    - [User Authentication \& Session Management](#user-authentication--session-management)
+      - [How to Distinguish Users in LangServe](#how-to-distinguish-users-in-langserve)
+    - [Load Balancing Setup (Not Automatic!)](#load-balancing-setup-not-automatic)
+      - [Option 1: Nginx Load Balancer](#option-1-nginx-load-balancer)
+      - [Option 2: Docker Compose](#option-2-docker-compose)
+      - [Option 3: Kubernetes](#option-3-kubernetes)
+    - [Complete Production Example](#complete-production-example)
+    - [Key Takeaways](#key-takeaways)
+    - [Frontend with React Query](#frontend-with-react-query)
+      - [Install Dependencies](#install-dependencies-1)
+      - [Setup React Query Provider](#setup-react-query-provider)
+      - [Chat Component with React Query](#chat-component-with-react-query)
+      - [Alternative: Plain Fetch with React Query](#alternative-plain-fetch-with-react-query)
+  - [Option B: Manual SSE Streaming (Advanced)](#option-b-manual-sse-streaming-advanced)
+  - [1. FastAPI Backend with Streaming](#1-fastapi-backend-with-streaming)
+    - [Install Dependencies](#install-dependencies-2)
+    - [FastAPI Server with SSE (Server-Sent Events)](#fastapi-server-with-sse-server-sent-events)
+  - [2. Alternative: Simple LLM Streaming (No Agent)](#2-alternative-simple-llm-streaming-no-agent)
+  - [3. React Frontend](#3-react-frontend)
+    - [Install Dependencies](#install-dependencies-3)
+    - [React Component with Streaming](#react-component-with-streaming)
+    - [Simple CSS](#simple-css)
+  - [4. Alternative: Using EventSource API](#4-alternative-using-eventsource-api)
+  - [5. FastAPI with GET Endpoint (For EventSource)](#5-fastapi-with-get-endpoint-for-eventsource)
+  - [6. Advanced: Streaming with Agent Tool Calls](#6-advanced-streaming-with-agent-tool-calls)
+  - [Comparison Table](#comparison-table)
+  - [7. Running the Full Stack](#7-running-the-full-stack)
+    - [Option A: LangServe](#option-a-langserve)
+    - [Option B: Manual SSE](#option-b-manual-sse)
+  - [Key Points](#key-points)
+    - [LangServe Approach](#langserve-approach)
+    - [Manual SSE Approach](#manual-sse-approach)
+  - [Debugging Tips](#debugging-tips)
+    - [LangServe](#langserve)
+    - [Manual SSE](#manual-sse)
+  - [Production Considerations](#production-considerations)
+    - [Both Approaches](#both-approaches)
+    - [LangServe Specific](#langserve-specific)
+    - [Manual SSE Specific](#manual-sse-specific)
+
+---
+
 ## Overview
 
 Enable real-time streaming of LangChain agent/LLM responses to a React frontend via FastAPI.
 
+**Two approaches:**
+
+- ✅ **Option A (Simple)**: Use LangServe - 95% less code, production-ready
+- ⚙️ **Option B (Advanced)**: Manual SSE - full control, custom events
+
 ---
+
+## Option A: Simple Way - Using LangServe (RECOMMENDED)
+
+### Backend Setup (LangServe)
+
+#### Install Dependencies
+
+```bash
+pip install langserve[all] langchain langchain-openai
+```
+
+#### FastAPI Server (20 lines!)
+
+```python
+# app.py
+from fastapi import FastAPI
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langserve import add_routes
+
+app = FastAPI(title="Banking Agent API")
+
+# Your agent setup
+llm = ChatOpenAI(model="gpt-4", temperature=0, streaming=True)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful banking and investment assistant."),
+    ("user", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+# Add your tools here
+from langchain_core.tools import tool
+
+@tool
+def calculate_roi(initial: float, final: float) -> str:
+    """Calculate ROI percentage."""
+    roi = ((final - initial) / initial) * 100
+    return f"ROI: {roi:.2f}%"
+
+tools = [calculate_roi]
+
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# THIS IS ALL YOU NEED - LangServe handles everything!
+add_routes(
+    app,
+    agent_executor,
+    path="/agent",
+    enable_feedback_endpoint=True,
+)
+
+# Bonus: Get playground UI at http://localhost:8000/agent/playground
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+**That's it!** LangServe automatically provides:
+
+- ✅ Streaming endpoints
+- ✅ CORS handling
+- ✅ WebSocket support
+- ✅ Interactive playground
+- ✅ OpenAPI docs
+- ❌ Load balancing (requires external infrastructure)
+
+---
+
+### User Authentication & Session Management
+
+#### How to Distinguish Users in LangServe
+
+**Option 1: Using `per_req_config_modifier` (Recommended)**
+
+```python
+# app.py with user authentication
+from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from langserve import add_routes
+import jwt
+
+app = FastAPI(title="Banking Agent API")
+security = HTTPBearer()
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify JWT token and return user info."""
+    try:
+        payload = jwt.decode(credentials.credentials, "your-secret-key", algorithms=["HS256"])
+        user_id = payload.get("user_id")
+        return {"user_id": user_id, "name": payload.get("name")}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+def inject_user_context(request: Request, user=Depends(verify_token)):
+    """Inject user info into request config."""
+    return {
+        "configurable": {
+            "user_id": user["user_id"],
+            "user_name": user["name"],
+        }
+    }
+
+# Add routes with user context
+add_routes(
+    app,
+    agent_executor,
+    path="/agent",
+    per_req_config_modifier=inject_user_context,  # Inject user info!
+)
+```
+
+Now access user info in your agent:
+
+```python
+# In your tools
+@tool
+def get_portfolio_performance(query: str, config: dict) -> str:
+    """Get portfolio performance for the current user."""
+    user_id = config.get("configurable", {}).get("user_id")
+    # Query database with user-specific data
+    return f"User {user_id} portfolio: +12.5%"
+```
+
+**Option 2: Simple API Key**
+
+```python
+def inject_api_key_context(request: Request):
+    """Extract API key from headers."""
+    api_key = request.headers.get("x-api-key")
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Missing API key")
+
+    # Map API key to user
+    user_id = {"key123": "user123", "key456": "user456"}.get(api_key)
+
+    return {"configurable": {"user_id": user_id}}
+
+add_routes(app, agent_executor, path="/agent", per_req_config_modifier=inject_api_key_context)
+```
+
+Frontend usage:
+
+```typescript
+const agent = new RemoteRunnable({
+  url: "http://localhost:8000/agent",
+  options: {
+    headers: {
+      Authorization: "Bearer YOUR_JWT_TOKEN",
+      // or 'x-api-key': 'key123'
+    },
+  },
+});
+```
+
+---
+
+### Load Balancing Setup (Not Automatic!)
+
+**LangServe doesn't provide automatic load balancing** - use standard infrastructure:
+
+#### Option 1: Nginx Load Balancer
+
+```nginx
+# nginx.conf
+upstream langserve_backend {
+    server 127.0.0.1:8000;
+    server 127.0.0.1:8001;
+    server 127.0.0.1:8002;
+}
+
+server {
+    listen 80;
+    location /agent {
+        proxy_pass http://langserve_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        # For streaming
+        proxy_buffering off;
+    }
+}
+```
+
+Start multiple instances:
+
+```bash
+uvicorn app:app --port 8000 &
+uvicorn app:app --port 8001 &
+uvicorn app:app --port 8002 &
+```
+
+#### Option 2: Docker Compose
+
+```yaml
+# docker-compose.yml
+version: "3.8"
+services:
+  langserve:
+    build: .
+    deploy:
+      replicas: 3 # Run 3 instances
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+```
+
+```bash
+docker-compose up --scale langserve=5
+```
+
+#### Option 3: Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langserve-agent
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: langserve
+          image: your-registry/langserve:latest
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langserve-lb
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8000
+```
+
+```bash
+kubectl scale deployment langserve-agent --replicas=10
+```
+
+---
+
+### Complete Production Example
+
+```python
+# production_app.py
+from fastapi import FastAPI, Request, Depends
+from fastapi.security import HTTPBearer
+from langserve import add_routes
+import os
+
+app = FastAPI()
+security = HTTPBearer()
+
+def verify_and_inject_user(request: Request, credentials = Depends(security)):
+    """Verify JWT and inject user context."""
+    # Verify token
+    user = verify_jwt(credentials.credentials)
+
+    return {
+        "configurable": {
+            "user_id": user["user_id"],
+            "portfolio_id": user["portfolio_id"],
+        }
+    }
+
+# Your agent setup (same as before)
+agent_executor = create_your_agent()
+
+add_routes(
+    app,
+    agent_executor,
+    path="/agent",
+    per_req_config_modifier=verify_and_inject_user,
+)
+
+if __name__ == "__main__":
+    import uvicorn
+    # Run with multiple workers for better performance
+    uvicorn.run(app, host="0.0.0.0", port=8000, workers=4)
+```
+
+---
+
+### Key Takeaways
+
+**Load Balancing:**
+
+- ❌ NOT automatic in LangServe
+- ✅ Use Nginx, AWS ALB, or Kubernetes
+- ✅ LangServe is stateless - easy to scale horizontally
+- ✅ Run multiple instances with `--workers` or containers
+
+**User Identification:**
+
+- ✅ Use `per_req_config_modifier` to inject user context
+- ✅ Support JWT, API keys, sessions, OAuth
+- ✅ Access user info in prompts and tools via `config`
+- ✅ User-specific caching and data isolation
+
+---
+
+### Frontend with React Query
+
+#### Install Dependencies
+
+```bash
+npm install @tanstack/react-query @langchain/core axios
+```
+
+#### Setup React Query Provider
+
+```typescript
+// App.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ChatComponent from './ChatComponent';
+
+const queryClient = new QueryClient();
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ChatComponent />
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+```
+
+#### Chat Component with React Query
+
+```typescript
+// ChatComponent.tsx
+import { useState, useRef } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { RemoteRunnable } from '@langchain/core/runnables/remote';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export default function ChatComponent() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [streamingContent, setStreamingContent] = useState('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Initialize LangServe agent
+  const agent = new RemoteRunnable({
+    url: 'http://localhost:8000/agent',
+  });
+
+  // React Query mutation for streaming
+  const streamMutation = useMutation({
+    mutationFn: async (query: string) => {
+      abortControllerRef.current = new AbortController();
+
+      // Add user message
+      const userMsg: Message = { role: 'user', content: query };
+      setMessages(prev => [...prev, userMsg]);
+
+      // Add placeholder for assistant
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      let fullResponse = '';
+
+      try {
+        // Stream from LangServe
+        const stream = await agent.stream(
+          { input: query },
+          { signal: abortControllerRef.current.signal }
+        );
+
+        for await (const chunk of stream) {
+          const content = chunk?.content || chunk?.output || '';
+          fullResponse += content;
+          setStreamingContent(fullResponse);
+
+          // Update last message in real-time
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: 'assistant',
+              content: fullResponse
+            };
+            return updated;
+          });
+        }
+
+        return fullResponse;
+      } finally {
+        setStreamingContent('');
+      }
+    },
+    onError: (error) => {
+      console.error('Streaming error:', error);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: 'assistant',
+          content: 'Sorry, an error occurred.'
+        };
+        return updated;
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || streamMutation.isPending) return;
+
+    streamMutation.mutate(input);
+    setInput('');
+  };
+
+  const stopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    streamMutation.reset();
+  };
+
+  return (
+    <div className="chat-container">
+      <h1>Banking Agent Chat</h1>
+
+      <div className="messages">
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`message ${msg.role}`}>
+            <strong>{msg.role === 'user' ? '👤 You' : '🤖 Assistant'}:</strong>
+            <p>{msg.content}</p>
+            {streamMutation.isPending && idx === messages.length - 1 && (
+              <span className="cursor">▋</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="input-form">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about your investments..."
+          disabled={streamMutation.isPending}
+        />
+        {streamMutation.isPending ? (
+          <button type="button" onClick={stopStreaming} className="stop-btn">
+            ⏹ Stop
+          </button>
+        ) : (
+          <button type="submit">Send</button>
+        )}
+      </form>
+
+      {streamMutation.isPending && (
+        <div className="status">Streaming... {streamingContent.length} chars</div>
+      )}
+    </div>
+  );
+}
+```
+
+#### Alternative: Plain Fetch with React Query
+
+```typescript
+// ChatWithFetch.tsx
+import { useMutation } from '@tanstack/react-query';
+
+export default function ChatWithFetch() {
+  const streamMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await fetch('http://localhost:8000/agent/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { input: query },
+          config: { configurable: {} }
+        }),
+      });
+
+      if (!response.ok) throw new Error('Network error');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim());
+
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              if (data.content) {
+                fullText += data.content;
+                // Update UI here
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      return fullText;
+    },
+  });
+
+  return (
+    <button onClick={() => streamMutation.mutate('Calculate ROI')}>
+      Ask Agent
+    </button>
+  );
+}
+```
+
+---
+
+## Option B: Manual SSE Streaming (Advanced)
 
 ## 1. FastAPI Backend with Streaming
 
@@ -601,9 +1192,49 @@ const processStreamEvent = (event: StreamEvent) => {
 
 ---
 
+## Comparison Table
+
+| Feature              | LangServe (Option A) | Manual SSE (Option B)  |
+| -------------------- | -------------------- | ---------------------- |
+| **Backend Code**     | ~20 lines            | ~200 lines             |
+| **Frontend Code**    | ~50 lines            | ~150 lines             |
+| **Complexity**       | ⭐ Low               | ⭐⭐⭐⭐ High          |
+| **Streaming**        | ✅ Automatic         | ⚙️ Manual setup        |
+| **CORS**             | ✅ Built-in          | ⚙️ Manual config       |
+| **Playground UI**    | ✅ Included          | ❌ Not included        |
+| **Custom Events**    | ⚠️ Limited           | ✅ Full control        |
+| **Production Ready** | ✅ Yes               | ⚠️ Needs work          |
+| **Learning Curve**   | Easy                 | Steep                  |
+| **Best For**         | Most use cases       | Advanced customization |
+
+**Recommendation**: Use **LangServe (Option A)** for 95% of use cases. Only use Option B if you need custom event types or very specific control.
+
+---
+
 ## 7. Running the Full Stack
 
-### Terminal 1: Start FastAPI
+### Option A: LangServe
+
+**Terminal 1: Start FastAPI**
+
+```bash
+python app.py
+# Server runs on http://localhost:8000
+# Playground at http://localhost:8000/agent/playground
+```
+
+**Terminal 2: Start React**
+
+```bash
+npm start
+# App runs on http://localhost:3000
+```
+
+---
+
+### Option B: Manual SSE
+
+**Terminal 1: Start FastAPI**
 
 ```bash
 cd backend
@@ -611,7 +1242,7 @@ python streaming_server.py
 # Server runs on http://localhost:8000
 ```
 
-### Terminal 2: Start React
+**Terminal 2: Start React**
 
 ```bash
 cd frontend
@@ -622,6 +1253,16 @@ npm start
 ---
 
 ## Key Points
+
+### LangServe Approach
+
+- ✅ Minimal code (20 lines backend, 50 lines frontend)
+- ✅ Production-ready out of the box
+- ✅ Built-in playground for testing
+- ✅ Works with React Query seamlessly
+- ✅ Automatic error handling and retries
+
+### Manual SSE Approach
 
 1. **SSE (Server-Sent Events)** is simpler than WebSockets for one-way streaming
 2. **FastAPI StreamingResponse** with `text/event-stream` media type
@@ -634,6 +1275,15 @@ npm start
 
 ## Debugging Tips
 
+### LangServe
+
+- Test in playground first: `http://localhost:8000/agent/playground`
+- Check OpenAPI docs: `http://localhost:8000/docs`
+- Enable verbose mode in AgentExecutor
+- Use React Query DevTools for frontend debugging
+
+### Manual SSE
+
 - Use browser DevTools → Network → EventStream to see live events
 - Add verbose logging in callback handlers
 - Test with Postman (supports SSE)
@@ -644,10 +1294,23 @@ npm start
 
 ## Production Considerations
 
+### Both Approaches
+
 - Add authentication/authorization
 - Rate limiting
 - Connection pooling
 - Error recovery
 - Timeout handling
 - Load balancing for multiple users
+
+### LangServe Specific
+
+- Configure `per_req_config_modifier` for user-specific settings
+- Use `enable_feedback_endpoint` for user feedback
+- Add monitoring with LangSmith
+
+### Manual SSE Specific
+
+- Implement reconnection logic
+- Handle partial message recovery
 - WebSocket alternative for bi-directional needs
