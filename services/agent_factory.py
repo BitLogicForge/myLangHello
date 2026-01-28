@@ -1,8 +1,11 @@
 """Agent Factory - Creates and configures the agent and executor."""
 
+import logging
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+
+logger = logging.getLogger(__name__)
 
 
 class AgentFactory:
@@ -34,10 +37,17 @@ class AgentFactory:
         self.verbose = verbose
         self.max_iterations = max_iterations
         self.max_execution_time = max_execution_time
+        logger.info(
+            f"AgentFactory initialized with {len(tools)} tools, "
+            f"max_iterations={max_iterations}, max_execution_time={max_execution_time}s"
+        )
 
     def create_agent(self):
         """Create the agent."""
-        return create_openai_functions_agent(self.llm, self.tools, self.prompt)
+        logger.debug("Creating OpenAI functions agent...")
+        agent = create_openai_functions_agent(self.llm, self.tools, self.prompt)
+        logger.info("Agent created successfully")
+        return agent
 
     def create_executor(self) -> AgentExecutor:
         """
@@ -46,9 +56,10 @@ class AgentFactory:
         Returns:
             Configured AgentExecutor
         """
+        logger.debug("Creating agent executor...")
         agent = self.create_agent()
 
-        return AgentExecutor(
+        executor = AgentExecutor(
             agent=agent,
             tools=self.tools,
             verbose=self.verbose,
@@ -56,3 +67,5 @@ class AgentFactory:
             max_iterations=self.max_iterations,
             max_execution_time=self.max_execution_time,
         )
+        logger.info("Agent executor created successfully")
+        return executor

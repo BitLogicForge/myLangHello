@@ -1,6 +1,7 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
 import os
+import logging
 from typing import Optional
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -9,6 +10,9 @@ from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class AgentApp:
@@ -41,6 +45,9 @@ class AgentApp:
             schema_path: Path to database schema configuration
             enable_sql_tool: Enable or disable SQL query tool
         """
+        logger.info("Initializing AgentApp...")
+        logger.debug(f"Model: {model}, Temperature: {temperature}, SQL enabled: {enable_sql_tool}")
+
         # Get database URI from env if not provided
         if db_uri is None:
             db_uri = os.getenv(
@@ -48,6 +55,7 @@ class AgentApp:
                 "mssql+pyodbc://username:password@server/database"
                 "?driver=ODBC+Driver+17+for+SQL+Server",
             )
+            logger.debug("Database URI loaded from environment")
 
         # Initialize core components
         # ChatOpenAI Parameters (categorized by importance):
@@ -91,6 +99,7 @@ class AgentApp:
         # tags: List[str] - Tags for tracking/filtering
         # metadata: dict - Additional metadata for requests
 
+        logger.info(f"Initializing LLM: {model}")
         self.llm = ChatOpenAI(
             temperature=temperature,
             model=model,
@@ -103,16 +112,25 @@ class AgentApp:
         )
 
         # Setup database
+        logger.info("Setting up database manager...")
         self.db_manager = DatabaseManager(
             db_uri=db_uri,
             include_tables=["users", "orders", "products"],
             sample_rows=2,
+            # Connection pool configuration for ~100 users
+            # Adjust based on your specific load pattern
+            pool_size=10,  # Increased from default 5
+            max_overflow=15,  # Increased from default 10
+            pool_recycle=1800,  # 30 minutes (reduced from 3600)
         )
 
         # Load custom schema
+        logger.info(f"Loading custom schema from {schema_path}")
         self.custom_schema = DatabaseManager.load_custom_schema(schema_path)
+        logger.debug(f"Schema loaded with {len(self.custom_schema)} tables")
 
         # Setup tools
+        logger.info("Setting up tools manager...")
         self.tools_manager = ToolsManager(
             db=self.db_manager.get_database(),
             llm=self.llm,
@@ -121,10 +139,12 @@ class AgentApp:
         )
 
         # Build prompt
+        logger.info("Building prompt template...")
         self.prompt_builder = PromptBuilder(system_prompt_path="messages/system_prompt.txt")
         self.prompt = self.prompt_builder.build_prompt(self.custom_schema)
 
         # Create agent executor
+        logger.info("Creating agent executor...")
         self.agent_factory = AgentFactory(
             llm=self.llm,
             tools=self.tools_manager.get_tools(),
@@ -134,6 +154,7 @@ class AgentApp:
             max_execution_time=60,
         )
         self.agent_executor = self.agent_factory.create_executor()
+        logger.info("✅ AgentApp initialized successfully")
 
     def run(self, question: str) -> dict:
         """
@@ -145,10 +166,17 @@ class AgentApp:
         Returns:
             Agent response dictionary
         """
+        logger.info("Running agent with question...")
+        logger.debug(f"Question: {question[:100]}...")
 
-        response = self.agent_executor.invoke({"input": question})
-        self._print_response(response)
-        return response
+        try:
+            response = self.agent_executor.invoke({"input": question})
+            logger.info("Agent execution completed successfully")
+            self._print_response(response)
+            return response
+        except Exception as e:
+            logger.error(f"Agent execution failed: {e}", exc_info=True)
+            raise
 
     @staticmethod
     def _print_response(response: dict) -> None:

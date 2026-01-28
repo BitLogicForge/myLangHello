@@ -16,12 +16,39 @@ python api.py
 uvicorn api:app --reload --host 0.0.0.0 --port 8000
 ```
 
+**Note:** Logs are written to both console and `api.log` file.
+
 ## Endpoints
 
 ### 1. Health Check
 
 ```bash
 curl http://localhost:8000/health
+```
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "agent_loaded": true,
+  "langserve_available": true
+}
+```
+
+### 1.1 Database Health Check
+
+```bash
+curl http://localhost:8000/health/db
+```
+
+**Response:**
+
+```json
+{
+  "database_healthy": true,
+  "status": "connected"
+}
 ```
 
 ### 2. Query Agent (Manual - No Streaming)

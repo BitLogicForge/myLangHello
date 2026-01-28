@@ -1,5 +1,6 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,15 +8,23 @@ from pydantic import BaseModel, Field
 from typing import Optional, Any
 import uvicorn
 
+from base_chain_agen_func_tooling import AgentApp
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("api.log")],
+)
+logger = logging.getLogger(__name__)
+
 try:
     from langserve import add_routes
 
     LANGSERVE_AVAILABLE = True
 except ImportError:
     LANGSERVE_AVAILABLE = False
-    print("Warning: langserve not installed. Run: pip install langserve[all]")
-
-from base_chain_agen_func_tooling import AgentApp
+    logger.warning("langserve not installed. Run: pip install langserve[all]")
 
 
 # Request/Response Models
@@ -71,14 +80,41 @@ app.add_middleware(
 
 # Initialize agent
 agent_executor: Optional[Any] = None
+agent_app: Optional[AgentApp] = None
 try:
+    logger.info("Initializing agent application...")
     agent_app = AgentApp()
     agent_executor = agent_app.agent_executor
     AGENT_LOADED = True
+    logger.info("✅ Agent loaded successfully")
 except Exception as e:
-    print(f"Error loading agent: {e}")
+    logger.error(f"❌ Error loading agent: {e}", exc_info=True)
     agent_executor = None
+    agent_app = None
     AGENT_LOADED = False
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Application startup - verify database connection."""
+    logger.info("Application startup initiated")
+    if agent_app and agent_app.db_manager:
+        health = agent_app.db_manager.health_check()
+        if health:
+            logger.info("✅ Database connection pool initialized and healthy")
+        else:
+            logger.warning("⚠️ Database health check failed")
+    logger.info("Application startup complete")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Application shutdown - cleanup database connections."""
+    logger.info("Application shutdown initiated")
+    if agent_app and agent_app.db_manager:
+        agent_app.db_manager.close()
+        logger.info("✅ Database connection pool closed")
+    logger.info("Application shutdown complete")
 
 
 @app.get("/", tags=["Root"])
@@ -101,6 +137,19 @@ async def health_check():
         agent_loaded=AGENT_LOADED,
         langserve_available=LANGSERVE_AVAILABLE,
     )
+
+
+@app.get("/health/db", tags=["Health"])
+async def database_health_check():
+    """Check database connection health."""
+    if not AGENT_LOADED or not agent_app:
+        raise HTTPException(status_code=503, detail="Agent not loaded")
+
+    is_healthy = agent_app.db_manager.health_check()
+    return {
+        "database_healthy": is_healthy,
+        "status": "connected" if is_healthy else "disconnected",
+    }
 
 
 # LangServe Routes (Recommended - with streaming support)
@@ -126,9 +175,13 @@ async def query_agent(request: QueryRequest):
     For streaming support, install langserve and use /agent/stream endpoint.
     """
     if not AGENT_LOADED or agent_executor is None:
+        logger.warning("Query attempted but agent not loaded")
         raise HTTPException(status_code=503, detail="Agent not loaded")
 
     try:
+        logger.info(f"Processing query (session: {request.session_id})")
+        logger.debug(f"Question: {request.question[:100]}...")
+
         # Prepare input with history if provided
         invoke_input: dict[str, Any] = {"input": request.question}
         if request.history:
@@ -137,13 +190,16 @@ async def query_agent(request: QueryRequest):
                 (msg.role, msg.content) for msg in request.history
             ]
             invoke_input["chat_history"] = chat_history
+            logger.debug(f"Included {len(chat_history)} history messages")
 
         response = agent_executor.invoke(invoke_input)
+        logger.info(f"Query completed successfully (session: {request.session_id})")
         return QueryResponse(
             output=response["output"],
             session_id=request.session_id,
         )
     except Exception as e:
+        logger.error(f"Agent error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
 
 
@@ -151,7 +207,7 @@ async def query_agent(request: QueryRequest):
 @app.get("/config", tags=["Configuration"])
 async def get_config():
     """Get agent configuration details."""
-    if not AGENT_LOADED:
+    if not AGENT_LOADED or not agent_app:
         raise HTTPException(status_code=503, detail="Agent not loaded")
 
     try:

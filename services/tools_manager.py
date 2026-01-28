@@ -1,5 +1,6 @@
 """Tools Manager - Handles tool registration and configuration."""
 
+import logging
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
 from langchain_openai import ChatOpenAI
@@ -15,6 +16,8 @@ from tools import (
     system_info,
     random_joke,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ToolsManager:
@@ -40,13 +43,19 @@ class ToolsManager:
         self.llm = llm
         self.output_limit = output_limit
         self.enable_sql_tool = enable_sql_tool
+        sql_status = "enabled" if enable_sql_tool else "disabled"
+        logger.debug(
+            f"ToolsManager initializing (SQL tools: {sql_status}, " f"output_limit: {output_limit})"
+        )
         self.tools = self._register_tools()
+        logger.info(f"ToolsManager initialized with {len(self.tools)} tools")
 
     def _register_tools(self) -> list:
         """Register and configure all tools."""
+        logger.debug("Registering tools...")
         sql_tools = self._get_sql_tools() if self.enable_sql_tool else []
 
-        return [
+        tools_list = [
             calculator,
             weather,
             read_file,
@@ -57,11 +66,15 @@ class ToolsManager:
             random_joke,
             *sql_tools,
         ]
+        logger.info(f"Registered {len(tools_list)} tools " f"(utility: 8, SQL: {len(sql_tools)})")
+        return tools_list
 
     def _get_sql_tools(self) -> list:
         """Get SQL tools with output limiting."""
+        logger.debug("Creating SQL toolkit...")
         sql_toolkit = SQLDatabaseToolkit(db=self.db, llm=self.llm)
         sql_tools = sql_toolkit.get_tools()
+        logger.debug(f"SQL toolkit created with {len(sql_tools)} tools")
 
         # Replace SQL query tool with limited version
         modified_tools: list = []
@@ -84,10 +97,12 @@ class ToolsManager:
                     name=tool.name,
                     description=tool.description,
                 )
+                logger.debug(f"SQL query tool wrapped with {output_limit} char limit")
                 modified_tools.append(limited_tool)
             else:
                 modified_tools.append(tool)
 
+        logger.debug(f"SQL tools processed: {len(modified_tools)} tools ready")
         return modified_tools
 
     def get_tools(self) -> list:
