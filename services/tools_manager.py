@@ -20,7 +20,13 @@ from tools import (
 class ToolsManager:
     """Manages tool registration and configuration."""
 
-    def __init__(self, db: SQLDatabase, llm: ChatOpenAI, output_limit: int = 10000):
+    def __init__(
+        self,
+        db: SQLDatabase,
+        llm: ChatOpenAI,
+        output_limit: int = 10000,
+        enable_sql_tool: bool = True,
+    ):
         """
         Initialize the tools manager.
 
@@ -28,15 +34,17 @@ class ToolsManager:
             db: Database instance for SQL tools
             llm: Language model for toolkit
             output_limit: Maximum output size for SQL queries
+            enable_sql_tool: Enable or disable SQL query tool
         """
         self.db = db
         self.llm = llm
         self.output_limit = output_limit
+        self.enable_sql_tool = enable_sql_tool
         self.tools = self._register_tools()
 
     def _register_tools(self) -> list:
         """Register and configure all tools."""
-        sql_tools = self._get_sql_tools()
+        sql_tools = self._get_sql_tools() if self.enable_sql_tool else []
 
         return [
             calculator,

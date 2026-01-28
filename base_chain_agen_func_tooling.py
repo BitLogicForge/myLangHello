@@ -1,9 +1,14 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
+import os
+from typing import Optional
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory
+
+# Load environment variables
+load_dotenv()
 
 
 class AgentApp:
@@ -11,21 +16,38 @@ class AgentApp:
 
     def __init__(
         self,
-        db_uri: str = "sqlite:///example.db",
+        db_uri: Optional[str] = None,
         model: str = "gpt-4",
-        temperature: float = 0,
+        temperature: float = 0.7,
         schema_path: str = "db_schema_config.json",
+        enable_sql_tool: bool = True,
     ):
         """
         Initialize the agent application.
 
         Args:
-            db_uri: Database connection URI
+            db_uri: Database connection URI (MSSQL format).
+                   If None, reads from DATABASE_URI env var.
+                   Example:
+                   mssql+pyodbc://username:password@server/database
+                   ?driver=ODBC+Driver+17+for+SQL+Server
+
+                   Or with Windows Auth:
+                   mssql+pyodbc://server/database
+                   ?driver=ODBC+Driver+17+for+SQL+Server
+                   &trusted_connection=yes
             model: LLM model name
             temperature: LLM temperature setting
             schema_path: Path to database schema configuration
+            enable_sql_tool: Enable or disable SQL query tool
         """
-        load_dotenv()
+        # Get database URI from env if not provided
+        if db_uri is None:
+            db_uri = os.getenv(
+                "DATABASE_URI",
+                "mssql+pyodbc://username:password@server/database"
+                "?driver=ODBC+Driver+17+for+SQL+Server",
+            )
 
         # Initialize core components
         # ChatOpenAI Parameters (categorized by importance):
@@ -95,6 +117,7 @@ class AgentApp:
             db=self.db_manager.get_database(),
             llm=self.llm,
             output_limit=10000,
+            enable_sql_tool=enable_sql_tool,
         )
 
         # Build prompt
@@ -112,7 +135,7 @@ class AgentApp:
         )
         self.agent_executor = self.agent_factory.create_executor()
 
-    def run(self, question: str | None = None) -> dict:
+    def run(self, question: str) -> dict:
         """
         Run the agent with a question.
 
@@ -122,12 +145,6 @@ class AgentApp:
         Returns:
             Agent response dictionary
         """
-        if question is None:
-            question = (
-                "How many users are registered in the database? "
-                "What are the total sales from completed orders? "
-                "Also, what's 5 + 7 and what's the weather in Paris?"
-            )
 
         response = self.agent_executor.invoke({"input": question})
         self._print_response(response)
@@ -145,8 +162,13 @@ class AgentApp:
 def main():
     """Main entry point."""
     print("Hello, Function Calling Agent!")
-    app = AgentApp()
-    app.run()
+    question = (
+        "How many users are registered in the database? "
+        "What are the total sales from completed orders? "
+        "Also, what's 5 + 7 and what's the weather in Paris?"
+    )
+    app = AgentApp(enable_sql_tool=True)  # Set to False to disable SQL tool
+    app.run(question=question)
 
 
 if __name__ == "__main__":

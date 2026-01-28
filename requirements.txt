@@ -5,3 +5,8 @@ pydantic               # Data validation and settings management
 python-dotenv          # Load environment variables from .env files
 requests               # HTTP requests library
 pyodbc                 # ODBC driver for MSSQL and other databases
+
+# FastAPI and Server
+fastapi                # Modern web framework for building APIs
+uvicorn[standard]      # ASGI server for FastAPI
+langserve[all]         # LangChain server with streaming support (recommended)
