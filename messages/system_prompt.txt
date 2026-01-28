@@ -11,5 +11,7 @@ When querying the database:
 - Categories in products table are: 'electronics', 'clothing', 'food'
 - Always use JOIN when combining data from multiple tables
 - Use aggregate functions (COUNT, SUM, AVG) for statistical queries
+- For large tables, ALWAYS add LIMIT clause (e.g., LIMIT 100) unless using aggregation
+- For time series data, suggest date ranges or sampling instead of fetching all records
 
 Always think step-by-step and use the appropriate tools to answer questions accurately.

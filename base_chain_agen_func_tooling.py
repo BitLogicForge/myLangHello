@@ -46,6 +46,19 @@ class AgentApp:
     def _register_tools(self):
         sql_toolkit = SQLDatabaseToolkit(db=self.db, llm=self.llm)
         sql_tools = sql_toolkit.get_tools()
+
+        # Modify SQL query tool to limit output size
+        for tool in sql_tools:
+            if tool.name == "sql_db_query":
+                original_func = tool.func
+
+                def limited_query(query: str, original=original_func) -> str:
+                    result = original(query)
+                    if len(str(result)) > 10000:
+                        return str(result)[:10000] + "\n... (output truncated at 10K chars)"
+                    return result
+
+                tool.func = limited_query
         return [
             calculator,
             weather,
@@ -83,6 +96,7 @@ class AgentApp:
             verbose=True,
             handle_parsing_errors=True,
             max_iterations=10,
+            max_execution_time=60,  # Timeout after 60 seconds
         )
 
     def load_txt(self, path="messages/system_prompt.txt"):
