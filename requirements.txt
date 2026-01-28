@@ -1,6 +1,7 @@
-langchain
-langchain-openai
-langchain-community
-pydantic
-python-dotenv
-requests
+langchain              # Core LangChain framework for agents and chains
+langchain-openai       # OpenAI integration for LangChain (LLMs)
+langchain-community    # Community-contributed LangChain integrations/tools
+pydantic               # Data validation and settings management
+python-dotenv          # Load environment variables from .env files
+requests               # HTTP requests library
+pyodbc                 # ODBC driver for MSSQL and other databases
