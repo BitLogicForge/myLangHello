@@ -31,6 +31,7 @@ class PromptBuilder:
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("user", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
