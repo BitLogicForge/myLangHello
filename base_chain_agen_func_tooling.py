@@ -170,35 +170,12 @@ class AgentApp:
         logger.debug(f"Question: {question[:100]}...")
 
         try:
-            # LangGraph uses message-based input
-            response = self.agent_executor.invoke({"messages": [("user", question)]})
+            # Standard AgentExecutor input format
+            response = self.agent_executor.invoke({"input": question})
             logger.info("✅ Agent completed successfully")
-
-            # Extract the final message from LangGraph response
-            if "messages" in response:
-                final_message = response["messages"][-1]
-                output_content = (
-                    final_message.content
-                    if hasattr(final_message, "content")
-                    else str(final_message)
-                )
-                return {
-                    "output": output_content,
-                    "intermediate_steps": response.get("messages", [])[:-1],
-                }
-
             return response
         except Exception as e:
             logger.error(f"❌ Agent execution failed: {str(e)}")
-            raise
-
-        try:
-            response = self.agent_executor.invoke({"input": question})
-            logger.info("Agent execution completed successfully")
-            self._print_response(response)
-            return response
-        except Exception as e:
-            logger.error(f"Agent execution failed: {e}", exc_info=True)
             raise
 
     @staticmethod

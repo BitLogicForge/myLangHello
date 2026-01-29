@@ -1,7 +1,6 @@
 langchain              # Core LangChain framework for agents and chains
 langchain-openai       # OpenAI integration for LangChain (LLMs)
 langchain-community    # Community-contributed LangChain integrations/tools
-langgraph              # Modern LangChain agent framework (replaces AgentExecutor)
 pydantic               # Data validation and settings management
 python-dotenv          # Load environment variables from .env files
 requests               # HTTP requests library
