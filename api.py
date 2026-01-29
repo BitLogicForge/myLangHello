@@ -122,6 +122,13 @@ async def database_health_check():
     if not AGENT_LOADED or not agent_app:
         raise HTTPException(status_code=503, detail="Agent not loaded")
 
+    if not agent_app.db_manager:
+        return {
+            "database_healthy": False,
+            "status": "disabled",
+            "message": "SQL tools are disabled",
+        }
+
     is_healthy = agent_app.db_manager.health_check()
     return {
         "database_healthy": is_healthy,
@@ -192,7 +199,8 @@ async def get_config():
             "model": agent_app.llm.model_name,
             "temperature": agent_app.llm.temperature,
             "tools_count": len(agent_app.tools_manager.get_tools()),
-            "database_tables": agent_app.db_manager.include_tables,
+            "database_tables": agent_app.db_manager.include_tables if agent_app.db_manager else [],
+            "sql_tools_enabled": agent_app.db_manager is not None,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Config error: {str(e)}")

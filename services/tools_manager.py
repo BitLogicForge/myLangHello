@@ -1,6 +1,7 @@
 """Tools Manager - Handles tool registration and configuration."""
 
 import logging
+from typing import Optional
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -25,7 +26,7 @@ class ToolsManager:
 
     def __init__(
         self,
-        db: SQLDatabase,
+        db: Optional[SQLDatabase],
         llm: BaseChatModel,
         output_limit: int = 10000,
         enable_sql_tool: bool = True,
@@ -34,7 +35,7 @@ class ToolsManager:
         Initialize the tools manager.
 
         Args:
-            db: Database instance for SQL tools
+            db: Database instance for SQL tools (None if SQL tools disabled)
             llm: Language model for toolkit
             output_limit: Maximum output size for SQL queries
             enable_sql_tool: Enable or disable SQL query tool
@@ -71,6 +72,10 @@ class ToolsManager:
 
     def _get_sql_tools(self) -> list:
         """Get SQL tools with output limiting."""
+        if self.db is None:
+            logger.warning("Database is None, cannot create SQL tools")
+            return []
+
         logger.debug("Creating SQL toolkit...")
         sql_toolkit = SQLDatabaseToolkit(db=self.db, llm=self.llm)
         sql_tools = sql_toolkit.get_tools()

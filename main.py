@@ -11,16 +11,25 @@ from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory,
 load_dotenv()
 
 # Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],  # Output to console
+)
 logger = logging.getLogger(__name__)
 
 
 class AgentApp:
     """Main application orchestrator - coordinates all components."""
 
+    # Type annotations for instance attributes
+    db_manager: Optional[DatabaseManager]
+    custom_schema: dict
+
     def __init__(
         self,
         db_uri: Optional[str] = None,
-        model: str = "gpt-4.1",
+        model: Optional[str] = None,
         temperature: float = 0.7,
         schema_path: str = "db_schema_config.json",
         enable_sql_tool: bool = True,
@@ -110,28 +119,33 @@ class AgentApp:
             temperature=temperature,
         )
 
-        # Setup database
-        logger.info("Setting up database manager...")
-        self.db_manager = DatabaseManager(
-            db_uri=db_uri,
-            include_tables=["users", "orders", "products"],
-            sample_rows=2,
-            # Connection pool configuration for ~100 users
-            # Adjust based on your specific load pattern
-            pool_size=10,  # Increased from default 5
-            max_overflow=15,  # Increased from default 10
-            pool_recycle=1800,  # 30 minutes (reduced from 3600)
-        )
+        # Setup database (only if SQL tools are enabled)
+        if enable_sql_tool:
+            logger.info("Setting up database manager...")
+            self.db_manager = DatabaseManager(
+                db_uri=db_uri,
+                include_tables=["users", "orders", "products"],
+                sample_rows=2,
+                # Connection pool configuration for ~100 users
+                # Adjust based on your specific load pattern
+                pool_size=10,  # Increased from default 5
+                max_overflow=15,  # Increased from default 10
+                pool_recycle=1800,  # 30 minutes (reduced from 3600)
+            )
 
-        # Load custom schema
-        logger.info(f"Loading custom schema from {schema_path}")
-        self.custom_schema = DatabaseManager.load_custom_schema(schema_path)
-        logger.debug(f"Schema loaded with {len(self.custom_schema)} tables")
+            # Load custom schema
+            logger.info(f"Loading custom schema from {schema_path}")
+            self.custom_schema = DatabaseManager.load_custom_schema(schema_path)
+            logger.debug(f"Schema loaded with {len(self.custom_schema)} tables")
+        else:
+            logger.info("Database manager disabled (SQL tools disabled)")
+            self.db_manager = None
+            self.custom_schema = {}
 
         # Setup tools
         logger.info("Setting up tools manager...")
         self.tools_manager = ToolsManager(
-            db=self.db_manager.get_database(),
+            db=self.db_manager.get_database() if self.db_manager else None,
             llm=self.llm,
             output_limit=10000,
             enable_sql_tool=enable_sql_tool,
@@ -155,7 +169,7 @@ class AgentApp:
         self.agent_executor = self.agent_factory.create_executor()
         logger.info("✅ AgentApp initialized successfully")
 
-    def run(self, question: str) -> dict:
+    def run(self, question: str) -> Optional[dict]:
         """
         Run the agent with a question.
 
@@ -169,70 +183,69 @@ class AgentApp:
         logger.debug(f"Question: {question[:100]}...")
 
         try:
-            # LangGraph format (updated from old AgentExecutor format)
-            response = self.agent_executor.invoke(
+            print("\n" + "=" * 80)
+            print("AGENT EXECUTION TRACE (STREAMING)")
+            print("=" * 80)
+
+            # Stream the agent execution to see thoughts in real-time
+            step_count = 0
+            final_response: Optional[dict] = None
+
+            for event in self.agent_executor.stream(
                 {"messages": [("user", question)]}, config={"recursion_limit": 15}  # type: ignore
-            )
+            ):
+                step_count += 1
+                self._print_streaming_event(event, step_count)
+                final_response = event
+
             logger.info("✅ Agent completed successfully")
 
-            # Print the full trace
-            self._print_response(response)
+            print("\n" + "=" * 80)
+            print("EXECUTION COMPLETE")
+            print("=" * 80)
 
-            return response
+            return final_response
         except Exception as e:
             logger.error(f"❌ Agent execution failed: {str(e)}")
             raise
 
     @staticmethod
-    def _print_response(response: dict) -> None:
-        """Print formatted agent response with tool usage and thoughts."""
-        print("\n" + "=" * 80)
-        print("AGENT EXECUTION TRACE")
-        print("=" * 80)
+    def _print_streaming_event(event: dict, step_count: int) -> None:
+        """Print a single streaming event from the agent."""
+        for node_name, node_data in event.items():
+            print(f"\n--- Step {step_count}: {node_name} ---")
 
-        # LangGraph returns messages, iterate through all to show reasoning
-        if "messages" in response:
-            for i, msg in enumerate(response["messages"], 1):
-                msg_type = msg.__class__.__name__
+            if "messages" in node_data:
+                for msg in node_data["messages"]:
+                    # Human/User message
+                    if hasattr(msg, "type") and msg.type == "human":
+                        print(f"👤 User: {msg.content}")
 
-                print(f"\n--- Step {i}: {msg_type} ---")
+                    # AI message with potential tool calls
+                    elif hasattr(msg, "type") and msg.type == "ai":
+                        if msg.content:
+                            print(f"🤖 AI: {msg.content}")
 
-                # Human/User message
-                if hasattr(msg, "type") and msg.type == "human":
-                    print(f"👤 User: {msg.content}")
+                        # Check for tool calls
+                        if hasattr(msg, "tool_calls") and msg.tool_calls:
+                            for tool_call in msg.tool_calls:
+                                print(f"🔧 Calling Tool: {tool_call.get('name', 'unknown')}")
+                                print(f"   Args: {tool_call.get('args', {})}")
 
-                # AI message with potential tool calls
-                elif hasattr(msg, "type") and msg.type == "ai":
-                    if msg.content:
-                        print(f"🤖 AI Thought: {msg.content}")
+                    # Tool message (tool response)
+                    elif hasattr(msg, "type") and msg.type == "tool":
+                        tool_name = getattr(msg, "name", "unknown")
+                        print(f"⚙️  Tool Result ({tool_name}):")
+                        content = str(msg.content)
+                        if len(content) > 500:
+                            print(f"   {content[:500]}... (truncated)")
+                        else:
+                            print(f"   {content}")
 
-                    # Check for tool calls
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
-                        for tool_call in msg.tool_calls:
-                            print(f"🔧 Tool Call: {tool_call.get('name', 'unknown')}")
-                            print(f"   Args: {tool_call.get('args', {})}")
-
-                # Tool message (tool response)
-                elif hasattr(msg, "type") and msg.type == "tool":
-                    tool_name = getattr(msg, "name", "unknown")
-                    print(f"⚙️  Tool Result ({tool_name}):")
-                    content = str(msg.content)
-                    if len(content) > 500:
-                        print(f"   {content[:500]}... (truncated)")
+                    # Other message types
                     else:
-                        print(f"   {content}")
-
-                # Other message types
-                else:
-                    print(f"💬 {msg.content if hasattr(msg, 'content') else str(msg)}")
-
-            print("\n" + "=" * 80)
-            print("FINAL ANSWER")
-            print("=" * 80)
-            print(response["messages"][-1].content)
-        else:
-            # Fallback for old format
-            print(response.get("output", str(response)))
+                        content = msg.content if hasattr(msg, "content") else str(msg)
+                        print(f"💬 {content}")
 
 
 def main():
@@ -243,7 +256,7 @@ def main():
         # "What are the total sales from completed orders? "
         "Also, what's 5 + 7 and what's the weather in Paris?"
     )
-    app = AgentApp(enable_sql_tool=False)  # Set to False to disable SQL tool
+    app = AgentApp(enable_sql_tool=False, llm_provider="openai")  # Set to False to disable SQL tool
     app.run(question=question)
 
 
