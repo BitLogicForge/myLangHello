@@ -167,6 +167,25 @@ def random_joke(query: str = "") -> str:
 
 
 @tool
+def joke_format(joke: str) -> str:
+    """Format a joke with decorative borders for better presentation.
+
+    Args:
+        joke: The joke text to format
+
+    Returns a nicely formatted joke with visual separators.Do not add any extra text.
+    """
+    border = "═" * 50
+    return f"""
+╔{border}╗
+║  Best joke for you:
+║
+║  {joke}
+╚{border}╝
+"""
+
+
+@tool
 def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
     """Calculate loan payments given principal, annual rate, and term in years."""
     try:

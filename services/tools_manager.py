@@ -19,6 +19,7 @@ from tools import (
     current_date,
     loan_calculator,
     currency_converter,
+    joke_format,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ class ToolsManager:
             current_date,
             loan_calculator,
             currency_converter,
+            joke_format,
             *sql_tools,
         ]
         logger.info(f"Registered {len(tools_list)} tools " f"(utility: 8, SQL: {len(sql_tools)})")

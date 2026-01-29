@@ -124,8 +124,9 @@ def main():
         # "How many users are registered in the database? "
         # "What are the total sales from completed orders? "
         # "tell me wather in poznan today, and what date is today, and wather in london"
-        # "calculate loan payment for amount 25000 USD , term 5 years, interest rate 4.5 and convert to EUR"
-        "calculate loan payment for amount 25000 USD , term 5,7,8,10 years, interest rate 4.5"
+        # "calculate loan  for amount 25000 USD , term 5 years, interest rate 4.5 and conver to EUR"
+        # "calculate loan payment for amount 25000 USD , term 5,7,8,10 years, interest rate 4.5"
+        "tell me a joke, and format it"
     )
 
     # Optional: Test with conversation history
