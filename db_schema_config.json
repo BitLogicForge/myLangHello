@@ -1,5 +1,45 @@
 {
-  "users": "Contains user information. Columns: id (primary key), name (full name), email, created_at (registration date)",
-  "orders": "Contains order records. Columns: id, user_id (foreign key to users), product_id (foreign key to products), quantity, order_date, status (pending/completed/cancelled)",
-  "products": "Contains product catalog. Columns: id, name, description, price, category (electronics/clothing/food), stock_quantity"
+  "users": {
+    "description": "Contains user account information and registration details",
+    "columns": {
+      "id": "Primary key, unique user identifier",
+      "name": "Full name of the user",
+      "email": "Email address for login and communication",
+      "created_at": "Registration date and time"
+    },
+    "foreign_keys": []
+  },
+  "orders": {
+    "description": "Contains order transactions and purchase history",
+    "columns": {
+      "id": "Primary key, unique order identifier",
+      "user_id": "Foreign key to users table, identifies the customer",
+      "product_id": "Foreign key to products table, identifies the ordered item",
+      "quantity": "Number of items ordered",
+      "order_date": "Date and time when order was placed",
+      "status": "Order status: pending, completed, or cancelled"
+    },
+    "foreign_keys": [
+      {
+        "column": "user_id",
+        "foreign_column": "users.id"
+      },
+      {
+        "column": "product_id",
+        "foreign_column": "products.id"
+      }
+    ]
+  },
+  "products": {
+    "description": "Contains product catalog with inventory information",
+    "columns": {
+      "id": "Primary key, unique product identifier",
+      "name": "Product name",
+      "description": "Detailed product description",
+      "price": "Product price in currency units",
+      "category": "Product category: electronics, clothing, or food",
+      "stock_quantity": "Current inventory quantity available"
+    },
+    "foreign_keys": []
+  }
 }

@@ -1,5 +1,6 @@
 """Prompt Builder - Creates and configures prompt templates."""
 
+import json
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Optional
@@ -68,12 +69,19 @@ class PromptBuilder:
     @staticmethod
     def _format_schema_context(schema: dict) -> str:
         """
-        Format schema information for the prompt.
+        Format schema information for the prompt as JSON.
 
         Args:
-            schema: Schema dictionary
+            schema: Schema dictionary with structure:
+                   {table_name: {description: str, columns: {col_name: col_desc}}}
 
         Returns:
-            Formatted schema context string
+            Formatted schema context as JSON string with explanation
         """
-        return "\n".join([f"- {table}: {desc}" for table, desc in schema.items()])
+        schema_json = json.dumps(schema, indent=2)
+        return (
+            "Database Schema (JSON format):\n"
+            "Each table has a 'description' and 'columns' dictionary.\n"
+            "Column names map to their descriptions.\n\n"
+            f"{schema_json}"
+        )

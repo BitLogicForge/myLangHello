@@ -2,6 +2,7 @@
 
 import os
 import logging
+import time
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -190,12 +191,13 @@ class AgentApp:
             # Stream the agent execution to see thoughts in real-time
             step_count = 0
             final_response: Optional[dict] = None
+            tool_timings: dict[str, float] = {}  # Track tool execution : {tool_call_id: start_time}
 
             for event in self.agent_executor.stream(
                 {"messages": [("user", question)]}, config={"recursion_limit": 15}  # type: ignore
             ):
                 step_count += 1
-                self._print_streaming_event(event, step_count)
+                self._print_streaming_event(event, step_count, tool_timings)
                 final_response = event
 
             logger.info("✅ Agent completed successfully")
@@ -210,7 +212,7 @@ class AgentApp:
             raise
 
     @staticmethod
-    def _print_streaming_event(event: dict, step_count: int) -> None:
+    def _print_streaming_event(event: dict, step_count: int, tool_timings: dict) -> None:
         """Print a single streaming event from the agent."""
         for node_name, node_data in event.items():
             print(f"\n--- Step {step_count}: {node_name} ---")
@@ -229,13 +231,25 @@ class AgentApp:
                         # Check for tool calls
                         if hasattr(msg, "tool_calls") and msg.tool_calls:
                             for tool_call in msg.tool_calls:
-                                print(f"🔧 Calling Tool: {tool_call.get('name', 'unknown')}")
+                                tool_call_id = tool_call.get("id", "unknown")
+                                tool_name = tool_call.get("name", "unknown")
+                                print(f"🔧 Calling Tool: {tool_name}")
                                 print(f"   Args: {tool_call.get('args', {})}")
+                                # Record start time
+                                tool_timings[tool_call_id] = time.time()
 
                     # Tool message (tool response)
                     elif hasattr(msg, "type") and msg.type == "tool":
                         tool_name = getattr(msg, "name", "unknown")
-                        print(f"⚙️  Tool Result ({tool_name}):")
+                        tool_call_id = getattr(msg, "tool_call_id", None)
+
+                        # Calculate execution time if we have a start time
+                        exec_time_str = ""
+                        if tool_call_id and tool_call_id in tool_timings:
+                            exec_time = time.time() - tool_timings[tool_call_id]
+                            exec_time_str = f" ⏱️  {exec_time:.3f}s"
+
+                        print(f"⚙️  Tool Result ({tool_name}){exec_time_str}:")
                         content = str(msg.content)
                         if len(content) > 500:
                             print(f"   {content[:500]}... (truncated)")
