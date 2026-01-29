@@ -11,3 +11,6 @@ pyodbc                 # ODBC driver for MSSQL and other databases
 fastapi                # Modern web framework for building APIs
 uvicorn[standard]      # ASGI server for FastAPI
 langserve[all]         # LangChain server with streaming support (recommended)
+
+# Metrics and Monitoring (Self-hosted)
+prometheus-client      # Prometheus metrics for self-hosted monitoring

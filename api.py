@@ -9,6 +9,7 @@ import uvicorn
 
 from main import AgentApp
 from routes import health_routes, agent_routes, config_routes
+from services.telemetry import get_telemetry, TelemetryManager
 
 # Configure logging
 logging.basicConfig(
@@ -43,12 +44,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize telemetry (self-hosted metrics)
+telemetry: Optional[TelemetryManager] = None
+try:
+    telemetry = get_telemetry(
+        service_name="chatbot-agent-api",
+        metrics_port=9090,
+        enable_metrics_server=True,
+    )
+    logger.info("✅ Telemetry initialized")
+except Exception as e:
+    logger.warning(f"⚠️  Telemetry initialization failed: {e}")
+    telemetry = None
+
 # Initialize agent
 agent_executor: Optional[Any] = None
 agent_app: Optional[AgentApp] = None
 try:
     logger.info("Initializing agent application...")
-    agent_app = AgentApp()
+    agent_app = AgentApp(enable_sql_tool=False, llm_provider="openai")
     agent_executor = agent_app.agent_executor
     AGENT_LOADED = True
     logger.info("✅ Agent loaded successfully")
@@ -61,7 +75,7 @@ except Exception as e:
 
 # Configure route modules with agent state
 health_routes.set_agent_state(agent_app, AGENT_LOADED, LANGSERVE_AVAILABLE)
-agent_routes.set_agent_executor(agent_executor, AGENT_LOADED)
+agent_routes.set_agent_executor(agent_executor, AGENT_LOADED, telemetry)
 config_routes.set_agent_app(agent_app, AGENT_LOADED)
 
 # Register routers
@@ -79,6 +93,7 @@ async def root():
         "health": "/health",
         "agent_endpoint": "/agent" if LANGSERVE_AVAILABLE else "/query",
         "playground": "/agent/playground" if LANGSERVE_AVAILABLE else None,
+        "metrics": "http://localhost:9090/metrics" if telemetry else None,
     }
 
 

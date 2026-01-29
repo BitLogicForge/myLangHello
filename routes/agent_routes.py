@@ -1,6 +1,7 @@
 """Agent query route handlers."""
 
 import logging
+import time
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Any
 
@@ -14,13 +15,15 @@ router = APIRouter(prefix="", tags=["Agent"])
 # Module-level variables to be set by main app
 agent_executor: Optional[Any] = None
 AGENT_LOADED: bool = False
+telemetry: Optional[Any] = None
 
 
-def set_agent_executor(executor: Optional[Any], loaded: bool) -> None:
+def set_agent_executor(executor: Optional[Any], loaded: bool, telem: Optional[Any] = None) -> None:
     """Set the agent executor for query handling."""
-    global agent_executor, AGENT_LOADED
+    global agent_executor, AGENT_LOADED, telemetry
     agent_executor = executor
     AGENT_LOADED = loaded
+    telemetry = telem
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -34,24 +37,71 @@ async def query_agent(request: QueryRequest):
         logger.warning("Query attempted but agent not loaded")
         raise HTTPException(status_code=503, detail="Agent not loaded")
 
+    # Track metrics if telemetry is available
+    if telemetry:
+        with telemetry.track_request("query"):
+            return await _process_query(request)
+    else:
+        return await _process_query(request)
+
+
+async def _process_query(request: QueryRequest) -> QueryResponse:
+    """Internal query processing with metrics tracking."""
+    if agent_executor is None:
+        raise HTTPException(status_code=503, detail="Agent executor not available")
+
     try:
         logger.info(f"Processing query (session: {request.session_id})")
         logger.debug(f"Question: {request.question[:100]}...")
 
-        # Prepare input with history if provided
-        invoke_input: dict[str, Any] = {"input": request.question}
-        if request.history:
-            # Convert MessageHistory objects to tuples for LangChain
-            chat_history: list[tuple[str, str]] = [
-                (msg.role, msg.content) for msg in request.history
-            ]
-            invoke_input["chat_history"] = chat_history
-            logger.debug(f"Included {len(chat_history)} history messages")
+        # Prepare messages for LangGraph agent
+        messages = [("user", request.question)]
 
-        response = agent_executor.invoke(invoke_input)
-        logger.info(f"Query completed successfully (session: {request.session_id})")
+        # Add history if provided
+        if request.history:
+            # Prepend history messages
+            history_messages = [(msg.role, msg.content) for msg in request.history]
+            messages = history_messages + messages
+            logger.debug(f"Included {len(request.history)} history messages")
+
+        start_time = time.time()
+        # LangGraph agents expect messages format
+        response = agent_executor.invoke({"messages": messages})
+        duration = time.time() - start_time
+
+        logger.info(
+            f"Query completed successfully in {duration:.2f}s (session: {request.session_id})"
+        )
+
+        # Track basic metrics if available
+        if telemetry and hasattr(response, "get"):
+            # Try to extract iteration count from response metadata
+            metadata = response.get("metadata", {})
+            if "iterations" in metadata:
+                telemetry.track_agent_iterations(metadata["iterations"])
+
+        # Extract the final message from LangGraph response
+        # LangGraph returns {"messages": [...]} where last message is the response
+        if isinstance(response, dict) and "messages" in response:
+            messages_list = response["messages"]
+            if messages_list and len(messages_list) > 0:
+                # Get the last message (agent's response)
+                final_message = messages_list[-1]
+                # Extract content from the message
+                if hasattr(final_message, "content"):
+                    output_text = final_message.content
+                elif isinstance(final_message, tuple) and len(final_message) > 1:
+                    output_text = final_message[1]
+                else:
+                    output_text = str(final_message)
+            else:
+                output_text = "No response generated"
+        else:
+            # Fallback for old format
+            output_text = response.get("output", str(response))
+
         return QueryResponse(
-            output=response["output"],
+            output=output_text,
             session_id=request.session_id,
         )
     except Exception as e:
