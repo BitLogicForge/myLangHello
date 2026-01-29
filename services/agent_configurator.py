@@ -187,16 +187,16 @@ class AgentConfigurator:
         )
         return self.tools_manager
 
-    def setup_prompt(self) -> Any:
+    def setup_prompt(self) -> str:
         """
-        Build the prompt template.
+        Build the system prompt text.
 
         Returns:
-            Prompt template instance
+            System prompt text as string
         """
-        logger.info("Building prompt template...")
+        logger.info("Building system prompt...")
         self.prompt_builder = PromptBuilder(system_prompt_path=self.system_prompt_path)
-        self.prompt = self.prompt_builder.build_prompt(self.custom_schema)
+        self.prompt = self.prompt_builder.get_system_prompt(self.custom_schema)
         return self.prompt
 
     def setup_agent_factory(self) -> AgentFactory:
@@ -211,13 +211,13 @@ class AgentConfigurator:
         if self.tools_manager is None:
             raise RuntimeError("Tools manager must be initialized. Call setup_tools() first.")
         if self.prompt is None:
-            raise RuntimeError("Prompt must be initialized. Call setup_prompt() first.")
+            raise RuntimeError("System prompt must be initialized. Call setup_prompt() first.")
 
         logger.info("Creating agent factory...")
         self.agent_factory = AgentFactory(
             llm=self.llm,
             tools=self.tools_manager.get_tools(),
-            prompt=self.prompt,
+            system_prompt=self.prompt,
             verbose=self.verbose,
             max_iterations=self.max_iterations,
             max_execution_time=self.max_execution_time,

@@ -8,11 +8,11 @@ This guide explains how to use the `/agent/stream` endpoint with configurable pa
 
 When you use `add_routes` in your FastAPI app, LangServe automatically creates these endpoints:
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/agent/invoke` | POST | Non-streaming (single response) |
-| `/agent/stream` | POST | Streaming (real-time chunks) |
-| `/agent/playground` | GET | Interactive UI for testing |
+| Endpoint            | Method | Purpose                         |
+| ------------------- | ------ | ------------------------------- |
+| `/agent/invoke`     | POST   | Non-streaming (single response) |
+| `/agent/stream`     | POST   | Streaming (real-time chunks)    |
+| `/agent/playground` | GET    | Interactive UI for testing      |
 
 ## Input Format
 
@@ -67,7 +67,7 @@ export default function ChatWithAgent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  
+
   // User-configurable parameters
   const [config, setConfig] = useState<AgentConfig>({
     temperature: 0.7,
@@ -117,13 +117,13 @@ export default function ChatWithAgent() {
       // Process streaming chunks
       for await (const chunk of stream) {
         // Extract content (format may vary)
-        const content = chunk?.messages?.[0]?.content || 
-                       chunk?.content || 
+        const content = chunk?.messages?.[0]?.content ||
+                       chunk?.content ||
                        chunk?.output || '';
-        
+
         if (content) {
           fullResponse += content;
-          
+
           // Update UI in real-time
           setMessages(prev => {
             const updated = [...prev];
@@ -155,7 +155,7 @@ export default function ChatWithAgent() {
       {/* Configuration Panel */}
       <div className="config-panel">
         <h3>Configuration</h3>
-        
+
         <label>
           Temperature: {config.temperature}
           <input
@@ -165,15 +165,15 @@ export default function ChatWithAgent() {
             step="0.1"
             value={config.temperature}
             onChange={(e) => setConfig({
-              ...config, 
+              ...config,
               temperature: parseFloat(e.target.value)
             })}
           />
         </label>
-        
+
         <label>
           Model:
-          <select 
+          <select
             value={config.model}
             onChange={(e) => setConfig({...config, model: e.target.value})}
           >
@@ -242,7 +242,7 @@ interface StreamConfig {
 }
 
 async function streamAgentResponse(
-  question: string, 
+  question: string,
   config: StreamConfig,
   onChunk: (content: string) => void,
   onError: (error: Error) => void
@@ -288,7 +288,7 @@ async function streamAgentResponse(
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      
+
       // Keep last incomplete line in buffer
       buffer = lines.pop() || '';
 
@@ -297,7 +297,7 @@ async function streamAgentResponse(
 
         try {
           const data = JSON.parse(line);
-          
+
           // Handle different response formats
           if (data.messages && data.messages.length > 0) {
             const lastMessage = data.messages[data.messages.length - 1];
@@ -326,7 +326,7 @@ function ChatComponent() {
 
   const handleQuery = async () => {
     setResponse('');
-    
+
     await streamAgentResponse(
       'What are my top investments?',
       {
@@ -363,12 +363,12 @@ function ChatComponent() {
 const userSessionId = `user-${userId}-${Date.now()}`;
 
 const stream = await agent.stream(
-  { messages: [['user', question]] },
+  { messages: [["user", question]] },
   {
     configurable: {
-      thread_id: userSessionId  // Maintains conversation history
-    }
-  }
+      thread_id: userSessionId, // Maintains conversation history
+    },
+  },
 );
 ```
 
@@ -376,21 +376,23 @@ const stream = await agent.stream(
 
 ```typescript
 // Allow users to adjust creativity
-const [creativity, setCreativity] = useState<'factual' | 'balanced' | 'creative'>('balanced');
+const [creativity, setCreativity] = useState<
+  "factual" | "balanced" | "creative"
+>("balanced");
 
 const temperatureMap = {
-  factual: 0.1,    // Precise, deterministic
-  balanced: 0.7,   // Good balance
-  creative: 0.9    // More varied responses
+  factual: 0.1, // Precise, deterministic
+  balanced: 0.7, // Good balance
+  creative: 0.9, // More varied responses
 };
 
 const stream = await agent.stream(
-  { messages: [['user', question]] },
+  { messages: [["user", question]] },
   {
     configurable: {
-      temperature: temperatureMap[creativity]
-    }
-  }
+      temperature: temperatureMap[creativity],
+    },
+  },
 );
 ```
 
@@ -398,20 +400,20 @@ const stream = await agent.stream(
 
 ```typescript
 // Let users choose speed vs quality
-const [modelTier, setModelTier] = useState<'fast' | 'powerful'>('fast');
+const [modelTier, setModelTier] = useState<"fast" | "powerful">("fast");
 
 const modelMap = {
-  fast: 'gpt-3.5-turbo',      // Cheaper, faster
-  powerful: 'gpt-4'            // Better quality
+  fast: "gpt-3.5-turbo", // Cheaper, faster
+  powerful: "gpt-4", // Better quality
 };
 
 const stream = await agent.stream(
-  { messages: [['user', question]] },
+  { messages: [["user", question]] },
   {
     configurable: {
-      model: modelMap[modelTier]
-    }
-  }
+      model: modelMap[modelTier],
+    },
+  },
 );
 ```
 
@@ -420,16 +422,16 @@ const stream = await agent.stream(
 ```typescript
 // Pass custom config to your tools
 const stream = await agent.stream(
-  { messages: [['user', 'Get my portfolio']] },
+  { messages: [["user", "Get my portfolio"]] },
   {
     configurable: {
-      thread_id: 'user-123',
-      user_id: userId,              // For DB queries
-      include_archived: false,       // Filter flag
-      max_results: 10,               // Limit results
-      currency: 'USD'                // Formatting
-    }
-  }
+      thread_id: "user-123",
+      user_id: userId, // For DB queries
+      include_archived: false, // Filter flag
+      max_results: 10, // Limit results
+      currency: "USD", // Formatting
+    },
+  },
 );
 ```
 
@@ -447,14 +449,14 @@ def get_portfolio(query: str, config: dict) -> str:
     user_id = config.get("configurable", {}).get("user_id")
     include_archived = config.get("configurable", {}).get("include_archived", False)
     max_results = config.get("configurable", {}).get("max_results", 10)
-    
+
     # Use config in your logic
     portfolios = db.query_portfolios(
         user_id=user_id,
         include_archived=include_archived,
         limit=max_results
     )
-    
+
     return f"Found {len(portfolios)} portfolios"
 ```
 
@@ -467,7 +469,7 @@ def inject_user_config(request: Request):
     """Extract user info from JWT and inject into config."""
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     user = verify_jwt(token)
-    
+
     return {
         "configurable": {
             "user_id": user["id"],
@@ -528,7 +530,7 @@ export default function AgentChat() {
       content: input,
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsStreaming(true);
@@ -556,12 +558,12 @@ export default function AgentChat() {
       );
 
       for await (const chunk of stream) {
-        const content = chunk?.messages?.[0]?.content || 
-                       chunk?.content || 
+        const content = chunk?.messages?.[0]?.content ||
+                       chunk?.content ||
                        chunk?.output || '';
-        
+
         accumulated += content;
-        
+
         setMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1].content = accumulated;
@@ -584,7 +586,7 @@ export default function AgentChat() {
     <div className="agent-chat">
       <aside className="settings-panel">
         <h3>Settings</h3>
-        
+
         <div className="setting">
           <label>Temperature: {settings.temperature}</label>
           <input
@@ -629,7 +631,7 @@ export default function AgentChat() {
           />
         </div>
 
-        <button 
+        <button
           onClick={() => setSettings({
             ...settings,
             sessionId: `session-${Date.now()}`
@@ -693,18 +695,21 @@ export default function AgentChat() {
 ## Troubleshooting
 
 ### Stream not working?
+
 - Check if LangServe is installed: `pip list | grep langserve`
 - Verify endpoint URL is correct
 - Check CORS settings in FastAPI
 - Ensure `streaming=True` in LLM initialization
 
 ### Config not applied?
+
 - Verify config is in `configurable` key
 - Check backend logs for config reception
 - Ensure config values are correct types (number, string, etc.)
 - Test in playground first: `http://localhost:8000/agent/playground`
 
 ### Memory not working?
+
 - Ensure same `thread_id` is used across requests
 - Check if checkpointer is configured in backend
 - Verify database/memory persistence setup

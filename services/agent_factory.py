@@ -2,9 +2,8 @@
 
 import logging
 from typing import Optional, Any
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ class AgentFactory:
         self,
         llm: BaseChatModel,
         tools: list,
-        prompt: ChatPromptTemplate,
+        system_prompt: str,
         verbose: bool = True,
         max_iterations: int = 10,
         max_execution_time: int = 60,
@@ -29,7 +28,7 @@ class AgentFactory:
         Args:
             llm: Language model instance
             tools: List of tools for the agent
-            prompt: Prompt template
+            system_prompt: System prompt text to guide agent behavior
             verbose: Enable verbose output (for backward compatibility)
             max_iterations: Maximum agent iterations (Note: LangGraph uses recursion_limit)
             max_execution_time: Maximum execution time in seconds (for backward compatibility)
@@ -37,7 +36,7 @@ class AgentFactory:
         """
         self.llm = llm
         self.tools = tools
-        self.prompt = prompt
+        self.system_prompt = system_prompt
         self.verbose = verbose
         self.max_iterations = max_iterations
         self.max_execution_time = max_execution_time
@@ -56,15 +55,16 @@ class AgentFactory:
         """
         logger.debug("Creating LangGraph ReAct agent...")
 
-        # Create the ReAct agent with the updated langchain.agents API
-        # Moved from langgraph.prebuilt to langchain.agents
-        agent = create_agent(
+        # Create the ReAct agent with LangGraph
+        # System prompt is passed via state_modifier
+        agent = create_react_agent(
             model=self.llm,
             tools=self.tools,
+            state_modifier=self.system_prompt,  # System prompt injected here
             checkpointer=self.checkpointer,  # Enable memory if checkpointer provided
         )
 
-        logger.info("LangGraph ReAct agent created successfully")
+        logger.info("LangGraph ReAct agent created successfully with system prompt")
         return agent
 
     def create_executor(self):
