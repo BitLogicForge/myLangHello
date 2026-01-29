@@ -116,12 +116,39 @@ class AgentConfigurator:
         # Get database URI from env if not provided
         db_uri = self.db_uri
         if db_uri is None:
-            db_uri = os.getenv(
-                "DATABASE_URI",
-                "mssql+pyodbc://username:password@server/database"
-                "?driver=ODBC+Driver+17+for+SQL+Server",
-            )
-            logger.debug("Database URI loaded from environment")
+            # Try to get DATABASE_URI first (legacy support)
+            db_uri = os.getenv("DATABASE_URI")
+
+            # If not provided, build from separate components
+            if not db_uri:
+                db_host = os.getenv("DB_HOST", "localhost")
+                db_name = os.getenv("DB_NAME", "MyDatabase")
+                db_username = os.getenv("DB_USERNAME")
+                db_password = os.getenv("DB_PASSWORD")
+                use_windows_auth = os.getenv("DB_USE_WINDOWS_AUTH", "false").lower() == "true"
+                db_driver = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+
+                # Build connection string
+                if use_windows_auth:
+                    db_uri = (
+                        f"mssql+pyodbc://{db_host}/{db_name}"
+                        f"?driver={db_driver}&trusted_connection=yes"
+                    )
+                    logger.debug("Using Windows Authentication for database")
+                elif db_username and db_password:
+                    db_uri = (
+                        f"mssql+pyodbc://{db_username}:{db_password}@"
+                        f"{db_host}/{db_name}?driver={db_driver}"
+                    )
+                    logger.debug("Using SQL Authentication for database")
+                else:
+                    db_uri = f"mssql+pyodbc://{db_host}/{db_name}?driver={db_driver}"
+                    logger.warning("No authentication credentials provided for database")
+
+                logger.debug(
+                    f"Built database URI from environment variables: "
+                    f"Host={db_host}, DB={db_name}"
+                )
 
         logger.info("Setting up database manager...")
         self.db_manager = DatabaseManager(
