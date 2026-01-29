@@ -1,13 +1,9 @@
 """Agent Factory - Creates and configures the agent and executor."""
 
 import logging
+from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.agents import AgentExecutor
-from langchain.agents.format_scratchpad.openai_tools import (
-    format_to_openai_tool_messages,
-)
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 
 logger = logging.getLogger(__name__)
 
@@ -47,45 +43,34 @@ class AgentFactory:
         )
 
     def create_agent(self):
-        """Create the agent using OpenAI tool calling."""
-        logger.debug("Creating agent with OpenAI tool calling...")
+        """Create the agent."""
+        logger.debug("Creating React agent with LangGraph...")
 
-        # Bind tools to the LLM
-        llm_with_tools = self.llm.bind_tools(self.tools)
+        # Extract system message from prompt template for state_modifier
+        system_message = None
+        if hasattr(self.prompt, "messages") and len(self.prompt.messages) > 0:
+            # Get the first message if it's a system message
+            first_message = self.prompt.messages[0]
+            if hasattr(first_message, "prompt") and hasattr(first_message.prompt, "template"):
+                system_message = first_message.prompt.template
 
-        # Create the agent runnable
-        agent = (
-            {
-                "input": lambda x: x["input"],
-                "agent_scratchpad": lambda x: format_to_openai_tool_messages(
-                    x["intermediate_steps"]
-                ),
-            }
-            | self.prompt
-            | llm_with_tools
-            | OpenAIToolsAgentOutputParser()
+        # Create agent with LangGraph
+        agent = create_agent(
+            model=self.llm,
+            tools=self.tools,
+            state_modifier=system_message,
         )
-
-        logger.info("Agent created successfully with OpenAI tool calling")
+        logger.info("Agent created successfully with LangGraph")
         return agent
 
-    def create_executor(self) -> AgentExecutor:
+    def create_executor(self):
         """
-        Create the agent executor.
+        Create the agent executor (returns LangGraph agent).
 
         Returns:
-            Configured AgentExecutor
+            LangGraph CompiledStateGraph (agent)
         """
         logger.debug("Creating agent executor...")
         agent = self.create_agent()
-
-        executor = AgentExecutor(
-            agent=agent,
-            tools=self.tools,
-            verbose=self.verbose,
-            handle_parsing_errors=True,
-            max_iterations=self.max_iterations,
-            max_execution_time=self.max_execution_time,
-        )
         logger.info("Agent executor created successfully")
-        return executor
+        return agent
