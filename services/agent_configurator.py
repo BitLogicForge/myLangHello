@@ -26,7 +26,6 @@ class AgentConfigurator:
         llm_config_path: str = "llm_config.json",
         llm_provider: Optional[str] = None,
         system_prompt_path: str = "messages/system_prompt.txt",
-        include_tables: Optional[list] = None,
         sample_rows: int = 2,
         pool_size: int = 10,
         max_overflow: int = 15,
@@ -44,12 +43,11 @@ class AgentConfigurator:
                    If None, reads from DATABASE_URI env var.
             model: LLM model name
             temperature: LLM temperature setting
-            schema_path: Path to database schema configuration
+            schema_path: Path to database schema configuration (mandatory for SQL tools)
             enable_sql_tool: Enable or disable SQL query tool
             llm_config_path: Path to LLM configuration file
             llm_provider: Override LLM provider (azure or openai)
             system_prompt_path: Path to system prompt file
-            include_tables: List of tables to include in database access
             sample_rows: Number of sample rows for database tables
             pool_size: Database connection pool size
             max_overflow: Maximum overflow connections in pool
@@ -67,7 +65,6 @@ class AgentConfigurator:
         self.llm_config_path = llm_config_path
         self.llm_provider = llm_provider
         self.system_prompt_path = system_prompt_path
-        self.include_tables = include_tables or ["users", "orders", "products"]
         self.sample_rows = sample_rows
         self.pool_size = pool_size
         self.max_overflow = max_overflow
@@ -129,16 +126,15 @@ class AgentConfigurator:
         logger.info("Setting up database manager...")
         self.db_manager = DatabaseManager(
             db_uri=db_uri,
-            include_tables=self.include_tables,
+            schema_path=self.schema_path,
             sample_rows=self.sample_rows,
             pool_size=self.pool_size,
             max_overflow=self.max_overflow,
             pool_recycle=self.pool_recycle,
         )
 
-        # Load custom schema
-        logger.info(f"Loading custom schema from {self.schema_path}")
-        self.custom_schema = DatabaseManager.load_custom_schema(self.schema_path)
+        # Custom schema is already loaded by DatabaseManager
+        self.custom_schema = self.db_manager.custom_schema
         logger.debug(f"Schema loaded with {len(self.custom_schema)} tables")
 
         return self.db_manager

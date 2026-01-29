@@ -39,11 +39,7 @@ async def get_config():
             "model": llm.model_name if llm and hasattr(llm, "model_name") else "unknown",
             "temperature": llm.temperature if llm and hasattr(llm, "temperature") else 0.0,
             "tools_count": len(tools_manager.get_tools()) if tools_manager else 0,
-            "database_tables": (
-                db_manager.include_tables
-                if db_manager and hasattr(db_manager, "include_tables")
-                else []
-            ),
+            "database_tables": db_manager.include_tables if db_manager else [],
             "sql_tools_enabled": db_manager is not None,
         }
     except Exception as e:

@@ -15,7 +15,7 @@ class DatabaseManager:
     def __init__(
         self,
         db_uri: str,
-        include_tables: Optional[list] = None,
+        schema_path: str = "db_schema_config.json",
         sample_rows: int = 2,
         pool_size: int = 5,
         max_overflow: int = 10,
@@ -27,7 +27,7 @@ class DatabaseManager:
 
         Args:
             db_uri: Database connection URI
-            include_tables: List of tables to include
+            schema_path: Path to schema configuration file (mandatory)
             sample_rows: Number of sample rows in table info
             pool_size: Number of connections to maintain in the pool (default: 5)
             max_overflow: Max connections to create beyond pool_size (default: 10)
@@ -35,15 +35,21 @@ class DatabaseManager:
             lazy_init: If True, delay connection until first use (default: False)
         """
         self.db_uri = db_uri
-        self.include_tables = include_tables or []
+        self.schema_path = schema_path
         self.sample_rows = sample_rows
         self.pool_size = pool_size
         self.max_overflow = max_overflow
         self.pool_recycle = pool_recycle
         self._db: Optional[SQLDatabase] = None
 
+        # Load schema config to get table names
+        self.custom_schema = self.load_custom_schema(schema_path)
+        self.include_tables = list(self.custom_schema.keys())
+        logger.info(f"Loaded {len(self.include_tables)} tables from schema: {self.include_tables}")
+
         if not lazy_init:
             self._db = self._init_db()
+            self.validate_tables()
 
     def _init_db(self) -> SQLDatabase:
         """Initialize database connection with pooling configuration."""
@@ -111,6 +117,33 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
             return False
+
+    def validate_tables(self) -> list[str]:
+        """
+        Validate that schema tables exist in the database.
+
+        Logs warnings for missing tables but doesn't fail.
+
+        Returns:
+            List of missing table names
+        """
+        try:
+            db = self.get_database()
+            actual_tables = set(db.get_usable_table_names())
+            missing_tables = [t for t in self.include_tables if t not in actual_tables]
+
+            if missing_tables:
+                logger.warning(
+                    f"Schema tables not found in database: {missing_tables}. "
+                    f"Available tables: {sorted(actual_tables)}"
+                )
+            else:
+                logger.info(f"✅ All {len(self.include_tables)} schema tables exist in database")
+
+            return missing_tables
+        except Exception as e:
+            logger.error(f"Failed to validate tables: {e}")
+            return []
 
     @staticmethod
     def load_custom_schema(schema_path: str = "db_schema_config.json") -> dict:
