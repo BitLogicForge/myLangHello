@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Any
 import uvicorn
 
-from base_chain_agen_func_tooling import AgentApp
+from main import AgentApp
 
 # Configure logging
 logging.basicConfig(
