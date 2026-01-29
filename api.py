@@ -94,29 +94,6 @@ except Exception as e:
     AGENT_LOADED = False
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Application startup - verify database connection."""
-    logger.info("Application startup initiated")
-    if agent_app and agent_app.db_manager:
-        health = agent_app.db_manager.health_check()
-        if health:
-            logger.info("✅ Database connection pool initialized and healthy")
-        else:
-            logger.warning("⚠️ Database health check failed")
-    logger.info("Application startup complete")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown - cleanup database connections."""
-    logger.info("Application shutdown initiated")
-    if agent_app and agent_app.db_manager:
-        agent_app.db_manager.close()
-        logger.info("✅ Database connection pool closed")
-    logger.info("Application shutdown complete")
-
-
 @app.get("/", tags=["Root"])
 async def root():
     """Root endpoint."""
@@ -214,8 +191,6 @@ async def get_config():
         return {
             "model": agent_app.llm.model_name,
             "temperature": agent_app.llm.temperature,
-            "max_iterations": agent_app.agent_executor.max_iterations,
-            "max_execution_time": agent_app.agent_executor.max_execution_time,
             "tools_count": len(agent_app.tools_manager.get_tools()),
             "database_tables": agent_app.db_manager.include_tables,
         }

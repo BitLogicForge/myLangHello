@@ -4,10 +4,12 @@ from .database_manager import DatabaseManager
 from .tools_manager import ToolsManager
 from .prompt_builder import PromptBuilder
 from .agent_factory import AgentFactory
+from .llm_factory import LLMFactory
 
 __all__ = [
     "DatabaseManager",
     "ToolsManager",
     "PromptBuilder",
     "AgentFactory",
+    "LLMFactory",
 ]

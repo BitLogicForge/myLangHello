@@ -1,0 +1,31 @@
+{
+  "provider": "azure",
+  "azure": {
+    "model": "gpt-4.1",
+    "temperature": 0.7,
+    "max_tokens": null,
+    "timeout": 120,
+    "max_retries": 3,
+    "streaming": false,
+    "api_version": "2024-02-15-preview",
+    "azure_endpoint": null,
+    "api_key": null
+  },
+  "openai": {
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "max_tokens": null,
+    "timeout": 120,
+    "max_retries": 3,
+    "streaming": false,
+    "base_url": null,
+    "api_key": null,
+    "organization": null
+  },
+  "common_params": {
+    "verbose": false,
+    "top_p": null,
+    "frequency_penalty": null,
+    "presence_penalty": null
+  }
+}

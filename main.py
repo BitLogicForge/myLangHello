@@ -4,9 +4,8 @@ import os
 import logging
 from typing import Optional
 from dotenv import load_dotenv
-from langchain_openai import AzureChatOpenAI
 
-from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory
+from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory, LLMFactory
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +24,8 @@ class AgentApp:
         temperature: float = 0.7,
         schema_path: str = "db_schema_config.json",
         enable_sql_tool: bool = True,
+        llm_config_path: str = "llm_config.json",
+        llm_provider: Optional[str] = None,
     ):
         """
         Initialize the agent application.
@@ -44,6 +45,8 @@ class AgentApp:
             temperature: LLM temperature setting
             schema_path: Path to database schema configuration
             enable_sql_tool: Enable or disable SQL query tool
+            llm_config_path: Path to LLM configuration file (default: llm_config.json)
+            llm_provider: Override LLM provider (azure or openai). If None, uses config file.
         """
         logger.info("Initializing AgentApp...")
         logger.debug(f"Model: {model}, Temperature: {temperature}, SQL enabled: {enable_sql_tool}")
@@ -99,16 +102,12 @@ class AgentApp:
         # tags: List[str] - Tags for tracking/filtering
         # metadata: dict - Additional metadata for requests
 
-        logger.info(f"Initializing LLM: {model}")
-        self.llm = AzureChatOpenAI(
-            temperature=temperature,
+        logger.info(f"Initializing LLM: {model} (provider: {llm_provider or 'from config'})")
+        self.llm = LLMFactory.create_llm(
+            config_path=llm_config_path,
+            provider=llm_provider,
             model=model,
-            # Uncomment and configure as needed:
-            # max_tokens=4096,
-            # timeout=120,
-            # streaming=True,
-            # max_retries=3,
-            # verbose=True,
+            temperature=temperature,
         )
 
         # Setup database
