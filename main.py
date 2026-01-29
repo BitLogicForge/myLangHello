@@ -21,7 +21,7 @@ class AgentApp:
     def __init__(
         self,
         db_uri: Optional[str] = None,
-        model: str = "gpt-4",
+        model: str = "gpt-4.1",
         temperature: float = 0.7,
         schema_path: str = "db_schema_config.json",
         enable_sql_tool: bool = True,
@@ -170,8 +170,10 @@ class AgentApp:
         logger.debug(f"Question: {question[:100]}...")
 
         try:
-            # Standard AgentExecutor input format
-            response = self.agent_executor.invoke({"input": question})
+            # LangGraph format (updated from old AgentExecutor format)
+            response = self.agent_executor.invoke(
+                {"messages": [("user", question)]}, config={"recursion_limit": 15}  # type: ignore
+            )
             logger.info("✅ Agent completed successfully")
             return response
         except Exception as e:
@@ -184,7 +186,12 @@ class AgentApp:
         print("\n" + "=" * 50)
         print("Final Agent Response:")
         print("=" * 50)
-        print(response["output"])
+        # LangGraph returns messages, get the last message content
+        if "messages" in response:
+            print(response["messages"][-1].content)
+        else:
+            # Fallback for old format
+            print(response.get("output", str(response)))
 
 
 def main():

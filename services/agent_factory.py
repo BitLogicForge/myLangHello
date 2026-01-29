@@ -5,7 +5,6 @@ from typing import Optional, Any
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -48,42 +47,6 @@ class AgentFactory:
             f"recursion_limit={max_iterations}"
         )
 
-    def _extract_system_message(self) -> str:
-        """Extract system message from prompt template."""
-        try:
-            # Try to get the system message from the prompt template
-            if hasattr(self.prompt, "messages"):
-                for msg in self.prompt.messages:
-                    if isinstance(msg, SystemMessage):
-                        content = msg.content
-                        return str(content) if content else ""
-                    # Handle tuple format (role, content)
-                    if isinstance(msg, tuple) and msg[0] == "system":
-                        return str(msg[1])
-                    # Handle MessagesPlaceholder or other types
-                    if hasattr(msg, "content") and hasattr(msg, "type"):
-                        if msg.type == "system":
-                            content = msg.content
-                            return str(content) if content else ""
-
-            # Fallback: try to format the prompt
-            if hasattr(self.prompt, "format"):
-                formatted = self.prompt.format(agent_scratchpad=[], input="")
-                return formatted
-
-            default_msg = (
-                "You are a helpful AI assistant with access to various tools. "
-                "Use them to help answer questions."
-            )
-            return default_msg
-        except Exception as e:
-            logger.warning(f"Could not extract system message from prompt: {e}")
-            default_msg = (
-                "You are a helpful AI assistant with access to various tools. "
-                "Use them to help answer questions."
-            )
-            return default_msg
-
     def create_agent(self):
         """
         Create a LangGraph ReAct agent.
@@ -93,9 +56,6 @@ class AgentFactory:
         """
         logger.debug("Creating LangGraph ReAct agent...")
 
-        # Extract system message from prompt template
-        system_message = self._extract_system_message()
-
         # Create the ReAct agent with the updated langchain.agents API
         # Moved from langgraph.prebuilt to langchain.agents
         agent = create_agent(
@@ -103,9 +63,6 @@ class AgentFactory:
             tools=self.tools,
             checkpointer=self.checkpointer,  # Enable memory if checkpointer provided
         )
-
-        # Store system message for later use in invoke
-        self._system_message = system_message
 
         logger.info("LangGraph ReAct agent created successfully")
         return agent

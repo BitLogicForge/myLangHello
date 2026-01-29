@@ -4,7 +4,7 @@ import logging
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
 from langchain_openai import ChatOpenAI
-from langchain.tools import StructuredTool
+from langchain_core.tools import StructuredTool
 
 from tools import (
     calculator,
