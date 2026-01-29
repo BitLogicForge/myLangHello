@@ -3,7 +3,7 @@
 import logging
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.tools import StructuredTool
 
 from tools import (
@@ -26,7 +26,7 @@ class ToolsManager:
     def __init__(
         self,
         db: SQLDatabase,
-        llm: ChatOpenAI,
+        llm: AzureChatOpenAI,
         output_limit: int = 10000,
         enable_sql_tool: bool = True,
     ):

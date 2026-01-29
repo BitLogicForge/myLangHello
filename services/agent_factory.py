@@ -3,7 +3,7 @@
 import logging
 from typing import Optional, Any
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 
@@ -15,7 +15,7 @@ class AgentFactory:
 
     def __init__(
         self,
-        llm: ChatOpenAI,
+        llm: AzureChatOpenAI,
         tools: list,
         prompt: ChatPromptTemplate,
         verbose: bool = True,

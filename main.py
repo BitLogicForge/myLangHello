@@ -4,7 +4,7 @@ import os
 import logging
 from typing import Optional
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 
 from services import DatabaseManager, ToolsManager, PromptBuilder, AgentFactory
 
@@ -58,7 +58,7 @@ class AgentApp:
             logger.debug("Database URI loaded from environment")
 
         # Initialize core components
-        # ChatOpenAI Parameters (categorized by importance):
+        # AzureChatOpenAI Parameters (categorized by importance):
 
         # *** ESSENTIAL PARAMETERS ***
         # model: str - Model name (e.g., "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo")
@@ -100,7 +100,7 @@ class AgentApp:
         # metadata: dict - Additional metadata for requests
 
         logger.info(f"Initializing LLM: {model}")
-        self.llm = ChatOpenAI(
+        self.llm = AzureChatOpenAI(
             temperature=temperature,
             model=model,
             # Uncomment and configure as needed:
@@ -175,6 +175,10 @@ class AgentApp:
                 {"messages": [("user", question)]}, config={"recursion_limit": 15}  # type: ignore
             )
             logger.info("✅ Agent completed successfully")
+
+            # Print the full trace
+            self._print_response(response)
+
             return response
         except Exception as e:
             logger.error(f"❌ Agent execution failed: {str(e)}")
@@ -182,12 +186,50 @@ class AgentApp:
 
     @staticmethod
     def _print_response(response: dict) -> None:
-        """Print formatted agent response."""
-        print("\n" + "=" * 50)
-        print("Final Agent Response:")
-        print("=" * 50)
-        # LangGraph returns messages, get the last message content
+        """Print formatted agent response with tool usage and thoughts."""
+        print("\n" + "=" * 80)
+        print("AGENT EXECUTION TRACE")
+        print("=" * 80)
+
+        # LangGraph returns messages, iterate through all to show reasoning
         if "messages" in response:
+            for i, msg in enumerate(response["messages"], 1):
+                msg_type = msg.__class__.__name__
+
+                print(f"\n--- Step {i}: {msg_type} ---")
+
+                # Human/User message
+                if hasattr(msg, "type") and msg.type == "human":
+                    print(f"👤 User: {msg.content}")
+
+                # AI message with potential tool calls
+                elif hasattr(msg, "type") and msg.type == "ai":
+                    if msg.content:
+                        print(f"🤖 AI Thought: {msg.content}")
+
+                    # Check for tool calls
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        for tool_call in msg.tool_calls:
+                            print(f"🔧 Tool Call: {tool_call.get('name', 'unknown')}")
+                            print(f"   Args: {tool_call.get('args', {})}")
+
+                # Tool message (tool response)
+                elif hasattr(msg, "type") and msg.type == "tool":
+                    tool_name = getattr(msg, "name", "unknown")
+                    print(f"⚙️  Tool Result ({tool_name}):")
+                    content = str(msg.content)
+                    if len(content) > 500:
+                        print(f"   {content[:500]}... (truncated)")
+                    else:
+                        print(f"   {content}")
+
+                # Other message types
+                else:
+                    print(f"💬 {msg.content if hasattr(msg, 'content') else str(msg)}")
+
+            print("\n" + "=" * 80)
+            print("FINAL ANSWER")
+            print("=" * 80)
             print(response["messages"][-1].content)
         else:
             # Fallback for old format
