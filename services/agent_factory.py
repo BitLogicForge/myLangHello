@@ -1,15 +1,17 @@
-"""Agent Factory - Creates and configures the agent and executor."""
+"""Agent Factory - Creates and configures the agent using LangGraph."""
 
 import logging
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+from typing import Optional, Any
+from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage
 
 logger = logging.getLogger(__name__)
 
 
 class AgentFactory:
-    """Factory for creating and configuring agents."""
+    """Factory for creating and configuring LangGraph ReAct agents."""
 
     def __init__(
         self,
@@ -19,17 +21,19 @@ class AgentFactory:
         verbose: bool = True,
         max_iterations: int = 10,
         max_execution_time: int = 60,
+        checkpointer: Optional[Any] = None,
     ):
         """
-        Initialize the agent factory.
+        Initialize the agent factory with LangGraph.
 
         Args:
             llm: Language model instance
             tools: List of tools for the agent
             prompt: Prompt template
-            verbose: Enable verbose output
-            max_iterations: Maximum agent iterations
-            max_execution_time: Maximum execution time in seconds
+            verbose: Enable verbose output (for backward compatibility)
+            max_iterations: Maximum agent iterations (Note: LangGraph uses recursion_limit)
+            max_execution_time: Maximum execution time in seconds (for backward compatibility)
+            checkpointer: Optional memory checkpointer for conversation persistence
         """
         self.llm = llm
         self.tools = tools
@@ -37,35 +41,111 @@ class AgentFactory:
         self.verbose = verbose
         self.max_iterations = max_iterations
         self.max_execution_time = max_execution_time
+        self.checkpointer = checkpointer
         logger.info(
-            f"AgentFactory initialized with {len(tools)} tools, "
-            f"max_iterations={max_iterations}, max_execution_time={max_execution_time}s"
+            f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent, "
+            f"recursion_limit={max_iterations}"
         )
+
+    def _extract_system_message(self) -> str:
+        """Extract system message from prompt template."""
+        try:
+            # Try to get the system message from the prompt template
+            if hasattr(self.prompt, "messages"):
+                for msg in self.prompt.messages:
+                    if isinstance(msg, SystemMessage):
+                        content = msg.content
+                        return str(content) if content else ""
+                    # Handle tuple format (role, content)
+                    if isinstance(msg, tuple) and msg[0] == "system":
+                        return str(msg[1])
+                    # Handle MessagesPlaceholder or other types
+                    if hasattr(msg, "content") and hasattr(msg, "type"):
+                        if msg.type == "system":
+                            content = msg.content
+                            return str(content) if content else ""
+
+            # Fallback: try to format the prompt
+            if hasattr(self.prompt, "format"):
+                formatted = self.prompt.format(agent_scratchpad=[], input="")
+                return formatted
+
+            default_msg = (
+                "You are a helpful AI assistant with access to various tools. "
+                "Use them to help answer questions."
+            )
+            return default_msg
+        except Exception as e:
+            logger.warning(f"Could not extract system message from prompt: {e}")
+            default_msg = (
+                "You are a helpful AI assistant with access to various tools. "
+                "Use them to help answer questions."
+            )
+            return default_msg
 
     def create_agent(self):
-        """Create the agent."""
-        logger.debug("Creating OpenAI functions agent...")
-        agent = create_openai_functions_agent(self.llm, self.tools, self.prompt)
-        logger.info("Agent created successfully")
-        return agent
-
-    def create_executor(self) -> AgentExecutor:
         """
-        Create the agent executor.
+        Create a LangGraph ReAct agent.
 
         Returns:
-            Configured AgentExecutor
+            LangGraph agent graph that can be invoked
         """
-        logger.debug("Creating agent executor...")
-        agent = self.create_agent()
+        logger.debug("Creating LangGraph ReAct agent...")
 
-        executor = AgentExecutor(
-            agent=agent,
+        # Extract system message from prompt template
+        system_message = self._extract_system_message()
+
+        # Create the ReAct agent with LangGraph
+        # This is the SOTA approach using graph-based execution
+        agent = create_react_agent(
+            model=self.llm,
             tools=self.tools,
-            verbose=self.verbose,
-            handle_parsing_errors=True,
-            max_iterations=self.max_iterations,
-            max_execution_time=self.max_execution_time,
+            state_modifier=system_message,
+            checkpointer=self.checkpointer,  # Enable memory if checkpointer provided
         )
-        logger.info("Agent executor created successfully")
-        return executor
+
+        logger.info("LangGraph ReAct agent created successfully")
+        return agent
+
+    def create_executor(self):
+        """
+        Create the agent executor (LangGraph agent).
+
+        Returns:
+            LangGraph agent (CompiledGraph) that can be invoked
+
+        Note:
+            The LangGraph agent is invoked differently than AgentExecutor:
+            - Use: agent.invoke({"messages": [("user", "your question")]})
+            - With memory: agent.invoke(
+                {"messages": [...]},
+                config={"configurable": {"thread_id": "1"}}
+              )
+        """
+        logger.debug("Creating LangGraph agent executor...")
+        agent = self.create_agent()
+        logger.info("Agent executor (LangGraph) created successfully")
+        return agent
+
+    def invoke(self, input_text: str, config: Optional[dict] = None):
+        """
+        Convenience method to invoke the agent with a simple text input.
+
+        Args:
+            input_text: The user's input message
+            config: Optional configuration (e.g., for thread_id in memory)
+
+        Returns:
+            Agent response
+        """
+        agent = self.create_executor()
+
+        # Configure recursion limit
+        if config is None:
+            config = {}
+        config["recursion_limit"] = self.max_iterations
+
+        # Invoke with LangGraph format
+        result = agent.invoke({"messages": [("user", input_text)]}, config=config)
+
+        return result
