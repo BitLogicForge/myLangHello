@@ -2,10 +2,11 @@
 
 import logging
 from typing import Optional, Any
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -95,14 +96,16 @@ class AgentFactory:
         # Extract system message from prompt template
         system_message = self._extract_system_message()
 
-        # Create the ReAct agent with LangGraph
-        # This is the SOTA approach using graph-based execution
-        agent = create_react_agent(
+        # Create the ReAct agent with the updated langchain.agents API
+        # Moved from langgraph.prebuilt to langchain.agents
+        agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            state_modifier=system_message,
             checkpointer=self.checkpointer,  # Enable memory if checkpointer provided
         )
+
+        # Store system message for later use in invoke
+        self._system_message = system_message
 
         logger.info("LangGraph ReAct agent created successfully")
         return agent
@@ -127,7 +130,7 @@ class AgentFactory:
         logger.info("Agent executor (LangGraph) created successfully")
         return agent
 
-    def invoke(self, input_text: str, config: Optional[dict] = None):
+    def invoke(self, input_text: str, config: Optional[RunnableConfig] = None):
         """
         Convenience method to invoke the agent with a simple text input.
 
@@ -142,10 +145,12 @@ class AgentFactory:
 
         # Configure recursion limit
         if config is None:
-            config = {}
-        config["recursion_limit"] = self.max_iterations
+            config = {"recursion_limit": self.max_iterations}
+        else:
+            # Merge with provided config
+            config = {**config, "recursion_limit": self.max_iterations}
 
-        # Invoke with LangGraph format
-        result = agent.invoke({"messages": [("user", input_text)]}, config=config)
+        # Invoke with messages format (standard LangGraph format)
+        result = agent.invoke({"messages": [("user", input_text)]}, config=config)  # type: ignore
 
         return result
