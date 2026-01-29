@@ -19,6 +19,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Suppress verbose third-party logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 try:
     from langserve import add_routes
 
@@ -103,8 +108,8 @@ if LANGSERVE_AVAILABLE and agent_executor:
         app,
         agent_executor,
         path="/agent",
-        enabled_endpoints=["invoke", "stream", "batch", "stream_log"],
-        playground_type="default",  # Enables interactive playground UI
+        # Let LangServe enable all endpoints by default for playground to work
+        playground_type="default",  # Default playground works with LangGraph agents
         enable_feedback_endpoint=True,
     )
     print("✅ LangServe routes added at /agent")
