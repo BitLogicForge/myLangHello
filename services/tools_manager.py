@@ -16,6 +16,9 @@ from tools import (
     list_dir,
     system_info,
     random_joke,
+    current_date,
+    loan_calculator,
+    currency_converter,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,6 +68,9 @@ class ToolsManager:
             list_dir,
             system_info,
             random_joke,
+            current_date,
+            loan_calculator,
+            currency_converter,
             *sql_tools,
         ]
         logger.info(f"Registered {len(tools_list)} tools " f"(utility: 8, SQL: {len(sql_tools)})")

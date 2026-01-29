@@ -123,7 +123,9 @@ def main():
     question = (
         # "How many users are registered in the database? "
         # "What are the total sales from completed orders? "
-        "tell me about my db schema"
+        # "tell me wather in poznan today, and what date is today, and wather in london"
+        # "calculate loan payment for amount 25000 USD , term 5 years, interest rate 4.5 and convert to EUR"
+        "calculate loan payment for amount 25000 USD , term 5,7,8,10 years, interest rate 4.5"
     )
 
     # Optional: Test with conversation history

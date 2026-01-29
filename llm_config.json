@@ -26,6 +26,7 @@
     "verbose": false,
     "top_p": null,
     "frequency_penalty": null,
-    "presence_penalty": null
+    "presence_penalty": null,
+    "parallel_tool_calls": false
   }
 }

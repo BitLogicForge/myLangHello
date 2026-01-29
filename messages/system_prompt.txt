@@ -15,3 +15,9 @@ When querying the database:
 - For time series data, suggest date ranges or sampling instead of fetching all records
 
 Always think step-by-step and use the appropriate tools to answer questions accurately.
+
+IMPORTANT - Tool Execution Rules:
+- Execute tools ONE AT A TIME when one tool's output is needed as input for another tool
+- For example: If converting a calculated amount to another currency, first run the calculation tool, WAIT for the result, then run the currency converter with that amount
+- Only call multiple tools in parallel when they are completely independent of each other
+- Never pass None or placeholder values to tools - always wait for actual values from previous tool calls
