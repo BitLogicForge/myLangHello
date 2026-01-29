@@ -1,7 +1,7 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
 import logging
-from typing import Optional
+from typing import Optional, List, Tuple
 from dotenv import load_dotenv
 
 from services import AgentConfigurator, StreamingOutputFormatter
@@ -72,18 +72,27 @@ class AgentApp:
 
         logger.info("✅ AgentApp initialized successfully")
 
-    def run(self, question: str) -> Optional[dict]:
+    def run(self, question: str, history: Optional[List[Tuple[str, str]]] = None) -> Optional[dict]:
         """
-        Run the agent with a question.
+        Run the agent with a question and optional conversation history.
 
         Args:
             question: User question/input
+            history: Optional conversation history as list of (role, content) tuples
+                    Example: [("user", "Hello"), ("assistant", "Hi!"), ...]
 
         Returns:
             Agent response dictionary
         """
         logger.info("Running agent with question...")
         logger.debug(f"Question: {question[:100]}...")
+
+        # Build messages with history
+        messages: List[Tuple[str, str]] = []
+        if history:
+            messages.extend(history)
+            logger.info(f"Including {len(history)} history messages")
+        messages.append(("user", question))
 
         try:
             self.output_formatter.print_header()
@@ -94,7 +103,7 @@ class AgentApp:
             tool_timings: dict[str, float] = {}
 
             for event in self.agent_executor.stream(
-                {"messages": [("user", question)]}, config={"recursion_limit": 15}  # type: ignore
+                {"messages": messages}, config={"recursion_limit": 15}  # type: ignore
             ):
                 step_count += 1
                 self.output_formatter.print_event(event, step_count, tool_timings)
@@ -112,13 +121,26 @@ class AgentApp:
 def main():
     """Main entry point."""
     print("Hello, Function Calling Agent!")
+
+    # Example question
     question = (
         # "How many users are registered in the database? "
         # "What are the total sales from completed orders? "
-        "Also, what's 5 + 7 and what's the weather in Paris?"
+        "tell me about my db schema"
     )
+
+    # Optional: Test with conversation history
+    history: Optional[List[Tuple[str, str]]] = None
+    # Uncomment to test with history:
+    history = [
+        ("user", "Hello, my name is John and i have sister Jane."),
+        ("assistant", "Hi John! How can I help you today?"),
+        ("user", "I have a question"),
+        ("assistant", "Sure, I'd be happy to help. What's your question?"),
+    ]
+
     app = AgentApp(enable_sql_tool=False, llm_provider="openai")  # Set to False to disable SQL tool
-    app.run(question=question)
+    app.run(question=question, history=history)
 
 
 if __name__ == "__main__":

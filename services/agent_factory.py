@@ -2,7 +2,7 @@
 
 import logging
 from typing import Optional, Any
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 
@@ -56,15 +56,13 @@ class AgentFactory:
         logger.debug("Creating LangGraph ReAct agent...")
 
         # Create the ReAct agent with LangGraph
-        # System prompt is passed via state_modifier
-        agent = create_react_agent(
+        # Updated to use langchain.agents.create_agent (new location)
+
+        agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            state_modifier=self.system_prompt,  # System prompt injected here
-            checkpointer=self.checkpointer,  # Enable memory if checkpointer provided
+            checkpointer=self.checkpointer,
         )
-
-        logger.info("LangGraph ReAct agent created successfully with system prompt")
         return agent
 
     def create_executor(self):
