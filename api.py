@@ -10,13 +10,10 @@ import uvicorn
 from main import AgentApp
 from routes import health_routes, agent_routes, config_routes
 from services.telemetry import get_telemetry, TelemetryManager
+from services.logging_config import setup_logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("api.log")],
-)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 # Suppress verbose third-party logs

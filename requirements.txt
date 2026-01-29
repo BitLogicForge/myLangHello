@@ -6,6 +6,7 @@ pydantic               # Data validation and settings management
 python-dotenv          # Load environment variables from .env files
 requests               # HTTP requests library
 pyodbc                 # ODBC driver for MSSQL and other databases
+colorlog               # Colorful logging output for better readability
 
 # FastAPI and Server
 fastapi                # Modern web framework for building APIs

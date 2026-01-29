@@ -5,16 +5,13 @@ from typing import Optional, List, Tuple
 from dotenv import load_dotenv
 
 from services import AgentConfigurator, StreamingOutputFormatter
+from services.logging_config import setup_logging
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],  # Output to console
-)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
