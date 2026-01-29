@@ -1,14 +1,14 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 from typing import Optional, Any
 import uvicorn
 
 from main import AgentApp
+from routes import health_routes, agent_routes, config_routes
 
 # Configure logging
 logging.basicConfig(
@@ -25,41 +25,6 @@ try:
 except ImportError:
     LANGSERVE_AVAILABLE = False
     logger.warning("langserve not installed. Run: pip install langserve[all]")
-
-
-# Request/Response Models
-class MessageHistory(BaseModel):
-    """Individual message in conversation history."""
-
-    role: str = Field(..., description="Role of the message sender (human, ai, system)")
-    content: str = Field(..., description="Content of the message")
-
-
-class QueryRequest(BaseModel):
-    """Request model for agent queries."""
-
-    question: str = Field(..., description="Question to ask the agent")
-    session_id: Optional[str] = Field(None, description="Session ID for conversation tracking")
-    user_id: Optional[str] = Field(None, description="User ID for personalization")
-    history: Optional[list[MessageHistory]] = Field(
-        None,
-        description="Conversation history as a list of messages",
-    )
-
-
-class QueryResponse(BaseModel):
-    """Response model for agent queries."""
-
-    output: str = Field(..., description="Agent response")
-    session_id: Optional[str] = Field(None, description="Session ID")
-
-
-class HealthResponse(BaseModel):
-    """Health check response."""
-
-    status: str
-    agent_loaded: bool
-    langserve_available: bool
 
 
 # Initialize FastAPI app
@@ -94,6 +59,17 @@ except Exception as e:
     AGENT_LOADED = False
 
 
+# Configure route modules with agent state
+health_routes.set_agent_state(agent_app, AGENT_LOADED, LANGSERVE_AVAILABLE)
+agent_routes.set_agent_executor(agent_executor, AGENT_LOADED)
+config_routes.set_agent_app(agent_app, AGENT_LOADED)
+
+# Register routers
+app.include_router(health_routes.router)
+app.include_router(agent_routes.router)
+app.include_router(config_routes.router)
+
+
 @app.get("/", tags=["Root"])
 async def root():
     """Root endpoint."""
@@ -103,36 +79,6 @@ async def root():
         "health": "/health",
         "agent_endpoint": "/agent" if LANGSERVE_AVAILABLE else "/query",
         "playground": "/agent/playground" if LANGSERVE_AVAILABLE else None,
-    }
-
-
-@app.get("/health", response_model=HealthResponse, tags=["Health"])
-async def health_check():
-    """Health check endpoint."""
-    return HealthResponse(
-        status="healthy" if AGENT_LOADED else "degraded",
-        agent_loaded=AGENT_LOADED,
-        langserve_available=LANGSERVE_AVAILABLE,
-    )
-
-
-@app.get("/health/db", tags=["Health"])
-async def database_health_check():
-    """Check database connection health."""
-    if not AGENT_LOADED or not agent_app:
-        raise HTTPException(status_code=503, detail="Agent not loaded")
-
-    if not agent_app.db_manager:
-        return {
-            "database_healthy": False,
-            "status": "disabled",
-            "message": "SQL tools are disabled",
-        }
-
-    is_healthy = agent_app.db_manager.health_check()
-    return {
-        "database_healthy": is_healthy,
-        "status": "connected" if is_healthy else "disconnected",
     }
 
 
@@ -148,62 +94,6 @@ if LANGSERVE_AVAILABLE and agent_executor:
     )
     print("✅ LangServe routes added at /agent")
     print("📊 Playground available at http://localhost:8000/agent/playground")
-
-
-# Fallback manual endpoint (if LangServe not available)
-@app.post("/query", response_model=QueryResponse, tags=["Agent"])
-async def query_agent(request: QueryRequest):
-    """
-    Manual query endpoint (fallback if LangServe not available).
-
-    For streaming support, install langserve and use /agent/stream endpoint.
-    """
-    if not AGENT_LOADED or agent_executor is None:
-        logger.warning("Query attempted but agent not loaded")
-        raise HTTPException(status_code=503, detail="Agent not loaded")
-
-    try:
-        logger.info(f"Processing query (session: {request.session_id})")
-        logger.debug(f"Question: {request.question[:100]}...")
-
-        # Prepare input with history if provided
-        invoke_input: dict[str, Any] = {"input": request.question}
-        if request.history:
-            # Convert MessageHistory objects to tuples for LangChain
-            chat_history: list[tuple[str, str]] = [
-                (msg.role, msg.content) for msg in request.history
-            ]
-            invoke_input["chat_history"] = chat_history
-            logger.debug(f"Included {len(chat_history)} history messages")
-
-        response = agent_executor.invoke(invoke_input)
-        logger.info(f"Query completed successfully (session: {request.session_id})")
-        return QueryResponse(
-            output=response["output"],
-            session_id=request.session_id,
-        )
-    except Exception as e:
-        logger.error(f"Agent error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
-
-
-# Configuration endpoint
-@app.get("/config", tags=["Configuration"])
-async def get_config():
-    """Get agent configuration details."""
-    if not AGENT_LOADED or not agent_app:
-        raise HTTPException(status_code=503, detail="Agent not loaded")
-
-    try:
-        return {
-            "model": agent_app.llm.model_name,
-            "temperature": agent_app.llm.temperature,
-            "tools_count": len(agent_app.tools_manager.get_tools()),
-            "database_tables": agent_app.db_manager.include_tables if agent_app.db_manager else [],
-            "sql_tools_enabled": agent_app.db_manager is not None,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Config error: {str(e)}")
 
 
 # Error handlers
