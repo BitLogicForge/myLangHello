@@ -124,11 +124,11 @@ class DatabaseManager:
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
                 # Now create the real connection with custom schema
-                # custom_table_info defines available objects, no need for include_tables
-                # Pass empty include_tables to prevent automatic discovery
+                # Pass actual table names so SQLAlchemy knows they exist for query execution
+                # custom_table_info provides the schema descriptions without full DB reflection
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    include_tables=[],  # Empty list prevents automatic discovery
+                    include_tables=matched_tables,  # Tell SQLAlchemy these tables exist
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
                     engine_args=engine_args,
@@ -139,11 +139,11 @@ class DatabaseManager:
                 custom_table_info = self.generate_custom_table_info()
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
-                # custom_table_info defines available objects, no need for include_tables
-                # Pass empty include_tables list to prevent any table discovery
+                # Pass actual table names so SQLAlchemy knows they exist for query execution
+                # custom_table_info provides the schema descriptions without DB reflection
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    include_tables=[],  # Empty list prevents automatic discovery
+                    include_tables=self.include_tables,  # Tell SQLAlchemy these tables exist
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
                     engine_args=engine_args,
@@ -153,11 +153,14 @@ class DatabaseManager:
                 custom_table_info = self.generate_custom_table_info()
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
+                # Get list of tables from custom schema
+                table_list = list(self.custom_schema.keys())
+
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    include_tables=[],  # Empty list prevents automatic discovery
-                    sample_rows_in_table_info=0,  # Set to 0 since we use custom info
-                    custom_table_info=custom_table_info,  # Use our custom schema
+                    include_tables=table_list,  # Tell SQLAlchemy these tables exist
+                    sample_rows_in_table_info=0,
+                    custom_table_info=custom_table_info,
                     engine_args=engine_args,
                 )
 
