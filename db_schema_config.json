@@ -1,15 +1,5 @@
 {
-  "dbo.users": {
-    "description": "Contains user account information and registration details",
-    "columns": {
-      "id": "Primary key, unique user identifier",
-      "name": "Full name of the user",
-      "email": "Email address for login and communication",
-      "created_at": "Registration date and time"
-    },
-    "foreign_keys": []
-  },
-  "dbo.orders": {
+  "REPORTING.orders": {
     "description": "Contains order transactions and purchase history",
     "columns": {
       "id": "Primary key, unique order identifier",
@@ -22,24 +12,12 @@
     "foreign_keys": [
       {
         "column": "user_id",
-        "foreign_column": "dbo.users.id"
+        "foreign_column": "REPORTING.users.id"
       },
       {
         "column": "product_id",
-        "foreign_column": "dbo.products.id"
+        "foreign_column": "REPORTING.products.id"
       }
     ]
-  },
-  "dbo.products": {
-    "description": "Contains product catalog with inventory information",
-    "columns": {
-      "id": "Primary key, unique product identifier",
-      "name": "Product name",
-      "description": "Detailed product description",
-      "price": "Product price in currency units",
-      "category": "Product category: electronics, clothing, or food",
-      "stock_quantity": "Current inventory quantity available"
-    },
-    "foreign_keys": []
   }
 }
