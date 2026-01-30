@@ -99,7 +99,7 @@ class DatabaseManager:
                         f"Available: {all_tables}"
                     )
                     # Fall back to all tables rather than failing
-                    matched_tables = all_tables
+                    matched_tables = list(all_tables)
 
                 logger.info(f"Using tables: {matched_tables}")
 
@@ -118,7 +118,7 @@ class DatabaseManager:
                     engine_args=engine_args,
                 )
 
-            actual_tables = db.get_usable_table_names()
+            actual_tables = list(db.get_usable_table_names())
             logger.info(f"Database initialized with {len(actual_tables)} tables: {actual_tables}")
 
             return db
