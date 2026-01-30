@@ -123,13 +123,12 @@ class DatabaseManager:
                 custom_table_info = self.generate_custom_table_info()
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
-                # Now create the real connection with matched table names
-                # Use custom_table_info to override automatic schema reading
+                # Now create the real connection with custom schema
+                # custom_table_info defines available objects, no need for include_tables
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    include_tables=matched_tables,
-                    sample_rows_in_table_info=0,  # Set to 0 since we use custom info
-                    custom_table_info=custom_table_info,  # Use our custom schema
+                    sample_rows_in_table_info=0,
+                    custom_table_info=custom_table_info,
                     view_support=self.view_support,
                     engine_args=engine_args,
                 )
@@ -139,9 +138,9 @@ class DatabaseManager:
                 custom_table_info = self.generate_custom_table_info()
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
+                # custom_table_info defines available objects, no need for include_tables
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    include_tables=self.include_tables,
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
                     view_support=self.view_support,
