@@ -163,8 +163,17 @@ class DatabaseManager:
                     schema=None,  # Prevent schema reflection
                 )
 
-            actual_tables = list(db.get_usable_table_names())
-            logger.info(f"Database initialized with {len(actual_tables)} tables: {actual_tables}")
+            # Skip metadata query when using custom schema to avoid slow reflection
+            if self.discover_tables:
+                actual_tables = list(db.get_usable_table_names())
+                logger.info(
+                    f"Database initialized with {len(actual_tables)} tables: {actual_tables}"
+                )
+            else:
+                logger.info(
+                    f"Database initialized with {len(self.include_tables)} "
+                    f"configured objects from schema"
+                )
 
             return db
         except Exception as e:
