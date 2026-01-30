@@ -31,13 +31,13 @@ async def get_config():
 
     try:
         # Access configurator components
-        tools_manager = getattr(agent_app, "tools_manager", None)
+        tools = getattr(agent_app, "tools", None)
         llm = getattr(agent_app, "llm", None)
 
         return {
             "model": llm.model_name if llm and hasattr(llm, "model_name") else "unknown",
             "temperature": llm.temperature if llm and hasattr(llm, "temperature") else 0.0,
-            "tools_count": len(tools_manager.get_tools()) if tools_manager else 0,
+            "tools_count": len(tools) if tools else 0,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Config error: {str(e)}")
