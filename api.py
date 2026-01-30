@@ -1,16 +1,17 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
+from typing import Any, Optional
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from typing import Optional, Any
-import uvicorn
 
 from main import AgentApp
-from routes import health_routes, agent_routes, config_routes
-from services.telemetry import get_telemetry, TelemetryManager
+from routes import agent_routes, config_routes, health_routes
 from services.logging_config import setup_logging
+from services.telemetry import TelemetryManager, get_telemetry
 
 # Configure logging
 setup_logging()

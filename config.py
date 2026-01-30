@@ -1,7 +1,8 @@
 """Configuration manager - singleton for loading and accessing config."""
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
+
 from services.file_utils import read_json_file
 
 logger = logging.getLogger(__name__)

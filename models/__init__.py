@@ -1,5 +1,5 @@
 """Models package initialization."""
 
-from .api_models import MessageHistory, QueryRequest, QueryResponse, HealthResponse
+from .api_models import HealthResponse, MessageHistory, QueryRequest, QueryResponse
 
 __all__ = ["MessageHistory", "QueryRequest", "QueryResponse", "HealthResponse"]

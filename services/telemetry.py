@@ -2,16 +2,11 @@
 
 import logging
 import time
-from functools import wraps
-from typing import Optional, Callable
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    Info,
-    start_http_server,
-)
 from contextlib import contextmanager
+from functools import wraps
+from typing import Callable, Optional
+
+from prometheus_client import Counter, Gauge, Histogram, Info, start_http_server
 
 logger = logging.getLogger(__name__)
 

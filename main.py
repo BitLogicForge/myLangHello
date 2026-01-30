@@ -1,7 +1,8 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
 import logging
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
 from dotenv import load_dotenv
 
 from services import AgentConfigurator, StreamingOutputFormatter

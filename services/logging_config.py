@@ -1,6 +1,7 @@
 """Centralized logging configuration with colorful output."""
 
 import logging
+
 import colorlog
 
 # Suppress verbose third-party logs

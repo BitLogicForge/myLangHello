@@ -1,13 +1,14 @@
 """Agent configuration and initialization service."""
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
 
 from config import Config
-from .tools_manager import ToolsManager
-from .prompt_builder import PromptBuilder
+
 from .agent_factory import AgentFactory
 from .llm_factory import LLMFactory
+from .prompt_builder import PromptBuilder
+from .tools_manager import ToolsManager
 
 logger = logging.getLogger(__name__)
 

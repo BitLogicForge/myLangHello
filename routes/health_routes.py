@@ -1,11 +1,12 @@
 """Health check route handlers."""
 
 import logging
-from fastapi import APIRouter
 from typing import Optional
 
-from models.api_models import HealthResponse
+from fastapi import APIRouter
+
 from main import AgentApp
+from models.api_models import HealthResponse
 
 logger = logging.getLogger(__name__)
 

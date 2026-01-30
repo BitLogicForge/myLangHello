@@ -1,10 +1,10 @@
 """Agent Factory - Creates and configures the agent using LangGraph."""
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
+
 from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
-
 
 logger = logging.getLogger(__name__)
 

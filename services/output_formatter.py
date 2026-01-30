@@ -1,8 +1,10 @@
 """Output formatter for agent execution streaming events."""
 
 import time
-from typing import Dict, Any, List, Callable
-from colorama import Fore, Style, init as colorama_init
+from typing import Any, Callable, Dict, List
+
+from colorama import Fore, Style
+from colorama import init as colorama_init
 
 colorama_init(autoreset=True)
 

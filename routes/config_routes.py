@@ -1,8 +1,9 @@
 """Configuration route handlers."""
 
 import logging
-from fastapi import APIRouter, HTTPException
 from typing import Optional
+
+from fastapi import APIRouter, HTTPException
 
 from main import AgentApp
 
