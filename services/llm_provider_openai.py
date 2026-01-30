@@ -31,9 +31,6 @@ class OpenAILLMProvider:
         organization = config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
         base_url = config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
 
-        # Remove parallel_tool_calls - not a valid parameter for ChatOpenAI
-        config.pop("parallel_tool_calls", None)
-
         # Validate required parameters
         if not api_key:
             logger.warning("OPENAI_API_KEY not found in environment or config")

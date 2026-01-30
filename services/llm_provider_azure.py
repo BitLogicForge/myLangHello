@@ -42,9 +42,6 @@ class AzureLLMProvider:
         # Remove 'model' from config as Azure uses deployment_name instead
         config.pop("model", None)
 
-        # Remove parallel_tool_calls - not a valid parameter for AzureChatOpenAI
-        config.pop("parallel_tool_calls", None)
-
         # Validate required parameters
         if not api_key:
             logger.warning("AZURE_OPENAI_API_KEY not found in environment or config")

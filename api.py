@@ -16,10 +16,6 @@ from services.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Suppress verbose third-party logs
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("openai").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 try:
     from langserve import add_routes

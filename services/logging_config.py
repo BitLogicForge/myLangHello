@@ -3,6 +3,11 @@
 import logging
 import colorlog
 
+# Suppress verbose third-party logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 def setup_logging():
     """Configure colorful logging for the application."""

@@ -56,7 +56,6 @@ class AgentFactory:
         logger.debug("Creating LangGraph ReAct agent...")
 
         # Create the ReAct agent with LangGraph
-        # Updated to use langchain.agents.create_agent (new location)
 
         agent = create_agent(
             model=self.llm,

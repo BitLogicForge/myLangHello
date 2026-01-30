@@ -81,10 +81,10 @@ def main() -> None:
 
     # Example question
     question = (
-        # "tell me weather in poznan today, and what date is today, and weather in london"
+        "tell me weather in poznan today, and what date is today, and weather in london"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
-        "tell me a joke, and format it"
+        # "tell me a joke, and format it"
     )
 
     # Optional: Test with conversation history
