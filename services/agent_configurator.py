@@ -3,6 +3,7 @@
 import logging
 from typing import Optional, Any
 
+from config import Config
 from .tools_manager import ToolsManager
 from .prompt_builder import PromptBuilder
 from .agent_factory import AgentFactory
@@ -14,90 +15,46 @@ logger = logging.getLogger(__name__)
 class AgentConfigurator:
     """Handles agent initialization and component setup."""
 
-    def __init__(
-        self,
-        model: Optional[str] = None,
-        temperature: float = 0.7,
-        llm_config_path: str = "llm_config.json",
-        llm_provider: Optional[str] = None,
-        system_prompt_path: str = "messages/system_prompt.txt",
-        verbose: bool = True,
-        max_iterations: int = 10,
-        max_execution_time: int = 60,
-    ):
-        """
-        Initialize the agent configurator.
-
-        Args:
-            model: LLM model name
-            temperature: LLM temperature setting
-            llm_config_path: Path to LLM configuration file
-            llm_provider: Override LLM provider (azure or openai)
-            system_prompt_path: Path to system prompt file
-            verbose: Enable verbose logging for agent
-            max_iterations: Maximum agent iterations
-            max_execution_time: Maximum execution time in seconds
-        """
-        self.model = model
-        self.temperature = temperature
-        self.llm_config_path = llm_config_path
-        self.llm_provider = llm_provider
-        self.system_prompt_path = system_prompt_path
-        self.verbose = verbose
-        self.max_iterations = max_iterations
-        self.max_execution_time = max_execution_time
+    def __init__(self) -> None:
+        """Initialize the agent configurator."""
+        self.config = Config()
 
         # Component storage
         self.llm: Optional[Any] = None
         self.tools_manager: Optional[ToolsManager] = None
         self.prompt_builder: Optional[PromptBuilder] = None
-        self.prompt: Optional[Any] = None
+        self.system_prompt: Optional[Any] = None
         self.agent_factory: Optional[AgentFactory] = None
 
-    def setup_llm(self) -> Any:
+    def build_agent(self) -> Any:
         """
-        Initialize the LLM component.
+        Build the complete agent executor by initializing all components in order.
 
         Returns:
-            Initialized LLM instance
+            Agent executor instance
         """
-        provider_info = self.llm_provider or "from config"
-        logger.info(f"Initializing LLM: {self.model} (provider: {provider_info})")
-        self.llm = LLMFactory.create_llm(
-            config_path=self.llm_config_path,
-            provider=self.llm_provider,
-            model=self.model,
-            temperature=self.temperature,
-        )
-        return self.llm
+        logger.info("Building agent...")
 
-    def setup_tools(self) -> ToolsManager:
-        """
-        Initialize the tools manager.
-
-        Returns:
-            ToolsManager instance
-        """
-        if self.llm is None:
-            raise RuntimeError(
-                "LLM must be initialized before setting up tools. Call setup_llm() first."
-            )
+        # Initialize components in correct order
+        logger.info("Initializing LLM")
+        self.llm = LLMFactory.create_llm()
 
         logger.info("Setting up tools manager...")
-        self.tools_manager = ToolsManager(llm=self.llm)
-        return self.tools_manager
+        self.tools = ToolsManager().get_tools()
 
-    def setup_prompt(self) -> str:
-        """
-        Build the system prompt text.
-
-        Returns:
-            System prompt text as string
-        """
         logger.info("Building system prompt...")
-        self.prompt_builder = PromptBuilder(system_prompt_path=self.system_prompt_path)
-        self.prompt = self.prompt_builder.get_system_prompt()
-        return self.prompt
+
+        self.system_prompt = PromptBuilder().system_prompt
+
+        self.setup_agent_factory()
+
+        # Create and return executor
+        if self.agent_factory is None:
+            raise RuntimeError("Agent factory creation failed")
+
+        agent_executor = self.agent_factory.create_executor()
+        logger.info("✅ Agent built successfully")
+        return agent_executor
 
     def setup_agent_factory(self) -> AgentFactory:
         """
@@ -110,40 +67,14 @@ class AgentConfigurator:
             raise RuntimeError("LLM must be initialized. Call setup_llm() first.")
         if self.tools_manager is None:
             raise RuntimeError("Tools manager must be initialized. Call setup_tools() first.")
-        if self.prompt is None:
+        if self.system_prompt is None:
             raise RuntimeError("System prompt must be initialized. Call setup_prompt() first.")
 
         logger.info("Creating agent factory...")
+
         self.agent_factory = AgentFactory(
             llm=self.llm,
-            tools=self.tools_manager.get_tools(),
-            system_prompt=self.prompt,
-            verbose=self.verbose,
-            max_iterations=self.max_iterations,
-            max_execution_time=self.max_execution_time,
+            tools=self.tools,
+            system_prompt=self.system_prompt,
         )
         return self.agent_factory
-
-    def build_agent(self) -> Any:
-        """
-        Build the complete agent executor by initializing all components in order.
-
-        Returns:
-            Agent executor instance
-        """
-        logger.info("Building agent...")
-        logger.debug(f"Model: {self.model}, Temperature: {self.temperature}")
-
-        # Initialize components in correct order
-        self.setup_llm()
-        self.setup_tools()
-        self.setup_prompt()
-        self.setup_agent_factory()
-
-        # Create and return executor
-        if self.agent_factory is None:
-            raise RuntimeError("Agent factory creation failed")
-
-        agent_executor = self.agent_factory.create_executor()
-        logger.info("✅ Agent built successfully")
-        return agent_executor

@@ -1,7 +1,6 @@
 """Tools Manager - Handles tool registration and configuration."""
 
 import logging
-from langchain_core.language_models.chat_models import BaseChatModel
 
 from tools import (
     calculator,
@@ -24,19 +23,17 @@ logger = logging.getLogger(__name__)
 class ToolsManager:
     """Manages tool registration and configuration."""
 
-    def __init__(self, llm: BaseChatModel):
-        """
-        Initialize the tools manager.
+    _tools = None
 
-        Args:
-            llm: Language model for toolkit
-        """
-        self.llm = llm
-        logger.debug("ToolsManager initializing")
-        self.tools = self._register_tools()
-        logger.info(f"ToolsManager initialized with {len(self.tools)} tools")
+    @classmethod
+    def get_tools(cls) -> list:
+        """Get all registered tools."""
+        if cls._tools is None:
+            cls._tools = cls._register_tools()
+        return cls._tools
 
-    def _register_tools(self) -> list:
+    @classmethod
+    def _register_tools(cls) -> list:
         """Register and configure all tools."""
         logger.debug("Registering tools...")
 
@@ -56,7 +53,3 @@ class ToolsManager:
         ]
         logger.info(f"Registered {len(tools_list)} utility tools")
         return tools_list
-
-    def get_tools(self) -> list:
-        """Get all registered tools."""
-        return self.tools

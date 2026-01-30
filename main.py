@@ -18,34 +18,12 @@ logger = logging.getLogger(__name__)
 class AgentApp:
     """Main application orchestrator - coordinates all components."""
 
-    def __init__(
-        self,
-        model: Optional[str] = None,
-        temperature: float = 0.7,
-        llm_config_path: str = "llm_config.json",
-        llm_provider: Optional[str] = None,
-        **kwargs,
-    ):
-        """
-        Initialize the agent application.
-
-        Args:
-            model: LLM model name
-            temperature: LLM temperature setting
-            llm_config_path: Path to LLM configuration file (default: llm_config.json)
-            llm_provider: Override LLM provider (azure or openai). If None, uses config file.
-            **kwargs: Additional configuration options passed to AgentConfigurator
-        """
+    def __init__(self):
+        """Initialize the agent application."""
         logger.info("Initializing AgentApp...")
 
         # Create configurator and build agent
-        configurator = AgentConfigurator(
-            model=model,
-            temperature=temperature,
-            llm_config_path=llm_config_path,
-            llm_provider=llm_provider,
-            **kwargs,
-        )
+        configurator = AgentConfigurator()
         self.agent_executor = configurator.build_agent()
         self.output_formatter = StreamingOutputFormatter()
 
@@ -119,7 +97,7 @@ def main():
         ("assistant", "Sure, I'd be happy to help. What's your question?"),
     ]
 
-    app = AgentApp(llm_provider="openai")
+    app = AgentApp()
     app.run(question=question, history=history)
 
 

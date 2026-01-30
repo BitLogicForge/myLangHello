@@ -6,6 +6,8 @@ from langchain.agents import create_agent
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import RunnableConfig
 
+from config import Config
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,9 +19,6 @@ class AgentFactory:
         llm: BaseChatModel,
         tools: list,
         system_prompt: str,
-        verbose: bool = True,
-        max_iterations: int = 10,
-        max_execution_time: int = 60,
         checkpointer: Optional[Any] = None,
     ):
         """
@@ -29,21 +28,22 @@ class AgentFactory:
             llm: Language model instance
             tools: List of tools for the agent
             system_prompt: System prompt text to guide agent behavior
-            verbose: Enable verbose output (for backward compatibility)
-            max_iterations: Maximum agent iterations (Note: LangGraph uses recursion_limit)
-            max_execution_time: Maximum execution time in seconds (for backward compatibility)
             checkpointer: Optional memory checkpointer for conversation persistence
         """
         self.llm = llm
         self.tools = tools
         self.system_prompt = system_prompt
-        self.verbose = verbose
-        self.max_iterations = max_iterations
-        self.max_execution_time = max_execution_time
         self.checkpointer = checkpointer
+
+        # Read agent settings from config
+        config = Config()
+        self.verbose = config.get("agent.verbose", True)
+        self.max_iterations = config.get("agent.max_iterations", 10)
+        self.max_execution_time = config.get("agent.max_execution_time", 60)
+
         logger.info(
             f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent, "
-            f"recursion_limit={max_iterations}"
+            f"recursion_limit={self.max_iterations}"
         )
 
     def create_agent(self):

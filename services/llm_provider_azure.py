@@ -28,11 +28,9 @@ class AzureLLMProvider:
             - AZURE_OPENAI_DEPLOYMENT_NAME (required if not in config)
         """
         # Get API key and endpoint from environment if not in config
-        api_key = config.pop("api_key", None) or os.getenv("AZURE_OPENAI_API_KEY")
-        azure_endpoint = config.pop("azure_endpoint", None) or os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_version = config.get("api_version", None) or os.getenv(
-            "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
-        )
+        api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
         # Get deployment name (REQUIRED for Azure)
         deployment_name = (

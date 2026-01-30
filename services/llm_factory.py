@@ -1,10 +1,9 @@
 """LLM Factory - Creates LLM instances based on configuration."""
 
-import json
 import logging
-from typing import Optional, Any
 from langchain_core.language_models.chat_models import BaseChatModel
 
+from config import Config
 from .llm_provider_azure import AzureLLMProvider
 from .llm_provider_openai import OpenAILLMProvider
 
@@ -15,57 +14,19 @@ class LLMFactory:
     """Factory for creating LLM instances based on provider configuration."""
 
     @staticmethod
-    def load_config(config_path: str = "llm_config.json") -> dict:
-        """
-        Load LLM configuration from JSON file.
-
-        Args:
-            config_path: Path to the configuration file
-
-        Returns:
-            Configuration dictionary
-        """
-        try:
-            with open(config_path, "r") as f:
-                config = json.load(f)
-            logger.info(f"Loaded LLM configuration from {config_path}")
-            return config
-        except json.JSONDecodeError as e:
-            logger.error(f"Error parsing config file: {e}")
-            raise
-
-    @staticmethod
-    def create_llm(
-        config_path: str = "llm_config.json",
-        provider: Optional[str] = None,
-        **override_params: Any,
-    ) -> BaseChatModel:
+    def create_llm() -> BaseChatModel:
         """
         Create an LLM instance based on configuration.
 
-        Args:
-            config_path: Path to the configuration file
-            provider: Override the provider from config (azure, openai)
-            **override_params: Override any configuration parameters
-
         Returns:
             LLM instance (AzureChatOpenAI or ChatOpenAI)
-
-        Environment Variables:
-            For Azure:
-                - AZURE_OPENAI_API_KEY (required)
-                - AZURE_OPENAI_ENDPOINT (required)
-                - AZURE_OPENAI_API_VERSION (optional)
-
-            For OpenAI:
-                - OPENAI_API_KEY (required)
-                - OPENAI_ORGANIZATION (optional)
         """
         # Load configuration
-        config = LLMFactory.load_config(config_path)
+        config_obj = Config()
+        config = config_obj.get_all()
 
-        # Determine provider
-        selected_provider = provider or config.get("provider", "azure")
+        # Determine provider from config
+        selected_provider = config.get("provider", "openai")
         logger.info(f"Creating LLM with provider: {selected_provider}")
 
         # Get provider-specific config
@@ -74,9 +35,6 @@ class LLMFactory:
 
         # Merge common params with provider params
         provider_config.update(common_params)
-
-        # Apply overrides
-        provider_config.update(override_params)
 
         # Remove None values
         provider_config = {k: v for k, v in provider_config.items() if v is not None}
@@ -88,13 +46,3 @@ class LLMFactory:
             return OpenAILLMProvider.create(provider_config)
         else:
             raise ValueError(f"Unsupported provider: {selected_provider}")
-
-    @staticmethod
-    def get_available_providers() -> list[str]:
-        """
-        Get list of available LLM providers.
-
-        Returns:
-            List of provider names
-        """
-        return ["azure", "openai"]

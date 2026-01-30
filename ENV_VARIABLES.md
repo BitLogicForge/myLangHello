@@ -181,4 +181,4 @@ DB_USE_WINDOWS_AUTH=true
 - Add `.env` to your `.gitignore` file
 - Use `.env.example` as a template without actual secrets
 - For production, use environment variables set directly on your server/container
-- Provider selection (OpenAI vs Azure) is configured in `llm_config.json`
+- Provider selection (OpenAI vs Azure) is configured in `config.json`
