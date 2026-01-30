@@ -22,6 +22,8 @@ class DatabaseManager:
         pool_recycle: int = 3600,
         lazy_init: bool = False,
         discover_tables: bool = False,
+        view_support: bool = True,
+        validate_schema: bool = False,
     ):
         """
         Initialize the database manager with connection pooling.
@@ -35,6 +37,8 @@ class DatabaseManager:
             pool_recycle: Recycle connections after N seconds (default: 3600)
             lazy_init: If True, delay connection until first use (default: False)
             discover_tables: If True, discover all DB tables for matching (default: False)
+            view_support: If True, include database views (default: True)
+            validate_schema: If True, validate schema objects exist in DB (default: False)
         """
         self.db_uri = db_uri
         self.schema_path = schema_path
@@ -43,6 +47,8 @@ class DatabaseManager:
         self.max_overflow = max_overflow
         self.pool_recycle = pool_recycle
         self.discover_tables = discover_tables
+        self.view_support = view_support
+        self.validate_schema = validate_schema
         self._db: Optional[SQLDatabase] = None
 
         # Load schema config to get table names
@@ -57,7 +63,8 @@ class DatabaseManager:
 
         if not lazy_init:
             self._db = self._init_db()
-            self.validate_tables()
+            if self.validate_schema:
+                self.validate_tables()
 
     def _init_db(self) -> SQLDatabase:
         """Initialize database connection with pooling configuration."""
@@ -79,7 +86,7 @@ class DatabaseManager:
                 db_temp = SQLDatabase.from_uri(
                     self.db_uri,
                     sample_rows_in_table_info=0,  # Don't load samples yet
-                    view_support=True,
+                    view_support=self.view_support,
                     engine_args=engine_args,
                 )
                 all_tables = db_temp.get_usable_table_names()
@@ -123,7 +130,7 @@ class DatabaseManager:
                     include_tables=matched_tables,
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
-                    view_support=True,
+                    view_support=self.view_support,
                     engine_args=engine_args,
                 )
             elif self.include_tables:
@@ -137,7 +144,7 @@ class DatabaseManager:
                     include_tables=self.include_tables,
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
-                    view_support=True,
+                    view_support=self.view_support,
                     engine_args=engine_args,
                 )
             else:
@@ -149,7 +156,7 @@ class DatabaseManager:
                     self.db_uri,
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
-                    view_support=True,
+                    view_support=self.view_support,
                     engine_args=engine_args,
                 )
 
