@@ -1,7 +1,7 @@
 langchain==1.2.7              # Core LangChain framework for agents and chains
 langchain-openai==1.1.7       # OpenAI integration for LangChain (LLMs)
 langchain-community==0.4.1    # Community-contributed LangChain integrations/tools
-langgraph ==1.0.7             # State-of-the-art graph-based agent framework
+langgraph==1.0.7             # State-of-the-art graph-based agent framework
 pydantic==2.12.5              # Data validation and settings management
 python-dotenv==1.2.1          # Load environment variables from .env files
 requests==2.32.5              # HTTP requests library
