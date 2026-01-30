@@ -148,7 +148,8 @@ class ToolsManager:
                     name=tool.name,
                     description=(
                         tool.description
-                        + " (Read-only: SELECT queries only, restricted to allowed tables)"
+                        + " (Read-only: SELECT queries only, restricted to allowed tables. "
+                        + "Use T-SQL/MSSQL syntax: TOP not LIMIT, GETDATE() for current date)"
                     ),
                 )
                 logger.debug(
