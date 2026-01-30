@@ -75,7 +75,7 @@ class AgentApp:
             raise
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     print("Hello, Function Calling Agent!")
 

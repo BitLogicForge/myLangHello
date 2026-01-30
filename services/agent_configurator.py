@@ -64,11 +64,11 @@ class AgentConfigurator:
             AgentFactory instance
         """
         if self.llm is None:
-            raise RuntimeError("LLM must be initialized. Call setup_llm() first.")
-        if self.tools_manager is None:
-            raise RuntimeError("Tools manager must be initialized. Call setup_tools() first.")
+            raise RuntimeError("LLM must be initialized. ")
+        if self.tools is None:
+            raise RuntimeError("Tools  must be initialized. ")
         if self.system_prompt is None:
-            raise RuntimeError("System prompt must be initialized. Call setup_prompt() first.")
+            raise RuntimeError("System prompt must be initialized. ")
 
         logger.info("Creating agent factory...")
 

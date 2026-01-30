@@ -175,13 +175,15 @@ def joke_format(joke: str) -> str:
 
     Returns a nicely formatted joke with visual separators.Do not add any extra text.
     """
-    border = "═" * 50
+    border = "═" * (len(joke) + 2)
+    spacex = " " * (len(joke) + 2)
     return f"""
-╔{border}╗
-║  Best joke for you:
-║
-║  {joke}
-╚{border}╝
+Best joke for you:
+╔═{border}═╗
+║ {spacex} ║
+║  {joke}  ║
+║ {spacex} ║
+╚═{border}═╝
 """
 
 
