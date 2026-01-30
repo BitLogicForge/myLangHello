@@ -114,21 +114,39 @@ class LLMFactory:
             "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
         )
 
+        # Get deployment name (REQUIRED for Azure)
+        deployment_name = (
+            config.pop("deployment_name", None)
+            or config.pop("azure_deployment", None)
+            or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+        )
+
+        # Remove 'model' from config as Azure uses deployment_name instead
+        config.pop("model", None)
+
         if not api_key:
             logger.warning("AZURE_OPENAI_API_KEY not found in environment or config")
 
         if not azure_endpoint:
             logger.warning("AZURE_OPENAI_ENDPOINT not found in environment or config")
 
+        if not deployment_name:
+            logger.error("AZURE_OPENAI_DEPLOYMENT_NAME is required but not found!")
+            raise ValueError(
+                "Azure OpenAI requires deployment_name. "
+                "Set it in config or AZURE_OPENAI_DEPLOYMENT_NAME environment variable"
+            )
+
         # Build parameters
         params = {
             "api_key": api_key,
             "azure_endpoint": azure_endpoint,
             "api_version": api_version,
+            "deployment_name": deployment_name,
             **config,
         }
 
-        logger.info(f"Creating AzureChatOpenAI with model: {params.get('model', 'default')}")
+        logger.info(f"Creating AzureChatOpenAI with deployment: {deployment_name}")
         logger.debug(f"Azure parameters: {list(params.keys())}")
 
         return AzureChatOpenAI(**params)
