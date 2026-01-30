@@ -64,7 +64,7 @@ agent_executor: Optional[Any] = None
 agent_app: Optional[AgentApp] = None
 try:
     logger.info("Initializing agent application...")
-    agent_app = AgentApp(enable_sql_tool=False, llm_provider="openai")
+    agent_app = AgentApp(llm_provider="openai")
     agent_executor = agent_app.agent_executor
     AGENT_LOADED = True
     logger.info("✅ Agent loaded successfully")

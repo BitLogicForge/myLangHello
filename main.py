@@ -20,11 +20,8 @@ class AgentApp:
 
     def __init__(
         self,
-        db_uri: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
-        schema_path: str = "db_schema_config.json",
-        enable_sql_tool: bool = True,
         llm_config_path: str = "llm_config.json",
         llm_provider: Optional[str] = None,
         **kwargs,
@@ -33,20 +30,8 @@ class AgentApp:
         Initialize the agent application.
 
         Args:
-            db_uri: Database connection URI (MSSQL format).
-                   If None, reads from DATABASE_URI env var.
-                   Example:
-                   mssql+pyodbc://username:password@server/database
-                   ?driver=ODBC+Driver+17+for+SQL+Server
-
-                   Or with Windows Auth:
-                   mssql+pyodbc://server/database
-                   ?driver=ODBC+Driver+17+for+SQL+Server
-                   &trusted_connection=yes
             model: LLM model name
             temperature: LLM temperature setting
-            schema_path: Path to database schema configuration
-            enable_sql_tool: Enable or disable SQL query tool
             llm_config_path: Path to LLM configuration file (default: llm_config.json)
             llm_provider: Override LLM provider (azure or openai). If None, uses config file.
             **kwargs: Additional configuration options passed to AgentConfigurator
@@ -55,11 +40,8 @@ class AgentApp:
 
         # Create configurator and build agent
         configurator = AgentConfigurator(
-            db_uri=db_uri,
             model=model,
             temperature=temperature,
-            schema_path=schema_path,
-            enable_sql_tool=enable_sql_tool,
             llm_config_path=llm_config_path,
             llm_provider=llm_provider,
             **kwargs,
@@ -121,11 +103,9 @@ def main():
 
     # Example question
     question = (
-        # "How many users are registered in the database? "
-        # "What are the total sales from completed orders? "
-        # "tell me wather in poznan today, and what date is today, and wather in london"
-        # "calculate loan  for amount 25000 USD , term 5 years, interest rate 4.5 and conver to EUR"
-        # "calculate loan payment for amount 25000 USD , term 5,7,8,10 years, interest rate 4.5"
+        # "tell me weather in poznan today, and what date is today, and weather in london"
+        # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
+        # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         "tell me a joke, and format it"
     )
 
@@ -139,7 +119,7 @@ def main():
         ("assistant", "Sure, I'd be happy to help. What's your question?"),
     ]
 
-    app = AgentApp(enable_sql_tool=False, llm_provider="openai")  # Set to False to disable SQL tool
+    app = AgentApp(llm_provider="openai")
     app.run(question=question, history=history)
 
 

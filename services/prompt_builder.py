@@ -51,27 +51,16 @@ class PromptBuilder:
         logger.info("Prompt template built successfully")
         return prompt
 
-    def get_system_prompt(self, custom_schema: Optional[dict] = None) -> str:
+    def get_system_prompt(self) -> str:
         """
-        Get the system prompt text, optionally with schema context.
-
-        Args:
-            custom_schema: Optional custom schema information
+        Get the system prompt text.
 
         Returns:
             System prompt text as string
         """
         system_prompt = self._load_system_prompt()
-
-        if custom_schema:
-            logger.debug(f"Adding custom schema with {len(custom_schema)} tables")
-            schema_context = self._format_schema_context(custom_schema)
-            # Replace schema placeholder in prompt
-            system_prompt = system_prompt.replace("{schema_context}", schema_context)
-        else:
-            # Remove placeholder if no schema
-            system_prompt = system_prompt.replace("{schema_context}", "No database schema loaded.")
-
+        # Remove schema placeholder if it exists
+        system_prompt = system_prompt.replace("{schema_context}", "")
         logger.info(f"System prompt prepared ({len(system_prompt)} chars)")
         return system_prompt
 

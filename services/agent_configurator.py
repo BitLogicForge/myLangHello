@@ -1,10 +1,8 @@
 """Agent configuration and initialization service."""
 
-import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
-from .database_manager import DatabaseManager
 from .tools_manager import ToolsManager
 from .prompt_builder import PromptBuilder
 from .agent_factory import AgentFactory
@@ -18,19 +16,11 @@ class AgentConfigurator:
 
     def __init__(
         self,
-        db_uri: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
-        schema_path: str = "db_schema_config.json",
-        enable_sql_tool: bool = True,
         llm_config_path: str = "llm_config.json",
         llm_provider: Optional[str] = None,
         system_prompt_path: str = "messages/system_prompt.txt",
-        sample_rows: int = 2,
-        pool_size: int = 10,
-        max_overflow: int = 15,
-        pool_recycle: int = 1800,
-        output_limit: int = 10000,
         verbose: bool = True,
         max_iterations: int = 10,
         max_execution_time: int = 60,
@@ -39,45 +29,26 @@ class AgentConfigurator:
         Initialize the agent configurator.
 
         Args:
-            db_uri: Database connection URI (MSSQL format).
-                   If None, reads from DATABASE_URI env var.
             model: LLM model name
             temperature: LLM temperature setting
-            schema_path: Path to database schema configuration (mandatory for SQL tools)
-            enable_sql_tool: Enable or disable SQL query tool
             llm_config_path: Path to LLM configuration file
             llm_provider: Override LLM provider (azure or openai)
             system_prompt_path: Path to system prompt file
-            sample_rows: Number of sample rows for database tables
-            pool_size: Database connection pool size
-            max_overflow: Maximum overflow connections in pool
-            pool_recycle: Connection recycle time in seconds
-            output_limit: Output limit for tools
             verbose: Enable verbose logging for agent
             max_iterations: Maximum agent iterations
             max_execution_time: Maximum execution time in seconds
         """
-        self.db_uri = db_uri
         self.model = model
         self.temperature = temperature
-        self.schema_path = schema_path
-        self.enable_sql_tool = enable_sql_tool
         self.llm_config_path = llm_config_path
         self.llm_provider = llm_provider
         self.system_prompt_path = system_prompt_path
-        self.sample_rows = sample_rows
-        self.pool_size = pool_size
-        self.max_overflow = max_overflow
-        self.pool_recycle = pool_recycle
-        self.output_limit = output_limit
         self.verbose = verbose
         self.max_iterations = max_iterations
         self.max_execution_time = max_execution_time
 
         # Component storage
         self.llm: Optional[Any] = None
-        self.db_manager: Optional[DatabaseManager] = None
-        self.custom_schema: Dict = {}
         self.tools_manager: Optional[ToolsManager] = None
         self.prompt_builder: Optional[PromptBuilder] = None
         self.prompt: Optional[Any] = None
@@ -100,72 +71,6 @@ class AgentConfigurator:
         )
         return self.llm
 
-    def setup_database(self) -> Optional[DatabaseManager]:
-        """
-        Initialize the database manager (if SQL tools are enabled).
-
-        Returns:
-            DatabaseManager instance or None if SQL tools are disabled
-        """
-        if not self.enable_sql_tool:
-            logger.info("Database manager disabled (SQL tools disabled)")
-            self.db_manager = None
-            self.custom_schema = {}
-            return None
-
-        # Get database URI from env if not provided
-        db_uri = self.db_uri
-        if db_uri is None:
-            # Try to get DATABASE_URI first (legacy support)
-            db_uri = os.getenv("DATABASE_URI")
-
-            # If not provided, build from separate components
-            if not db_uri:
-                db_host = os.getenv("DB_HOST", "localhost")
-                db_name = os.getenv("DB_NAME", "MyDatabase")
-                db_username = os.getenv("DB_USERNAME")
-                db_password = os.getenv("DB_PASSWORD")
-                use_windows_auth = os.getenv("DB_USE_WINDOWS_AUTH", "false").lower() == "true"
-                db_driver = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
-
-                # Build connection string
-                if use_windows_auth:
-                    db_uri = (
-                        f"mssql+pyodbc://{db_host}/{db_name}"
-                        f"?driver={db_driver}&trusted_connection=yes"
-                    )
-                    logger.debug("Using Windows Authentication for database")
-                elif db_username and db_password:
-                    db_uri = (
-                        f"mssql+pyodbc://{db_username}:{db_password}@"
-                        f"{db_host}/{db_name}?driver={db_driver}"
-                    )
-                    logger.debug("Using SQL Authentication for database")
-                else:
-                    db_uri = f"mssql+pyodbc://{db_host}/{db_name}?driver={db_driver}"
-                    logger.warning("No authentication credentials provided for database")
-
-                logger.debug(
-                    f"Built database URI from environment variables: "
-                    f"Host={db_host}, DB={db_name}"
-                )
-
-        logger.info("Setting up database manager...")
-        self.db_manager = DatabaseManager(
-            db_uri=db_uri,
-            schema_path=self.schema_path,
-            sample_rows=self.sample_rows,
-            pool_size=self.pool_size,
-            max_overflow=self.max_overflow,
-            pool_recycle=self.pool_recycle,
-        )
-
-        # Custom schema is already loaded by DatabaseManager
-        self.custom_schema = self.db_manager.custom_schema
-        logger.debug(f"Schema loaded with {len(self.custom_schema)} tables")
-
-        return self.db_manager
-
     def setup_tools(self) -> ToolsManager:
         """
         Initialize the tools manager.
@@ -179,13 +84,7 @@ class AgentConfigurator:
             )
 
         logger.info("Setting up tools manager...")
-        self.tools_manager = ToolsManager(
-            db=self.db_manager.get_database() if self.db_manager else None,
-            llm=self.llm,
-            output_limit=self.output_limit,
-            enable_sql_tool=self.enable_sql_tool,
-            db_manager=self.db_manager,
-        )
+        self.tools_manager = ToolsManager(llm=self.llm)
         return self.tools_manager
 
     def setup_prompt(self) -> str:
@@ -197,7 +96,7 @@ class AgentConfigurator:
         """
         logger.info("Building system prompt...")
         self.prompt_builder = PromptBuilder(system_prompt_path=self.system_prompt_path)
-        self.prompt = self.prompt_builder.get_system_prompt(self.custom_schema)
+        self.prompt = self.prompt_builder.get_system_prompt()
         return self.prompt
 
     def setup_agent_factory(self) -> AgentFactory:
@@ -233,14 +132,10 @@ class AgentConfigurator:
             Agent executor instance
         """
         logger.info("Building agent...")
-        logger.debug(
-            f"Model: {self.model}, Temperature: {self.temperature}, "
-            f"SQL enabled: {self.enable_sql_tool}"
-        )
+        logger.debug(f"Model: {self.model}, Temperature: {self.temperature}")
 
         # Initialize components in correct order
         self.setup_llm()
-        self.setup_database()
         self.setup_tools()
         self.setup_prompt()
         self.setup_agent_factory()

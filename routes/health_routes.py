@@ -1,7 +1,7 @@
 """Health check route handlers."""
 
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from typing import Optional
 
 from models.api_models import HealthResponse
@@ -34,23 +34,3 @@ async def health_check():
         agent_loaded=AGENT_LOADED,
         langserve_available=LANGSERVE_AVAILABLE,
     )
-
-
-@router.get("/health/db")
-async def database_health_check():
-    """Check database connection health."""
-    if not AGENT_LOADED or not agent_app:
-        raise HTTPException(status_code=503, detail="Agent not loaded")
-
-    if not hasattr(agent_app, "db_manager") or not agent_app.db_manager:
-        return {
-            "database_healthy": False,
-            "status": "disabled",
-            "message": "SQL tools are disabled",
-        }
-
-    is_healthy = agent_app.db_manager.health_check()
-    return {
-        "database_healthy": is_healthy,
-        "status": "connected" if is_healthy else "disconnected",
-    }
