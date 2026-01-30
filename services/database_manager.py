@@ -45,7 +45,12 @@ class DatabaseManager:
         # Load schema config to get table names
         self.custom_schema = self.load_custom_schema(schema_path)
         self.include_tables = list(self.custom_schema.keys())
-        logger.info(f"Loaded {len(self.include_tables)} tables from schema: {self.include_tables}")
+        logger.info(
+            f"Loaded {len(self.include_tables)} tables from custom schema: {self.include_tables}"
+        )
+        logger.info(
+            "Using custom schema mode: Agent will NOT read actual table metadata from database"
+        )
 
         if not lazy_init:
             self._db = self._init_db()
@@ -103,18 +108,28 @@ class DatabaseManager:
 
                 logger.info(f"Using tables: {matched_tables}")
 
+                # Generate custom table info to prevent reading from database
+                custom_table_info = self.generate_custom_table_info()
+                logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
+
                 # Now create the real connection with matched table names
+                # Use custom_table_info to override automatic schema reading
                 db = SQLDatabase.from_uri(
                     self.db_uri,
                     include_tables=matched_tables,
-                    sample_rows_in_table_info=self.sample_rows,
+                    sample_rows_in_table_info=0,  # Set to 0 since we use custom info
+                    custom_table_info=custom_table_info,  # Use our custom schema
                     engine_args=engine_args,
                 )
             else:
-                # No filtering requested
+                # No filtering requested - use all tables from custom schema
+                custom_table_info = self.generate_custom_table_info()
+                logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
+
                 db = SQLDatabase.from_uri(
                     self.db_uri,
-                    sample_rows_in_table_info=self.sample_rows,
+                    sample_rows_in_table_info=0,  # Set to 0 since we use custom info
+                    custom_table_info=custom_table_info,  # Use our custom schema
                     engine_args=engine_args,
                 )
 
@@ -296,3 +311,42 @@ class DatabaseManager:
         """
         with open(schema_path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    def generate_custom_table_info(self) -> dict:
+        """
+        Generate custom_table_info dictionary for SQLDatabase.
+
+        This creates a formatted dictionary that SQLDatabase can use instead of
+        reading actual table metadata from the database.
+
+        Returns:
+            Dictionary mapping table names to formatted schema information
+        """
+        custom_table_info = {}
+
+        for table_name, table_data in self.custom_schema.items():
+            # Build column information
+            columns_text = []
+            for col_name, col_desc in table_data.get("columns", {}).items():
+                columns_text.append(f"  - {col_name}: {col_desc}")
+
+            # Build foreign key information
+            fk_text = []
+            for fk in table_data.get("foreign_keys", []):
+                fk_text.append(f"  - {fk['column']} -> {fk['foreign_column']}")
+
+            # Format complete table info
+            info_parts = [
+                f"Table: {table_name}",
+                f"Description: {table_data.get('description', 'No description')}",
+                "\nColumns:",
+            ]
+            info_parts.extend(columns_text)
+
+            if fk_text:
+                info_parts.append("\nForeign Keys:")
+                info_parts.extend(fk_text)
+
+            custom_table_info[table_name] = "\n".join(info_parts)
+
+        return custom_table_info

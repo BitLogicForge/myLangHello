@@ -2,13 +2,25 @@
 
 ## Overview
 
-The agent now enforces strict table access control based on the `include_tables` list defined in `db_schema_config.json`. The agent can only access tables that are explicitly listed in the configuration file and will be blocked from reading any other tables.
+The agent now enforces strict table access control based on the `include_tables` list defined in `db_schema_config.json`. The agent can **only** access tables that are explicitly listed in the configuration file and will be blocked from reading any other tables.
+
+**Important:** The agent uses **custom schema mode**, which means it does NOT read actual table metadata from the database. Instead, it relies entirely on the schema information defined in `db_schema_config.json`. This provides:
+
+- **Enhanced Security**: The agent never sees the actual database structure
+- **Privacy Protection**: Actual table contents and structure remain hidden
+- **Documentation Control**: You control exactly what information the agent receives about your database
 
 ## Implementation Details
 
 ### 1. Database Manager Enhancements ([database_manager.py](../services/database_manager.py))
 
 #### New Methods:
+
+- **`generate_custom_table_info() -> dict`**
+  - Generates formatted table information from the custom schema JSON
+  - Creates the `custom_table_info` dictionary used by SQLDatabase
+  - Prevents SQLDatabase from reading actual table metadata
+  - Returns formatted schema strings for each table
 
 - **`is_table_allowed(table_name: str) -> bool`**
   - Checks if a table is in the allowed `include_tables` list
@@ -26,6 +38,16 @@ The agent now enforces strict table access control based on the `include_tables`
   - Looks for tables after `FROM`, `JOIN`, `INTO`, and `UPDATE` keywords
   - Returns a list of unique table names found in the query
   - Used for validating query access before execution
+
+#### Custom Schema Mode:
+
+When initializing the database connection, the DatabaseManager now:
+
+1. Loads table names and schema from `db_schema_config.json`
+2. Generates formatted table information using `generate_custom_table_info()`
+3. Passes this to SQLDatabase via the `custom_table_info` parameter
+4. Sets `sample_rows_in_table_info=0` to prevent reading actual table data
+5. The agent sees ONLY what's defined in the JSON file - no actual database metadata
 
 ### 2. Tools Manager Enhancements ([tools_manager.py](../services/tools_manager.py))
 
@@ -70,20 +92,36 @@ Tables are configured in [db_schema_config.json](../db_schema_config.json):
 
 ```json
 {
-  "dbo.users": { ... },
+  "dbo.users": {
+    "description": "Contains user account information and registration details",
+    "columns": {
+      "id": "Primary key, unique user identifier",
+      "name": "Full name of the user",
+      "email": "Email address for login and communication",
+      "created_at": "Registration date and time"
+    },
+    "foreign_keys": []
+  },
   "dbo.orders": { ... },
   "dbo.products": { ... }
 }
 ```
 
-The keys of this JSON file determine which tables the agent can access. Any tables not listed here will be inaccessible to the agent.
+**Key Points:**
+
+- The **keys** of this JSON file determine which tables the agent can access
+- Any tables not listed here will be completely invisible to the agent
+- The agent receives ONLY the information defined in the JSON - it never reads actual table metadata
+- This provides fine-grained control over what the agent knows about your database structure
 
 ## Security Benefits
 
-1. **Prevents Information Disclosure**: Agent cannot discover or access tables outside the allowed list
-2. **Defense in Depth**: Multiple layers of protection (query validation, schema restriction, list filtering)
-3. **Clear Error Messages**: Users understand which tables are allowed when access is denied
-4. **Audit Trail**: All access denials are logged for security monitoring
+1. **Complete Schema Isolation**: Agent never reads actual database metadata - it only knows what you tell it in the JSON config
+2. **Prevents Information Disclosure**: Agent cannot discover or access tables outside the allowed list
+3. **Defense in Depth**: Multiple layers of protection (custom schema mode, query validation, schema restriction, list filtering)
+4. **Clear Error Messages**: Users understand which tables are allowed when access is denied
+5. **Audit Trail**: All access denials are logged for security monitoring
+6. **Privacy Protection**: Actual table structures, column types, and sample data remain completely hidden from the agent
 
 ## Example Scenarios
 
