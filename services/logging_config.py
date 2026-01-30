@@ -9,7 +9,7 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-def setup_logging():
+def setup_logging() -> None:
     """Configure colorful logging for the application."""
     # Create console handler with colors
     console_handler = colorlog.StreamHandler()

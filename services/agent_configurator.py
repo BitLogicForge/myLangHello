@@ -43,7 +43,6 @@ class AgentConfigurator:
         self.tools = ToolsManager().get_tools()
 
         logger.info("Building system prompt...")
-
         self.system_prompt = PromptBuilder().system_prompt
 
         self.setup_agent_factory()
@@ -52,7 +51,7 @@ class AgentConfigurator:
         if self.agent_factory is None:
             raise RuntimeError("Agent factory creation failed")
 
-        agent_executor = self.agent_factory.create_executor()
+        agent_executor = self.agent_factory.create_agent()
         logger.info("✅ Agent built successfully")
         return agent_executor
 
