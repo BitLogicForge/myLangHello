@@ -125,14 +125,13 @@ class DatabaseManager:
 
                 # Now create the real connection with custom schema
                 # custom_table_info defines available objects, no need for include_tables
-                # Pass empty metadata or schema to prevent reflection attempts
+                # Pass empty include_tables to prevent automatic discovery
                 db = SQLDatabase.from_uri(
                     self.db_uri,
+                    include_tables=[],  # Empty list prevents automatic discovery
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
-                    view_support=self.view_support,
                     engine_args=engine_args,
-                    schema=None,  # Prevent schema reflection
                 )
             elif self.include_tables:
                 # Use config tables directly without discovery
@@ -141,13 +140,13 @@ class DatabaseManager:
                 logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
 
                 # custom_table_info defines available objects, no need for include_tables
+                # Pass empty include_tables list to prevent any table discovery
                 db = SQLDatabase.from_uri(
                     self.db_uri,
+                    include_tables=[],  # Empty list prevents automatic discovery
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
-                    view_support=self.view_support,
                     engine_args=engine_args,
-                    schema=None,  # Prevent schema reflection
                 )
             else:
                 # No filtering requested - use all tables from custom schema
@@ -156,11 +155,10 @@ class DatabaseManager:
 
                 db = SQLDatabase.from_uri(
                     self.db_uri,
+                    include_tables=[],  # Empty list prevents automatic discovery
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
-                    view_support=self.view_support,
                     engine_args=engine_args,
-                    schema=None,  # Prevent schema reflection
                 )
 
             # Skip metadata query when using custom schema to avoid slow reflection
