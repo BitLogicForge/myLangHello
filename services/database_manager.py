@@ -62,13 +62,65 @@ class DatabaseManager:
                 "pool_pre_ping": True,  # Verify connections before using
             }
 
-            db = SQLDatabase.from_uri(
-                self.db_uri,
-                include_tables=self.include_tables,
-                sample_rows_in_table_info=self.sample_rows,
-                engine_args=engine_args,
-            )
-            logger.info(f"Database connection initialized with pool_size={self.pool_size}")
+            # For MS SQL Server, let SQLAlchemy discover tables first, then filter
+            # This avoids table name format mismatches
+            if self.include_tables:
+                logger.info(f"Requested tables from config: {self.include_tables}")
+
+                # First, connect without filter to discover actual table names
+                db_temp = SQLDatabase.from_uri(
+                    self.db_uri,
+                    sample_rows_in_table_info=0,  # Don't load samples yet
+                    engine_args=engine_args,
+                )
+                all_tables = db_temp.get_usable_table_names()
+                logger.info(f"All available tables in database: {all_tables}")
+
+                # Match requested tables (case-insensitive, with/without schema)
+                matched_tables = []
+                for requested in self.include_tables:
+                    # Try exact match first
+                    if requested in all_tables:
+                        matched_tables.append(requested)
+                        continue
+
+                    # Try matching just the table name (ignore schema)
+                    requested_name = requested.split(".")[-1]  # Get 'users' from 'dbo.users'
+                    for actual in all_tables:
+                        actual_name = actual.split(".")[-1]
+                        if requested_name.lower() == actual_name.lower():
+                            matched_tables.append(actual)
+                            logger.info(f"Matched '{requested}' to '{actual}'")
+                            break
+
+                if not matched_tables:
+                    logger.warning(
+                        f"No tables matched! Requested: {self.include_tables}, "
+                        f"Available: {all_tables}"
+                    )
+                    # Fall back to all tables rather than failing
+                    matched_tables = all_tables
+
+                logger.info(f"Using tables: {matched_tables}")
+
+                # Now create the real connection with matched table names
+                db = SQLDatabase.from_uri(
+                    self.db_uri,
+                    include_tables=matched_tables,
+                    sample_rows_in_table_info=self.sample_rows,
+                    engine_args=engine_args,
+                )
+            else:
+                # No filtering requested
+                db = SQLDatabase.from_uri(
+                    self.db_uri,
+                    sample_rows_in_table_info=self.sample_rows,
+                    engine_args=engine_args,
+                )
+
+            actual_tables = db.get_usable_table_names()
+            logger.info(f"Database initialized with {len(actual_tables)} tables: {actual_tables}")
+
             return db
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")

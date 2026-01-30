@@ -1,5 +1,5 @@
 {
-  "users": {
+  "dbo.users": {
     "description": "Contains user account information and registration details",
     "columns": {
       "id": "Primary key, unique user identifier",
@@ -9,7 +9,7 @@
     },
     "foreign_keys": []
   },
-  "orders": {
+  "dbo.orders": {
     "description": "Contains order transactions and purchase history",
     "columns": {
       "id": "Primary key, unique order identifier",
@@ -22,15 +22,15 @@
     "foreign_keys": [
       {
         "column": "user_id",
-        "foreign_column": "users.id"
+        "foreign_column": "dbo.users.id"
       },
       {
         "column": "product_id",
-        "foreign_column": "products.id"
+        "foreign_column": "dbo.products.id"
       }
     ]
   },
-  "products": {
+  "dbo.products": {
     "description": "Contains product catalog with inventory information",
     "columns": {
       "id": "Primary key, unique product identifier",

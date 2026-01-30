@@ -89,15 +89,35 @@ class ToolsManager:
         sql_tools = sql_toolkit.get_tools()
         logger.debug(f"SQL toolkit created with {len(sql_tools)} tools")
 
-        # Replace SQL query tool with limited version
+        # Replace SQL query tool with limited version AND add read-only protection
         modified_tools: list = []
         for tool in sql_tools:
             if tool.name == "sql_db_query":
-                # Create a wrapper with output limiting
+                # Create a wrapper with output limiting AND read-only enforcement
                 output_limit = self.output_limit
                 original_tool = tool
 
                 def limited_query_func(query: str) -> str:
+                    # Block DDL/DML commands
+                    query_upper = query.strip().upper()
+                    dangerous_keywords = [
+                        "CREATE",
+                        "DROP",
+                        "INSERT",
+                        "UPDATE",
+                        "DELETE",
+                        "ALTER",
+                        "TRUNCATE",
+                    ]
+
+                    for keyword in dangerous_keywords:
+                        if query_upper.startswith(keyword):
+                            logger.warning(f"Blocked dangerous SQL command: {keyword}")
+                            return (
+                                f"Error: {keyword} commands are not allowed. "
+                                "Only SELECT queries permitted."
+                            )
+
                     result = original_tool.invoke(query)
                     if len(str(result)) > output_limit:
                         truncated = f"\n... (output truncated at {output_limit//1000}K chars)"
@@ -108,9 +128,12 @@ class ToolsManager:
                 limited_tool = StructuredTool.from_function(
                     func=limited_query_func,
                     name=tool.name,
-                    description=tool.description,
+                    description=tool.description + " (Read-only: SELECT queries only)",
                 )
-                logger.debug(f"SQL query tool wrapped with {output_limit} char limit")
+                logger.debug(
+                    f"SQL query tool wrapped with {output_limit} char limit "
+                    "and read-only protection"
+                )
                 modified_tools.append(limited_tool)
             else:
                 modified_tools.append(tool)
