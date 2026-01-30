@@ -79,6 +79,7 @@ class DatabaseManager:
                 db_temp = SQLDatabase.from_uri(
                     self.db_uri,
                     sample_rows_in_table_info=0,  # Don't load samples yet
+                    view_support=True,
                     engine_args=engine_args,
                 )
                 all_tables = db_temp.get_usable_table_names()
@@ -122,6 +123,7 @@ class DatabaseManager:
                     include_tables=matched_tables,
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
+                    view_support=True,
                     engine_args=engine_args,
                 )
             elif self.include_tables:
@@ -135,6 +137,7 @@ class DatabaseManager:
                     include_tables=self.include_tables,
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
+                    view_support=True,
                     engine_args=engine_args,
                 )
             else:
@@ -146,6 +149,7 @@ class DatabaseManager:
                     self.db_uri,
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
+                    view_support=True,
                     engine_args=engine_args,
                 )
 
