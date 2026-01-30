@@ -125,12 +125,14 @@ class DatabaseManager:
 
                 # Now create the real connection with custom schema
                 # custom_table_info defines available objects, no need for include_tables
+                # Pass empty metadata or schema to prevent reflection attempts
                 db = SQLDatabase.from_uri(
                     self.db_uri,
                     sample_rows_in_table_info=0,
                     custom_table_info=custom_table_info,
                     view_support=self.view_support,
                     engine_args=engine_args,
+                    schema=None,  # Prevent schema reflection
                 )
             elif self.include_tables:
                 # Use config tables directly without discovery
@@ -145,6 +147,7 @@ class DatabaseManager:
                     custom_table_info=custom_table_info,
                     view_support=self.view_support,
                     engine_args=engine_args,
+                    schema=None,  # Prevent schema reflection
                 )
             else:
                 # No filtering requested - use all tables from custom schema
@@ -157,6 +160,7 @@ class DatabaseManager:
                     custom_table_info=custom_table_info,  # Use our custom schema
                     view_support=self.view_support,
                     engine_args=engine_args,
+                    schema=None,  # Prevent schema reflection
                 )
 
             actual_tables = list(db.get_usable_table_names())
