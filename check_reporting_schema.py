@@ -7,6 +7,10 @@ import os
 import sys
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def check_reporting_schema():
@@ -23,30 +27,22 @@ def check_reporting_schema():
     db_uri = os.getenv("DATABASE_URI")
 
     if not db_uri:
-        if not all([db_host, db_name]):
+        if not all([db_host, db_name, db_user, db_password]):
             print("ERROR: Missing required environment variables!")
-            print("Required: DB_HOST, DB_NAME")
-            print("Optional: DB_USER, DB_PASSWORD, DB_DRIVER")
+            print("Required: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD")
+            print("Optional: DB_DRIVER, DATABASE_URI")
             sys.exit(1)
 
-        # Build connection string
-        if db_user and db_password:
-            # SQL Authentication
-            conn_str = (
-                f"mssql+pyodbc://{quote_plus(db_user)}:{quote_plus(db_password)}@"
-                f"{db_host}/{db_name}?driver={quote_plus(db_driver)}"
-            )
-        else:
-            # Windows Authentication
-            conn_str = (
-                f"mssql+pyodbc://{db_host}/{db_name}"
-                f"?driver={quote_plus(db_driver)}&trusted_connection=yes"
-            )
+        # Build connection string with SQL Authentication
+        conn_str = (
+            f"mssql+pyodbc://{quote_plus(db_user)}:{quote_plus(db_password)}@"
+            f"{db_host}/{db_name}?driver={quote_plus(db_driver)}"
+        )
     else:
         conn_str = db_uri
 
     print(f"Connecting to: {db_host}/{db_name}")
-    print(f"User: {db_user or 'Windows Auth'}")
+    print(f"User: {db_user}")
     print("-" * 60)
 
     try:
