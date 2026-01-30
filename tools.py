@@ -4,7 +4,6 @@ from langchain_core.tools import tool
 from dotenv import load_dotenv
 import os
 import requests
-import platform
 import random
 import ast
 import operator
@@ -12,6 +11,7 @@ import operator
 load_dotenv()
 
 
+# MARK: calculator tool
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a math expression safely and return the result as a string.
@@ -54,6 +54,7 @@ def calculator(expression: str) -> str:
         return f"Error: {e}"
 
 
+# MARK: weather tool
 @tool
 def weather(city: str) -> str:
     """Return a fake weather report for the given city."""
@@ -63,6 +64,7 @@ def weather(city: str) -> str:
     return f"The weather in {city} is {condition} and {temp_c}°C."
 
 
+# MARK: read file tools
 @tool
 def read_file(path: str) -> str:
     """Read a file and return its contents or an error message."""
@@ -75,13 +77,11 @@ def read_file(path: str) -> str:
         return f"Error reading file: {e}"
 
 
+# MARK: write file tool
 @tool
-def write_file(spec: str) -> str:
-    """Write content to a file. Spec: first line is path, rest is content."""
+def write_file(path: str, content: str) -> str:
+    """Write content to a file. Return success or error message."""
     try:
-        if "\n" not in spec:
-            return "Error: write spec must include a path line, then a newline, then content"
-        path, content = spec.split("\n", 1)
         dirpath = os.path.dirname(path)
         if dirpath and not os.path.exists(dirpath):
             os.makedirs(dirpath, exist_ok=True)
@@ -92,6 +92,7 @@ def write_file(spec: str) -> str:
         return f"Error writing file: {e}"
 
 
+# MARK: current date/time tool
 @tool
 def current_date(with_date: bool = True, with_time: bool = False) -> str:
     """Return the current date and/or time as a string.
@@ -116,6 +117,7 @@ def current_date(with_date: bool = True, with_time: bool = False) -> str:
         return now.strftime("%Y-%m-%d")  # Default to date if both are False
 
 
+# MARK: http get tool
 @tool
 def http_get(url: str) -> str:
     """Perform an HTTP GET and return a short summary/result."""
@@ -131,24 +133,7 @@ def http_get(url: str) -> str:
         return f"HTTP GET error: {e}"
 
 
-@tool
-def list_dir(path: str = ".") -> str:
-    """List files in a directory and return a newline-separated listing."""
-    try:
-        if not os.path.exists(path):
-            return f"Error: path not found: {path}"
-        items = os.listdir(path)
-        return "\n".join(items)
-    except Exception as e:
-        return f"Error listing directory: {e}"
-
-
-@tool
-def system_info(query: str = "") -> str:
-    """Return basic system information. The query parameter is ignored."""
-    return f"{platform.system()} {platform.release()} ({platform.machine()})"
-
-
+# MARK: random joke tool
 @tool
 def random_joke(query: str = "") -> str:
     """Return a small, harmless random joke. The query parameter is ignored."""
@@ -166,6 +151,7 @@ def random_joke(query: str = "") -> str:
     return random.choice(jokes)
 
 
+# MARK: joke formatting tool
 @tool
 def joke_format(joke: str) -> str:
     """Format a joke with decorative borders for better presentation.
@@ -187,9 +173,10 @@ Best joke for you:
 """
 
 
+# MARK: loan calculator tool
 @tool
 def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
-    """Calculate loan payments given principal, annual rate, and term in years."""
+    """Calculate loan payments given principal in USD, annual rate, and term in years."""
     try:
         if principal <= 0 or annual_rate < 0 or years <= 0:
             return "Error: Principal and years must be positive, rate must be non-negative"
@@ -230,6 +217,7 @@ Interest Percentage: {(total_interest/principal)*100:.2f}% of principal
         return f"Error calculating loan: {e}"
 
 
+# MARK: currency converter tool
 @tool
 def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
     """Convert amount from one currency to another using simulated exchange rates."""
