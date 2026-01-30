@@ -124,6 +124,9 @@ class LLMFactory:
         # Remove 'model' from config as Azure uses deployment_name instead
         config.pop("model", None)
 
+        # Remove parallel_tool_calls - not a valid parameter for AzureChatOpenAI
+        config.pop("parallel_tool_calls", None)
+
         if not api_key:
             logger.warning("AZURE_OPENAI_API_KEY not found in environment or config")
 
@@ -166,6 +169,9 @@ class LLMFactory:
         api_key = config.pop("api_key", None) or os.getenv("OPENAI_API_KEY")
         organization = config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
         base_url = config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
+
+        # Remove parallel_tool_calls - not a valid parameter for ChatOpenAI
+        config.pop("parallel_tool_calls", None)
 
         if not api_key:
             logger.warning("OPENAI_API_KEY not found in environment or config")
