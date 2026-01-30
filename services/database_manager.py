@@ -356,6 +356,9 @@ class DatabaseManager:
         This creates a formatted dictionary that SQLDatabase can use instead of
         reading actual table metadata from the database.
 
+        For SQL Server schema-qualified names (e.g., REPORTING.orders),
+        we need to handle them properly for SQLAlchemy.
+
         Returns:
             Dictionary mapping table names to formatted schema information
         """
@@ -384,6 +387,16 @@ class DatabaseManager:
                 info_parts.append("\nForeign Keys:")
                 info_parts.extend(fk_text)
 
-            custom_table_info[table_name] = "\n".join(info_parts)
+            schema_info = "\n".join(info_parts)
+
+            # For schema-qualified names, add entries for both formats
+            # SQLAlchemy might expect either "schema.table" or just "table"
+            custom_table_info[table_name] = schema_info
+
+            # If table name contains schema, also add without schema
+            if "." in table_name:
+                table_only = table_name.split(".", 1)[1]
+                custom_table_info[table_only] = schema_info
+                logger.debug(f"Added custom table info for both '{table_name}' and '{table_only}'")
 
         return custom_table_info
