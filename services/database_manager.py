@@ -21,6 +21,7 @@ class DatabaseManager:
         max_overflow: int = 10,
         pool_recycle: int = 3600,
         lazy_init: bool = False,
+        discover_tables: bool = False,
     ):
         """
         Initialize the database manager with connection pooling.
@@ -33,6 +34,7 @@ class DatabaseManager:
             max_overflow: Max connections to create beyond pool_size (default: 10)
             pool_recycle: Recycle connections after N seconds (default: 3600)
             lazy_init: If True, delay connection until first use (default: False)
+            discover_tables: If True, discover all DB tables for matching (default: False)
         """
         self.db_uri = db_uri
         self.schema_path = schema_path
@@ -40,6 +42,7 @@ class DatabaseManager:
         self.pool_size = pool_size
         self.max_overflow = max_overflow
         self.pool_recycle = pool_recycle
+        self.discover_tables = discover_tables
         self._db: Optional[SQLDatabase] = None
 
         # Load schema config to get table names
@@ -69,7 +72,7 @@ class DatabaseManager:
 
             # For MS SQL Server, let SQLAlchemy discover tables first, then filter
             # This avoids table name format mismatches
-            if self.include_tables:
+            if self.include_tables and self.discover_tables:
                 logger.info(f"Requested tables from config: {self.include_tables}")
 
                 # First, connect without filter to discover actual table names
@@ -119,6 +122,19 @@ class DatabaseManager:
                     include_tables=matched_tables,
                     sample_rows_in_table_info=0,  # Set to 0 since we use custom info
                     custom_table_info=custom_table_info,  # Use our custom schema
+                    engine_args=engine_args,
+                )
+            elif self.include_tables:
+                # Use config tables directly without discovery
+                logger.info(f"Using tables from config (no discovery): {self.include_tables}")
+                custom_table_info = self.generate_custom_table_info()
+                logger.info(f"Using custom schema info for {len(custom_table_info)} tables")
+
+                db = SQLDatabase.from_uri(
+                    self.db_uri,
+                    include_tables=self.include_tables,
+                    sample_rows_in_table_info=0,
+                    custom_table_info=custom_table_info,
                     engine_args=engine_args,
                 )
             else:
