@@ -185,26 +185,23 @@ class ToolsManager:
                 modified_tools.append(restricted_tool)
 
             elif tool.name == "sql_db_list_tables":
-                # Wrap list tables tool to only show allowed tables
+                # Replace list tables tool to only show allowed tables without DB query
                 db_manager = self.db_manager
 
                 def restricted_list_func(tool_input: str = "") -> str:
                     if db_manager and db_manager.include_tables:
                         allowed = ", ".join(db_manager.include_tables)
-                        return f"Allowed tables (restricted by configuration): {allowed}"
+                        return f"Available tables: {allowed}"
                     else:
-                        # If no restrictions, use original functionality
-                        return original_tool.invoke(tool_input)
+                        # If no restrictions, return empty to avoid DB query
+                        return "No tables configured"
 
-                original_tool = tool
                 restricted_tool = StructuredTool.from_function(
                     func=restricted_list_func,
                     name=tool.name,
-                    description=(
-                        "List available database tables " "(restricted to allowed tables only)"
-                    ),
+                    description="List available database tables from configuration",
                 )
-                logger.debug("SQL list tables tool wrapped with table access control")
+                logger.debug("SQL list tables tool replaced with config-based version")
                 modified_tools.append(restricted_tool)
 
             else:
