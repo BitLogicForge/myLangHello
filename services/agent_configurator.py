@@ -184,6 +184,7 @@ class AgentConfigurator:
             llm=self.llm,
             output_limit=self.output_limit,
             enable_sql_tool=self.enable_sql_tool,
+            db_manager=self.db_manager,
         )
         return self.tools_manager
 

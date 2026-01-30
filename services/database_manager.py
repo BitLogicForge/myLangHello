@@ -197,6 +197,92 @@ class DatabaseManager:
             logger.error(f"Failed to validate tables: {e}")
             return []
 
+    def is_table_allowed(self, table_name: str) -> bool:
+        """
+        Check if a table is in the allowed include_tables list.
+
+        Performs case-insensitive matching and supports both fully-qualified
+        table names (e.g., 'dbo.users') and simple names (e.g., 'users').
+
+        Args:
+            table_name: Table name to check
+
+        Returns:
+            True if table is allowed, False otherwise
+        """
+        if not self.include_tables:
+            # If no restrictions, allow all tables
+            return True
+
+        # Normalize the input table name
+        normalized_input = table_name.lower().strip()
+        input_simple = normalized_input.split(".")[-1]  # Get just 'users' from 'dbo.users'
+
+        for allowed_table in self.include_tables:
+            normalized_allowed = allowed_table.lower().strip()
+            allowed_simple = normalized_allowed.split(".")[-1]
+
+            # Match either full name or simple name
+            if normalized_input == normalized_allowed or input_simple == allowed_simple:
+                return True
+
+        return False
+
+    def validate_table_access(self, table_name: str) -> None:
+        """
+        Validate that a table is in the allowed include_tables list.
+
+        Args:
+            table_name: Table name to validate
+
+        Raises:
+            ValueError: If table is not in the allowed list
+        """
+        if not self.is_table_allowed(table_name):
+            allowed_str = ", ".join(self.include_tables)
+            raise ValueError(
+                f"Access denied: Table '{table_name}' is not in the allowed tables list. "
+                f"Allowed tables: [{allowed_str}]"
+            )
+
+    def _extract_table_names_from_query(self, query: str) -> list[str]:
+        """
+        Extract table names from a SQL query.
+
+        This is a basic implementation that looks for common SQL patterns.
+        It may not catch all edge cases but provides reasonable protection.
+
+        Args:
+            query: SQL query string
+
+        Returns:
+            List of table names found in the query
+        """
+        import re
+
+        # Normalize query
+        query_upper = query.upper()
+
+        # Pattern to find table names after FROM and JOIN keywords
+        # Matches: FROM table_name, JOIN schema.table_name, etc.
+        patterns = [
+            r"\bFROM\s+([\w.]+)",
+            r"\bJOIN\s+([\w.]+)",
+            r"\bINTO\s+([\w.]+)",
+            r"\bUPDATE\s+([\w.]+)",
+        ]
+
+        tables = set()
+        for pattern in patterns:
+            matches = re.finditer(pattern, query_upper)
+            for match in matches:
+                table_name = match.group(1).strip()
+                # Remove common SQL keywords that might be captured
+                if table_name not in ["SELECT", "WHERE", "GROUP", "ORDER", "HAVING"]:
+                    tables.add(table_name)
+
+        return list(tables)
+
     @staticmethod
     def load_custom_schema(schema_path: str = "db_schema_config.json") -> dict:
         """
