@@ -6,7 +6,8 @@ Database Schema Context:
 When querying the database:
 - Always check the schema first if unsure about table structure
 - Use proper SQL syntax for Microsoft SQL Server (T-SQL)
-- Use TOP instead of LIMIT for row limiting (e.g., SELECT TOP 100 * FROM table)
+- ALWAYS use fully-qualified table names with schema prefix (e.g., REPORTING.orders, not just orders)
+- Use TOP instead of LIMIT for row limiting (e.g., SELECT TOP 100 * FROM REPORTING.orders)
 - Use single quotes for string literals, not double quotes
 - Be careful with date formats (use YYYY-MM-DD format or CONVERT function)
 - For string concatenation, use + operator or CONCAT function
