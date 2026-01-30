@@ -82,6 +82,7 @@ def main() -> None:
     # Example question
     question = (
         "tell me weather in poznan today, and what date is today, and weather in london"
+        # "write it to file weather.txt"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         # "tell me a joke, and format it"
