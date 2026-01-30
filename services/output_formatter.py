@@ -2,6 +2,9 @@
 
 import time
 from typing import Dict, Any, List, Callable
+from colorama import Fore, Style, init as colorama_init
+
+colorama_init(autoreset=True)
 
 
 class StreamingOutputFormatter:
@@ -9,45 +12,45 @@ class StreamingOutputFormatter:
 
     @staticmethod
     def print_header() -> None:
-        """Print execution trace header."""
-        print("\n" + "=" * 80)
-        print("AGENT EXECUTION TRACE (STREAMING)")
-        print("=" * 80)
+        """Print execution trace header with color."""
+        print("\n" + Fore.CYAN + Style.BRIGHT + "=" * 80)
+        print(Fore.YELLOW + Style.BRIGHT + "AGENT EXECUTION TRACE (STREAMING)")
+        print(Fore.CYAN + Style.BRIGHT + "=" * 80)
 
     @staticmethod
     def print_footer() -> None:
-        """Print execution completion footer."""
-        print("\n" + "=" * 80)
-        print("EXECUTION COMPLETE")
-        print("=" * 80)
+        """Print execution completion footer with color."""
+        print("\n" + Fore.CYAN + Style.BRIGHT + "=" * 80)
+        print(Fore.GREEN + Style.BRIGHT + "EXECUTION COMPLETE")
+        print(Fore.CYAN + Style.BRIGHT + "=" * 80)
 
     @staticmethod
     def _format_human_message(msg: Any) -> List[str]:
-        """Format human/user message."""
-        return [f"👤 User: {msg.content}"]
+        """Format human/user message with color."""
+        return [Fore.BLUE + Style.BRIGHT + f"👤 User: {msg.content}"]
 
     @staticmethod
     def _format_ai_message(msg: Any, tool_timings: Dict[str, float]) -> List[str]:
-        """Format AI message with optional tool calls."""
+        """Format AI message with optional tool calls and color."""
         lines = []
 
         if msg.content:
-            lines.append(f"🤖 AI: {msg.content}")
+            lines.append(Fore.MAGENTA + Style.BRIGHT + f"🤖 AI: {msg.content}")
 
         # Handle tool calls
         if hasattr(msg, "tool_calls") and msg.tool_calls:
             for tool_call in msg.tool_calls:
                 tool_call_id = tool_call.get("id", "unknown")
                 tool_name = tool_call.get("name", "unknown")
-                lines.append(f"🔧 Calling Tool: {tool_name}")
-                lines.append(f"   Args: {tool_call.get('args', {})}")
+                lines.append(Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}")
+                lines.append(Fore.YELLOW + f"   Args: {tool_call.get('args', {})}")
                 tool_timings[tool_call_id] = time.time()
 
         return lines
 
     @staticmethod
     def _format_tool_message(msg: Any, tool_timings: Dict[str, float]) -> List[str]:
-        """Format tool result message."""
+        """Format tool result message with color."""
         tool_name = getattr(msg, "name", "unknown")
         tool_call_id = getattr(msg, "tool_call_id", None)
 
@@ -61,13 +64,16 @@ class StreamingOutputFormatter:
         if len(content) > 500:
             content = f"{content[:500]}... (truncated)"
 
-        return [f"⚙️  Tool Result ({tool_name}){exec_time_str}:", f"   {content}"]
+        return [
+            Fore.WHITE + Style.BRIGHT + f"⚙️  Tool Result ({tool_name}){exec_time_str}:",
+            Fore.WHITE + f"   {content}",
+        ]
 
     @staticmethod
     def _format_default_message(msg: Any) -> List[str]:
-        """Format unknown message type."""
+        """Format unknown message type with color."""
         content = msg.content if hasattr(msg, "content") else str(msg)
-        return [f"💬 {content}"]
+        return [Fore.WHITE + Style.DIM + f"💬 {content}"]
 
     @classmethod
     def print_event(cls, event: dict, step_count: int, tool_timings: Dict[str, float]) -> None:
@@ -91,7 +97,7 @@ class StreamingOutputFormatter:
         }
 
         for node_name, node_data in event.items():
-            print(f"\n--- Step {step_count}: {node_name} ---")
+            print(Fore.CYAN + Style.BRIGHT + f"\n--- Step {step_count}: {node_name} ---")
 
             if "messages" not in node_data:
                 continue
