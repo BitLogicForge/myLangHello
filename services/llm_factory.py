@@ -1,11 +1,12 @@
 """LLM Factory - Creates LLM instances based on configuration."""
 
-import os
 import json
 import logging
 from typing import Optional, Any
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_core.language_models.chat_models import BaseChatModel
+
+from .llm_provider_azure import AzureLLMProvider
+from .llm_provider_openai import OpenAILLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +30,6 @@ class LLMFactory:
                 config = json.load(f)
             logger.info(f"Loaded LLM configuration from {config_path}")
             return config
-        except FileNotFoundError:
-            logger.warning(f"Config file {config_path} not found, using defaults")
-            return {
-                "provider": "azure",
-                "azure": {"model": "gpt-4", "temperature": 0.7},
-                "openai": {"model": "gpt-4", "temperature": 0.7},
-                "common_params": {},
-            }
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing config file: {e}")
             raise
@@ -90,108 +83,11 @@ class LLMFactory:
 
         # Create the appropriate LLM
         if selected_provider == "azure":
-            return LLMFactory._create_azure_llm(provider_config)
+            return AzureLLMProvider.create(provider_config)
         elif selected_provider == "openai":
-            return LLMFactory._create_openai_llm(provider_config)
+            return OpenAILLMProvider.create(provider_config)
         else:
             raise ValueError(f"Unsupported provider: {selected_provider}")
-
-    @staticmethod
-    def _create_azure_llm(config: dict) -> AzureChatOpenAI:
-        """
-        Create an Azure OpenAI LLM instance.
-
-        Args:
-            config: Configuration dictionary
-
-        Returns:
-            AzureChatOpenAI instance
-        """
-        # Get API key and endpoint from environment if not in config
-        api_key = config.pop("api_key", None) or os.getenv("AZURE_OPENAI_API_KEY")
-        azure_endpoint = config.pop("azure_endpoint", None) or os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_version = config.get("api_version", None) or os.getenv(
-            "AZURE_OPENAI_API_VERSION", "2024-02-15-preview"
-        )
-
-        # Get deployment name (REQUIRED for Azure)
-        deployment_name = (
-            config.pop("deployment_name", None)
-            or config.pop("azure_deployment", None)
-            or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-        )
-
-        # Remove 'model' from config as Azure uses deployment_name instead
-        config.pop("model", None)
-
-        # Remove parallel_tool_calls - not a valid parameter for AzureChatOpenAI
-        config.pop("parallel_tool_calls", None)
-
-        if not api_key:
-            logger.warning("AZURE_OPENAI_API_KEY not found in environment or config")
-
-        if not azure_endpoint:
-            logger.warning("AZURE_OPENAI_ENDPOINT not found in environment or config")
-
-        if not deployment_name:
-            logger.error("AZURE_OPENAI_DEPLOYMENT_NAME is required but not found!")
-            raise ValueError(
-                "Azure OpenAI requires deployment_name. "
-                "Set it in config or AZURE_OPENAI_DEPLOYMENT_NAME environment variable"
-            )
-
-        # Build parameters
-        params = {
-            "api_key": api_key,
-            "azure_endpoint": azure_endpoint,
-            "api_version": api_version,
-            "deployment_name": deployment_name,
-            **config,
-        }
-
-        logger.info(f"Creating AzureChatOpenAI with deployment: {deployment_name}")
-        logger.debug(f"Azure parameters: {list(params.keys())}")
-
-        return AzureChatOpenAI(**params)
-
-    @staticmethod
-    def _create_openai_llm(config: dict) -> ChatOpenAI:
-        """
-        Create an OpenAI LLM instance.
-
-        Args:
-            config: Configuration dictionary
-
-        Returns:
-            ChatOpenAI instance
-        """
-        # Get API key and organization from environment if not in config
-        api_key = config.pop("api_key", None) or os.getenv("OPENAI_API_KEY")
-        organization = config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
-        base_url = config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
-
-        # Remove parallel_tool_calls - not a valid parameter for ChatOpenAI
-        config.pop("parallel_tool_calls", None)
-
-        if not api_key:
-            logger.warning("OPENAI_API_KEY not found in environment or config")
-
-        # Build parameters
-        params = {
-            "api_key": api_key,
-            **config,
-        }
-
-        if organization:
-            params["organization"] = organization
-
-        if base_url:
-            params["base_url"] = base_url
-
-        logger.info(f"Creating ChatOpenAI with model: {params.get('model', 'default')}")
-        logger.debug(f"OpenAI parameters: {list(params.keys())}")
-
-        return ChatOpenAI(**params)
 
     @staticmethod
     def get_available_providers() -> list[str]:
