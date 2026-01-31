@@ -1,11 +1,12 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from dotenv import load_dotenv
 
 from services import AgentConfigurator, StreamingOutputFormatter
+from services.agent_utils import prepare_messages_with_history
 from services.logging_config import setup_logging
 
 # Load environment variables
@@ -45,12 +46,12 @@ class AgentApp:
         logger.info("Running agent with question...")
         logger.debug(f"Question: {question[:100]}...")
 
-        # Build messages with history
-        messages: List[Tuple[str, str]] = []
+        # Prepare messages using shared utility
+        messages = prepare_messages_with_history(question, history)
         if history:
-            messages.extend(history)
-            logger.info(f"Including {len(history)} history messages")
-        messages.append(("user", question))
+            logger.info(f"Including {len(history)} history messages + current question")
+
+        agent_input: dict[str, Any] = {"messages": messages}
 
         try:
             self.output_formatter.print_header()
@@ -61,7 +62,7 @@ class AgentApp:
             tool_timings: dict[str, float] = {}
 
             for event in self.agent_executor.stream(
-                {"messages": messages}, config={"recursion_limit": 15}  # type: ignore
+                agent_input, config={"recursion_limit": 15}  # type: ignore
             ):
                 step_count += 1
                 self.output_formatter.print_event(event, step_count, tool_timings)
@@ -83,6 +84,8 @@ def main() -> None:
     # Example question
     question = (
         "tell me weather in poznan today, and what date is today, and weather in london"
+        # "list first 5 countries on letter B and their codes from db"
+        # "then check weather for each country treating them as city"
         # "write it to file weather.txt"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"

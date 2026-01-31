@@ -52,7 +52,7 @@ class AgentConfigurator:
         if self.agent_factory is None:
             raise RuntimeError("Agent factory creation failed")
 
-        agent_executor = self.agent_factory.create_agent()
+        agent_executor = self.agent_factory.create_db_agent()
         logger.info("✅ Agent built successfully")
         return agent_executor
 

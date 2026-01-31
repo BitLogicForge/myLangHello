@@ -1,12 +1,20 @@
 """Agent Factory - Creates and configures the agent using LangGraph."""
 
 import logging
+import os
 from typing import Any, Optional
 
+from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.language_models.chat_models import BaseChatModel
 
 logger = logging.getLogger(__name__)
+
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class AgentFactory:
@@ -52,4 +60,51 @@ class AgentFactory:
             system_prompt=self.system_prompt,
             checkpointer=self.checkpointer,
         )
+        return agent
+
+    def create_db_agent(self):
+        """
+        Create a LangGraph agent with a toolkit.
+
+        Returns:
+            LangGraph agent graph that can be invoked
+        """
+        logger.debug("Creating LangGraph toolkit agent...")
+
+        # agent = create_agent(
+        #     model=self.llm,
+        #     tools=toolkit.get_tools(),
+        #     system_prompt=self.system_prompt,
+        #     checkpointer=self.checkpointer,
+        #     verbose=verbose,
+        # )
+
+        db_host = os.getenv("DB_HOST")
+        db_name = os.getenv("DB_NAME")
+        db_user = os.getenv("DB_USERNAME")
+        db_password = os.getenv("DB_PASSWORD")
+        db_driver = os.getenv("DB_DRIVER")
+
+        conn_str = (
+            f"mssql+pyodbc://{db_user}:{db_password}@"
+            f"{db_host}/{db_name}?driver={db_driver}&TrustServerCertificate=yes"
+        )
+
+        # Create SQL toolkit
+        toolkit = SQLDatabaseToolkit(
+            db=SQLDatabase.from_uri(database_uri=conn_str),
+            llm=self.llm,
+        )
+
+        # Combine SQL toolkit tools with custom tools
+        all_tools = toolkit.get_tools() + self.tools
+
+        # Use create_agent to support custom tools
+        agent = create_agent(
+            model=self.llm,
+            tools=all_tools,
+            system_prompt=self.system_prompt,
+            checkpointer=self.checkpointer,
+        )
+
         return agent

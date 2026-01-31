@@ -14,5 +14,3 @@ agent = create_sql_agent(
         llm=ChatOpenAI(model="gpt-4o-mini"),
     ),
 )
-
-agent.invoke({"input": "How many calls happenend?"})

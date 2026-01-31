@@ -22,11 +22,7 @@ def check_reporting_schema():
     db_user = os.getenv("DB_USERNAME")
     db_password = os.getenv("DB_PASSWORD")
     db_driver = os.getenv("DB_DRIVER")
-    print("HOST:", db_host)
-    print("DB NAME:", db_name)
-    print("USER:", db_user)
-    print("PASSWORD:", db_password)
-    print("DRIVER:", db_driver)
+
     if not all([db_host, db_name, db_user, db_password]):
         print("ERROR: Missing required environment variables!")
         print("Required: DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD")

@@ -2,10 +2,12 @@
 
 import logging
 import time
+from typing import Any, Optional
+
 from fastapi import APIRouter, HTTPException
-from typing import Optional, Any
 
 from models.api_models import QueryRequest, QueryResponse
+from services.agent_utils import prepare_messages_with_history
 
 logger = logging.getLogger(__name__)
 
@@ -54,15 +56,14 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         logger.info(f"Processing query (session: {request.session_id})")
         logger.debug(f"Question: {request.question[:100]}...")
 
-        # Prepare messages for LangGraph agent
-        messages = [("user", request.question)]
-
-        # Add history if provided
+        # Convert history to format expected by utility function
+        history_tuples = None
         if request.history:
-            # Prepend history messages
-            history_messages = [(msg.role, msg.content) for msg in request.history]
-            messages = history_messages + messages
+            history_tuples = [(msg.role, msg.content) for msg in request.history]
             logger.debug(f"Included {len(request.history)} history messages")
+
+        # Prepare messages using shared utility
+        messages = prepare_messages_with_history(request.question, history_tuples)
 
         start_time = time.time()
         # LangGraph agents expect messages format
