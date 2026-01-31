@@ -7,7 +7,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, HTTPException
 
 from models.api_models import QueryRequest, QueryResponse
-from services.agent_utils import prepare_messages_with_history
+from utils import prepare_messages_with_history
 
 logger = logging.getLogger(__name__)
 

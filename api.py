@@ -10,8 +10,8 @@ from fastapi.responses import JSONResponse
 
 from main import AgentApp
 from routes import agent_routes, config_routes, health_routes
-from services.logging_config import setup_logging
 from services.telemetry import TelemetryManager, get_telemetry
+from utils import setup_logging
 
 # Configure logging
 setup_logging()

@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Optional
 
-from services.file_utils import read_json_file
+from utils import read_json_file
 
 logger = logging.getLogger(__name__)
 

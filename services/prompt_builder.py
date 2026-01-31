@@ -5,8 +5,7 @@ import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from config import Config
-
-from .file_utils import read_text_file
+from utils import read_text_file
 
 logger = logging.getLogger(__name__)
 

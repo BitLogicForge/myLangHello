@@ -6,8 +6,7 @@ from typing import Any, List, Optional, Tuple
 from dotenv import load_dotenv
 
 from services import AgentConfigurator, StreamingOutputFormatter
-from services.agent_utils import prepare_messages_with_history
-from services.logging_config import setup_logging
+from utils import prepare_messages_with_history, setup_logging
 
 # Load environment variables
 load_dotenv()
