@@ -58,13 +58,12 @@ class AgentApp:
             # Stream the agent execution to see thoughts in real-time
             step_count = 0
             final_response: Optional[dict] = None
-            tool_timings: dict[str, float] = {}
 
             for event in self.agent_executor.stream(
                 agent_input, config={"recursion_limit": 15}  # type: ignore
             ):
                 step_count += 1
-                self.output_formatter.print_event(event, step_count, tool_timings)
+                self.output_formatter.print_event(event, step_count)
                 final_response = event
 
             logger.info("✅ Agent completed successfully")
@@ -91,8 +90,7 @@ def main() -> None:
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         # "tell me 2 jokes, and format it"
         # "check avaiable views in db, plus i want 2 jokes , but funny ones"
-        # "check avaiable views in db"
-        "try to identify what my db relates to, find possible leverage points, and suggest what analysis i can do with it"
+        "check avaiable views in db"
     )
 
     # Optional: Test with conversation history
