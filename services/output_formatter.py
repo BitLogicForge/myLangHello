@@ -63,6 +63,11 @@ class StreamingOutputFormatter:
             exec_time_str = f" ⏱️  {exec_time:.3f}s"
 
         content = str(msg.content)
+
+        # Clean up SQL database errors
+        if tool_name == "sql_db_query" and "Error:" in content:
+            content = StreamingOutputFormatter._clean_sql_error(content)
+
         if len(content) > 500:
             content = f"{content[:500]}... (truncated)"
 
@@ -70,6 +75,32 @@ class StreamingOutputFormatter:
             Fore.WHITE + Style.BRIGHT + f"⚙️  Tool Result ({tool_name}){exec_time_str}:",
             Fore.WHITE + f"   {content}",
         ]
+
+    @staticmethod
+    def _clean_sql_error(error_msg: str) -> str:
+        """Clean up SQL error messages to be more readable."""
+        import re
+
+        # Extract the actual SQL Server error message
+        # Look for pattern: [ErrorCode] [Driver info][Server info]Message. (ErrorNum)
+        match = re.search(r"\[SQL Server\](.*?)\.\s*\(\d+\)", error_msg)
+        if match:
+            clean_error = match.group(1).strip()
+
+            # Extract the SQL query if present
+            sql_match = re.search(r"\[SQL:\s*(.*?)\]", error_msg, re.DOTALL)
+            if sql_match:
+                sql_query = sql_match.group(1).strip()
+                return f"❌ SQL Error: {clean_error}\n   Query: {sql_query}"
+            return f"❌ SQL Error: {clean_error}"
+
+        # Fallback: just remove the background link and technical details
+        error_msg = re.sub(r"\(Background on this error at:.*?\)", "", error_msg)
+        error_msg = re.sub(r"\(pyodbc\.\w+\)", "", error_msg)
+        error_msg = re.sub(r"\('[\w\d]+',\s*", "", error_msg)
+        error_msg = error_msg.replace('"', "'").strip()
+
+        return error_msg
 
     @staticmethod
     def _format_default_message(msg: Any) -> List[str]:
