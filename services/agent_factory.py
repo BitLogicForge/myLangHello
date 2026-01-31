@@ -43,25 +43,6 @@ class AgentFactory:
 
         logger.info(f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent")
 
-    def create_agent(self):
-        """
-        Create a LangGraph ReAct agent.
-
-        Returns:
-            LangGraph agent graph that can be invoked
-        """
-        logger.debug("Creating LangGraph ReAct agent...")
-
-        # Create the ReAct agent with LangGraph
-
-        agent = create_agent(
-            model=self.llm,
-            tools=self.tools,
-            system_prompt=self.system_prompt,
-            checkpointer=self.checkpointer,
-        )
-        return agent
-
     def create_db_agent(self):
         """
         Create a LangGraph agent with a toolkit.
