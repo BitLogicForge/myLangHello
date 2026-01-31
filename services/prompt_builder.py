@@ -13,13 +13,24 @@ logger = logging.getLogger(__name__)
 class PromptBuilder:
     """Builds and configures prompt templates for the agent."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the prompt builder."""
         config = Config()
-        self.system_prompt_path = config.get("system_prompt_path", "messages/system_prompt.txt")
+        self.system_prompt_path = config.get("system_prompt_path")
         logger.debug(f"PromptBuilder initialized with prompt file: {self.system_prompt_path}")
-        self.system_prompt = read_text_file(self.system_prompt_path)
-        logger.info(f"System prompt prepared ({len(self.system_prompt)} chars)")
+        self._load_system_prompt()
+
+    def _load_system_prompt(self) -> None:
+        """Load system prompt from file with error handling."""
+        try:
+            self.system_prompt = read_text_file(self.system_prompt_path)
+            logger.info(f"System prompt loaded ({len(self.system_prompt)} chars)")
+        except FileNotFoundError:
+            logger.error(f"System prompt file not found: {self.system_prompt_path}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to load system prompt from {self.system_prompt_path}: {e}")
+            raise
 
     def build_prompt(self) -> ChatPromptTemplate:
         """
@@ -28,11 +39,9 @@ class PromptBuilder:
         Returns:
             Configured ChatPromptTemplate
         """
-        system_prompt = read_text_file(self.system_prompt_path)
-
         prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", system_prompt),
+                ("system", self.system_prompt),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("user", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
