@@ -89,7 +89,7 @@ def main() -> None:
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         # "tell me a joke, and format it"
-        "list first 10 rows from nbp_countries_viewx"
+        "check avaiable views in db"
     )
 
     # Optional: Test with conversation history

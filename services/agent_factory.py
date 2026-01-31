@@ -90,9 +90,13 @@ class AgentFactory:
             f"{db_host}/{db_name}?driver={db_driver}&TrustServerCertificate=yes"
         )
 
-        # Create SQL toolkit
+        # Create SQL toolkit with view support enabled
         toolkit = SQLDatabaseToolkit(
-            db=SQLDatabase.from_uri(database_uri=conn_str),
+            db=SQLDatabase.from_uri(
+                database_uri=conn_str,
+                view_support=True,  # Enable querying database views
+                include_tables=["nbp_countries_view"],
+            ),
             llm=self.llm,
         )
 

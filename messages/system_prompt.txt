@@ -17,7 +17,7 @@ MSSQL Database Query Guidelines:
 - Date formatting: FORMAT(date_column, 'yyyy-MM-dd') or CONVERT(varchar, date_column, 120)
 - Avoid SELECT * in production queries; specify columns explicitly
 - Use WITH (NOLOCK) hint sparingly and only for read operations where dirty reads are acceptable
-- try to find correct table/view name in case of errors
+
 
 IMPORTANT - Tool Execution Rules:
 - Execute tools ONE AT A TIME when one tool's output is needed as input for another tool
