@@ -75,8 +75,27 @@ class AgentFactory:
         toolkit = SQLDatabaseToolkit(
             db=SQLDatabase.from_uri(
                 database_uri=conn_str,
+                # SQLAlchemy engine configuration
+                # engine_args={
+                #     "pool_size": 5,
+                #     "max_overflow": 10,
+                #     "pool_recycle": 3600,
+                #     "pool_pre_ping": True,
+                # },
+                # Schema and table filtering
+                schema="dbo",  # Restrict to specific schema
+                # include_tables=["nbp_countries_view", "table1"],  # Whitelist tables
+                # ignore_tables=["audit_log", "temp_table"],  # Blacklist tables
+                # Table info and metadata
                 view_support=True,  # Enable querying database views
-                include_tables=["nbp_countries_view"],
+                # sample_rows_in_table_info=3,  # Sample rows in table info (default: 3)
+                # indexes_in_table_info=False,  # Include indexes (default: False)
+                # custom_table_info={"table_name": "Custom description"},  # Custom desc
+                # max_string_length=300,  # Max string length (default: 300)
+                # Performance optimization
+                # lazy_table_reflection=False,  # Delay table metadata loading (default)
+                # Advanced (rarely needed)
+                # metadata=None,  # SQLAlchemy MetaData object
             ),
             llm=self.llm,
         )

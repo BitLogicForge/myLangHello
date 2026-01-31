@@ -86,11 +86,13 @@ def main() -> None:
         # "list first 5 countries on letter B and their codes from db"
         # "then check weather for each country treating them as city"
         # "write it to file weather.txt"
-        "what is my name? do i have sibilings?"
+        # "what is my name? do i have sibilings?"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         # "tell me 2 jokes, and format it"
         # "check avaiable views in db, plus i want 2 jokes , but funny ones"
+        # "check avaiable views in db"
+        "try to identify what my db relates to, find possible leverage points, and suggest what analysis i can do with it"
     )
 
     # Optional: Test with conversation history

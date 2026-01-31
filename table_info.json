@@ -1,0 +1,51 @@
+{
+  "users": {
+    "description": "Customer accounts and profile information",
+    "usage_notes": "Central table for all customer data. All orders and transactions reference this table.",
+    "columns": [
+      {
+        "name": "email",
+        "desc": "Unique identifier for customer login and communications"
+      },
+      {
+        "name": "created_at",
+        "desc": "Account creation date. Use for customer lifetime value and cohort analysis"
+      }
+    ],
+    "business_rules": [
+      "Email must be unique across all users",
+      "Deleted users are soft-deleted (is_deleted flag)"
+    ]
+  },
+  "orders": {
+    "description": "Purchase transactions and order history",
+    "usage_notes": "Always join with users table for customer information. Filter by status for different reports.",
+    "columns": [
+      {
+        "name": "user_id",
+        "desc": "References the customer who placed this order. Join with users table."
+      },
+      {
+        "name": "status",
+        "desc": "Order state: 'pending' (awaiting payment), 'completed' (shipped and paid), 'cancelled' (refunded or void)"
+      },
+      {
+        "name": "total_price",
+        "desc": "Final order amount including tax and discounts. Use for revenue calculations."
+      },
+      {
+        "name": "order_date",
+        "desc": "When the order was placed. Use for time-series analysis and trend reports."
+      }
+    ],
+    "business_rules": [
+      "Only orders with status='completed' should be included in revenue reports",
+      "Cancelled orders should be excluded from sales metrics but included in cancellation analysis",
+      "Pending orders older than 7 days are automatically cancelled"
+    ],
+    "common_queries": [
+      "Total revenue: SELECT SUM(total_price) FROM orders WHERE status='completed'",
+      "Customer orders: SELECT u.name, COUNT(o.id) FROM users u JOIN orders o ON u.id = o.user_id GROUP BY u.id"
+    ]
+  }
+}
