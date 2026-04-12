@@ -78,9 +78,9 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         )
 
         # Track basic metrics if available
-        if telemetry and hasattr(response, "get"):
+        if telemetry and isinstance(response, dict):
             # Try to extract iteration count from response metadata
-            metadata = response.get("metadata", {})
+            metadata = response.get("metadata") or {}
             if "iterations" in metadata:
                 telemetry.track_agent_iterations(metadata["iterations"])
 
