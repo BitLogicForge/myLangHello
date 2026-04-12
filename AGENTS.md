@@ -85,6 +85,7 @@ If test tooling is missing, note what was validated manually and what remains un
 - Update docs in the same change when behavior/contracts/config change.
 - Keep README and docs paths accurate.
 - Keep examples aligned with current request/response shapes.
+- GitHub MCP is available in this project context and should be used for GitHub operations (PRs, issues, comments, metadata, and commits) when possible.
 - Record ideas outside scope as:
   - `Suggestion: <what + why>`
 
@@ -95,6 +96,7 @@ Do not implement out-of-scope ideas without explicit approval.
 - Make small, atomic commits.
 - One concern per commit.
 - Use clear commit messages that explain intent and impact.
+- Prefer GitHub MCP tools for remote GitHub workflows; use local git as fallback if MCP auth/capability is blocked.
 - Do not rewrite history unless explicitly requested.
 
 ## Definition Of Done

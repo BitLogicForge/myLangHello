@@ -20,6 +20,7 @@ This project exposes an agent that can:
 - OpenAI, Azure OpenAI, and LM Studio support
 - Config-driven runtime guardrails
 - SQL database toolkit integration
+- GitHub MCP integration available for repository and PR workflows
 - Custom utility tools such as calculator, file read/write, HTTP GET, date, and demo helpers
 - Health and config endpoints
 - Optional LangServe playground and streaming endpoints
@@ -284,7 +285,7 @@ Note: some tools are intentionally demo-oriented rather than production-grade.
 |-- messages/
 |-- examples/
 |-- ENV_VARIABLES.md
-|-- DOCUMENTATION_IDEAS.md
+|-- docs/
 ```
 
 ## Known Limitations
@@ -307,5 +308,6 @@ Good follow-up docs for this repo would be:
 ## Related Docs
 
 - [ENV_VARIABLES.md](./ENV_VARIABLES.md)
-- [DOCUMENTATION_IDEAS.md](./DOCUMENTATION_IDEAS.md)
+- [Documentation Ideas](./docs/DOCUMENTATION_IDEAS.md)
 - [Agent Swarm Notes](./docs/AGENT_SWARM.md)
+- [Structured Output Guide](./docs/STRUCTURED_OUTPUT.md)
