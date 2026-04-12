@@ -101,6 +101,23 @@ This document lists all expected environment variables for the application.
 - **Example**: `https://api.openai.com/v1`
 - **Used by**: LLM Factory for OpenAI provider
 
+### LM Studio Configuration
+
+#### `LMSTUDIO_BASE_URL`
+
+- **Required**: No
+- **Description**: Base URL for the local LM Studio OpenAI-compatible API
+- **Default**: `http://localhost:1234/v1`
+- **Example**: `http://localhost:1234/v1`
+- **Used by**: LLM Factory for LM Studio provider
+
+#### `LMSTUDIO_API_KEY`
+
+- **Required**: No
+- **Description**: Optional compatibility value for clients that expect an API key field
+- **Default**: internal placeholder value
+- **Used by**: LLM Factory for LM Studio provider
+
 ### Observability & Monitoring
 
 #### `LANGCHAIN_TRACING_V2`
@@ -166,6 +183,10 @@ DB_USE_WINDOWS_AUTH=true
 # OPENAI_ORGANIZATION=org-your-org-id
 # OPENAI_BASE_URL=https://api.openai.com/v1
 
+# Optional - LM Studio (no auth required by default)
+# LMSTUDIO_BASE_URL=http://localhost:1234/v1
+# LMSTUDIO_API_KEY=lm-studio
+
 # Optional - LangSmith Tracing
 # LANGCHAIN_TRACING_V2=true
 # LANGCHAIN_API_KEY=ls__your-langsmith-key
@@ -181,4 +202,4 @@ DB_USE_WINDOWS_AUTH=true
 - Add `.env` to your `.gitignore` file
 - Use `.env.example` as a template without actual secrets
 - For production, use environment variables set directly on your server/container
-- Provider selection (OpenAI vs Azure) is configured in `config.json`
+- Provider selection (`openai`, `azure`, or `lmstudio`) is configured in `config.json`

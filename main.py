@@ -88,9 +88,9 @@ def main() -> None:
         # "what is my name? do i have sibilings?"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
-        # "tell me 2 jokes, and format it"
+        "tell me 2 jokes, and format it"
         # "check avaiable views in db, plus i want 2 jokes , but funny ones"
-        "check avaiable views in db"
+        # "check avaiable views in db"
     )
 
     # Optional: Test with conversation history

@@ -4,6 +4,7 @@ from .agent_configurator import AgentConfigurator
 from .agent_factory import AgentFactory
 from .llm_factory import LLMFactory
 from .llm_provider_azure import AzureLLMProvider
+from .llm_provider_lmstudio import LMStudioLLMProvider
 from .llm_provider_openai import OpenAILLMProvider
 from .output_formatter import StreamingOutputFormatter
 from .prompt_builder import PromptBuilder
@@ -16,6 +17,7 @@ __all__ = [
     "AgentFactory",
     "LLMFactory",
     "AzureLLMProvider",
+    "LMStudioLLMProvider",
     "OpenAILLMProvider",
     "StreamingOutputFormatter",
     "AgentConfigurator",

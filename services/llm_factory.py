@@ -7,6 +7,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from config import Config
 
 from .llm_provider_azure import AzureLLMProvider
+from .llm_provider_lmstudio import LMStudioLLMProvider
 from .llm_provider_openai import OpenAILLMProvider
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 class LLMFactory:
     """Factory for creating LLM instances based on provider configuration."""
+
+    SUPPORTED_PROVIDERS = ("azure", "lmstudio", "openai")
 
     @staticmethod
     def create_llm() -> BaseChatModel:
@@ -44,7 +47,13 @@ class LLMFactory:
         # Create the appropriate LLM
         if selected_provider == "azure":
             return AzureLLMProvider.create(provider_config)
+        elif selected_provider == "lmstudio":
+            return LMStudioLLMProvider.create(provider_config)
         elif selected_provider == "openai":
             return OpenAILLMProvider.create(provider_config)
         else:
-            raise ValueError(f"Unsupported provider: {selected_provider}")
+            supported = ", ".join(LLMFactory.SUPPORTED_PROVIDERS)
+            raise ValueError(
+                f"Unsupported provider: {selected_provider}. "
+                f"Supported providers: {supported}"
+            )

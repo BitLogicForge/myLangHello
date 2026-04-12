@@ -1,5 +1,5 @@
 {
-  "provider": "openai",
+  "provider": "lmstudio",
   "system_prompt_path": "messages/system_prompt.txt",
   "agent": {
     "verbose": true,
@@ -15,6 +15,16 @@
     "streaming": false,
     "api_version": "2024-02-15-preview",
     "azure_endpoint": null,
+    "api_key": null
+  },
+  "lmstudio": {
+    "model": "local-model",
+    "temperature": 0.7,
+    "max_tokens": null,
+    "timeout": 120,
+    "max_retries": 3,
+    "streaming": false,
+    "base_url": "http://localhost:1234/v1",
     "api_key": null
   },
   "openai": {
