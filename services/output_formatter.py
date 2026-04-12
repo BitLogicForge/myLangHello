@@ -159,6 +159,16 @@ class StreamRenderer:
 class StreamingOutputFormatter:
     """Coordinates formatting and display of agent execution events."""
 
+    PERSONA_COLORS = {
+        "Titan": Fore.YELLOW,
+        "Sterling": Fore.GREEN,
+        "Riot": Fore.MAGENTA,
+        "Nova": Fore.CYAN,
+        "Forge": Fore.BLUE,
+        "Junior": Fore.CYAN,
+        "Moderator": Fore.WHITE,
+    }
+
     def __init__(self):
         self.content_processor = ContentProcessor()
         self.execution_monitor = ExecutionMonitor()
@@ -172,6 +182,33 @@ class StreamingOutputFormatter:
     def print_footer(self) -> None:
         """Print execution completion footer."""
         self.renderer.print_footer()
+
+    def print_discussion_header(self, rounds: int) -> None:
+        """Print header for multi-agent discussion mode."""
+        print("\n" + Fore.CYAN + Style.BRIGHT + "=" * 80)
+        print(Fore.YELLOW + Style.BRIGHT + f"MULTI-AGENT DISCUSSION TRACE ({rounds} rounds)")
+        print(Fore.CYAN + Style.BRIGHT + "=" * 80)
+
+    def print_discussion_turn(
+        self,
+        round_number: int,
+        speaker: str,
+        role: str,
+        content: str,
+    ) -> None:
+        """Print one discussion turn."""
+        persona_color = self.PERSONA_COLORS.get(speaker, Fore.MAGENTA)
+        print(
+            persona_color
+            + Style.BRIGHT
+            + f"\n--- Discussion Round {round_number}: {speaker} ({role}) ---"
+        )
+        print(persona_color + Style.BRIGHT + f"{speaker}: {content}")
+
+    def print_discussion_summary(self, content: str) -> None:
+        """Print final moderator summary for discussion mode."""
+        print(Fore.WHITE + Style.BRIGHT + "\n--- Moderator Summary ---")
+        print(Fore.WHITE + content)
 
     def print_event(
         self, event: dict, step_count: int, tool_timings: Dict[str, float] | None = None

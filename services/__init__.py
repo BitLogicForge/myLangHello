@@ -3,6 +3,7 @@
 from .agent_configurator import AgentConfigurator
 from .agent_factory import AgentFactory
 from .agent_runner import AgentExecutionSettings, AgentRunner
+from .discussion_orchestrator import DiscussionOrchestrator
 from .llm_factory import LLMFactory
 from .llm_provider_azure import AzureLLMProvider
 from .llm_provider_lmstudio import LMStudioLLMProvider
@@ -19,6 +20,7 @@ __all__ = [
     "AgentExecutionSettings",
     "AgentRunner",
     "LLMFactory",
+    "DiscussionOrchestrator",
     "AzureLLMProvider",
     "LMStudioLLMProvider",
     "OpenAILLMProvider",

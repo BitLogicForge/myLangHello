@@ -76,7 +76,7 @@ except Exception as e:
 
 # Configure route modules with agent state
 health_routes.set_agent_state(agent_app, AGENT_LOADED, LANGSERVE_AVAILABLE)
-agent_routes.set_agent_executor(agent_executor, AGENT_LOADED, telemetry)
+agent_routes.set_agent_executor(agent_executor, agent_app, AGENT_LOADED, telemetry)
 config_routes.set_agent_app(agent_app, AGENT_LOADED)
 
 # Register routers

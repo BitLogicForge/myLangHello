@@ -185,7 +185,42 @@ Example response:
 ```json
 {
   "output": "Agent response text",
-  "session_id": "demo-1"
+  "session_id": "demo-1",
+  "mode": "single"
+}
+```
+
+### Discussion mode
+
+For a fun multi-agent demo, `/query` also supports a bounded discussion mode with three personas plus a moderator summary.
+
+Example request:
+
+```json
+{
+  "question": "Should we add a dashboard to this project?",
+  "mode": "discussion",
+  "discussion_rounds": 2,
+  "include_discussion_transcript": true
+}
+```
+
+Example response shape:
+
+```json
+{
+  "output": "Final moderator summary...",
+  "session_id": null,
+  "mode": "discussion",
+  "transcript": [
+    {
+      "round_number": 1,
+      "speaker": "Spark",
+      "role": "idea generator",
+      "content": "..."
+    }
+  ],
+  "participants": ["Spark", "Shield", "Forge", "Moderator"]
 }
 ```
 

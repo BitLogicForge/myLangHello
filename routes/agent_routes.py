@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
+from main import AgentApp
 from services import AgentExecutionSettings, AgentRunner
 from utils import prepare_messages_with_history
 
@@ -18,15 +19,22 @@ router = APIRouter(prefix="", tags=["Agent"])
 
 # Module-level variables to be set by main app
 agent_executor: Optional[Any] = None
+agent_app: Optional[AgentApp] = None
 AGENT_LOADED: bool = False
 telemetry: Optional[Any] = None
 config = Config()
 
 
-def set_agent_executor(executor: Optional[Any], loaded: bool, telem: Optional[Any] = None) -> None:
+def set_agent_executor(
+    executor: Optional[Any],
+    app: Optional[AgentApp],
+    loaded: bool,
+    telem: Optional[Any] = None,
+) -> None:
     """Set the agent executor for query handling."""
-    global agent_executor, AGENT_LOADED, telemetry
+    global agent_executor, agent_app, AGENT_LOADED, telemetry
     agent_executor = executor
+    agent_app = app
     AGENT_LOADED = loaded
     telemetry = telem
 
@@ -52,7 +60,7 @@ async def query_agent(request: QueryRequest):
 
 async def _process_query(request: QueryRequest) -> QueryResponse:
     """Internal query processing with metrics tracking."""
-    if agent_executor is None:
+    if agent_executor is None or agent_app is None:
         raise HTTPException(status_code=503, detail="Agent executor not available")
 
     try:
@@ -69,8 +77,15 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         messages = prepare_messages_with_history(request.question, history_tuples)
 
         start_time = time.time()
-        runner = AgentRunner(agent_executor, AgentExecutionSettings.from_config(config))
-        response = runner.run({"messages": messages})
+        if request.mode == "discussion":
+            response = agent_app.run_discussion(
+                question=request.question,
+                history=history_tuples,
+                rounds=request.discussion_rounds,
+            )
+        else:
+            runner = AgentRunner(agent_executor, AgentExecutionSettings.from_config(config))
+            response = runner.run({"messages": messages})
         duration = time.time() - start_time
 
         logger.info(
@@ -84,9 +99,18 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
             if "iterations" in metadata:
                 telemetry.track_agent_iterations(metadata["iterations"])
 
-        # Extract the final message from LangGraph response
-        # LangGraph returns {"messages": [...]} where last message is the response
-        if isinstance(response, dict) and "messages" in response:
+        output_text = "No response generated"
+        transcript = None
+        participants = None
+
+        if isinstance(response, dict) and request.mode == "discussion":
+            output_text = str(response.get("output", "No response generated"))
+            if request.include_discussion_transcript:
+                transcript = response.get("transcript")
+            participants = response.get("participants")
+        elif isinstance(response, dict) and "messages" in response:
+            # Extract the final message from LangGraph response
+            # LangGraph returns {"messages": [...]} where last message is the response
             messages_list = response["messages"]
             if messages_list and len(messages_list) > 0:
                 # Get the last message (agent's response)
@@ -109,6 +133,9 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         return QueryResponse(
             output=output_text,
             session_id=request.session_id,
+            mode=request.mode,
+            transcript=transcript,
+            participants=participants,
         )
     except Exception as e:
         logger.error(f"Agent error: {e}", exc_info=True)
