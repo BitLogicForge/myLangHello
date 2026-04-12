@@ -308,3 +308,4 @@ Good follow-up docs for this repo would be:
 
 - [ENV_VARIABLES.md](./ENV_VARIABLES.md)
 - [DOCUMENTATION_IDEAS.md](./DOCUMENTATION_IDEAS.md)
+- [Agent Swarm Notes](./docs/AGENT_SWARM.md)
