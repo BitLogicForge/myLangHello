@@ -5,14 +5,16 @@ from typing import Any, List, Optional, Tuple
 
 from dotenv import load_dotenv
 
-from services import AgentConfigurator, StreamingOutputFormatter
+from config import Config
+from services import AgentConfigurator, AgentExecutionSettings, AgentRunner, StreamingOutputFormatter
 from utils import prepare_messages_with_history, setup_logging
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
-setup_logging()
+app_config = Config()
+setup_logging(debug=bool(app_config.get("agent.debug", False)))
 logger = logging.getLogger(__name__)
 
 
@@ -23,9 +25,13 @@ class AgentApp:
         """Initialize the agent application."""
         logger.info("Initializing AgentApp...")
 
+        self.config = app_config
+        self.execution_settings = AgentExecutionSettings.from_config(self.config)
+
         # Create configurator and build agent
         configurator = AgentConfigurator()
         self.agent_executor = configurator.build_agent()
+        self.agent_runner = AgentRunner(self.agent_executor, self.execution_settings)
         self.output_formatter = StreamingOutputFormatter()
 
         logger.info("✅ AgentApp initialized successfully")
@@ -55,16 +61,10 @@ class AgentApp:
         try:
             self.output_formatter.print_header()
 
-            # Stream the agent execution to see thoughts in real-time
-            step_count = 0
-            final_response: Optional[dict] = None
-
-            for event in self.agent_executor.stream(
-                agent_input, config={"recursion_limit": 15}  # type: ignore
-            ):
-                step_count += 1
-                self.output_formatter.print_event(event, step_count)
-                final_response = event
+            final_response = self.agent_runner.run(
+                agent_input,
+                on_event=self.output_formatter.print_event,
+            )
 
             logger.info("✅ Agent completed successfully")
             self.output_formatter.print_footer()
@@ -82,13 +82,13 @@ def main() -> None:
     # Example question
     question = (
         # "tell me weather in poznan today, and what date is today, and weather in london"
-        # "list first 5 countries on letter B and their codes from db"
-        # "then check weather for each country treating them as city"
+        "list first 5 countries on letter B and their codes from db"
+        "then check weather for each country treating them as city"
         # "write it to file weather.txt"
         # "what is my name? do i have sibilings?"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
-        "tell me 2 jokes, and format it"
+        # "tell me 2 jokes, and format it"
         # "check avaiable views in db, plus i want 2 jokes , but funny ones"
         # "check avaiable views in db"
     )

@@ -6,7 +6,9 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 
+from config import Config
 from models.api_models import QueryRequest, QueryResponse
+from services import AgentExecutionSettings, AgentRunner
 from utils import prepare_messages_with_history
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,7 @@ router = APIRouter(prefix="", tags=["Agent"])
 agent_executor: Optional[Any] = None
 AGENT_LOADED: bool = False
 telemetry: Optional[Any] = None
+config = Config()
 
 
 def set_agent_executor(executor: Optional[Any], loaded: bool, telem: Optional[Any] = None) -> None:
@@ -66,8 +69,8 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         messages = prepare_messages_with_history(request.question, history_tuples)
 
         start_time = time.time()
-        # LangGraph agents expect messages format
-        response = agent_executor.invoke({"messages": messages})
+        runner = AgentRunner(agent_executor, AgentExecutionSettings.from_config(config))
+        response = runner.run({"messages": messages})
         duration = time.time() - start_time
 
         logger.info(
@@ -97,9 +100,11 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
                     output_text = str(final_message)
             else:
                 output_text = "No response generated"
-        else:
+        elif response is not None:
             # Fallback for old format
             output_text = response.get("output", str(response))
+        else:
+            output_text = "No response generated"
 
         return QueryResponse(
             output=output_text,

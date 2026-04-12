@@ -1,6 +1,7 @@
 """Centralized logging configuration with colorful output."""
 
 import logging
+from typing import Optional
 
 import colorlog
 
@@ -10,8 +11,10 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-def setup_logging() -> None:
+def setup_logging(debug: bool = False, level: Optional[int] = None) -> None:
     """Configure colorful logging for the application."""
+    root_level = level if level is not None else (logging.DEBUG if debug else logging.INFO)
+
     # Create console handler with colors
     console_handler = colorlog.StreamHandler()
     console_handler.setFormatter(
@@ -32,4 +35,4 @@ def setup_logging() -> None:
     )
 
     # Configure root logger
-    logging.basicConfig(level=logging.INFO, handlers=[console_handler])
+    logging.basicConfig(level=root_level, handlers=[console_handler], force=True)

@@ -8,13 +8,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from config import Config
 from main import AgentApp
 from routes import agent_routes, config_routes, health_routes
 from services.telemetry import TelemetryManager, get_telemetry
 from utils import setup_logging
 
 # Configure logging
-setup_logging()
+api_config = Config()
+setup_logging(debug=bool(api_config.get("agent.debug", False)))
 logger = logging.getLogger(__name__)
 
 

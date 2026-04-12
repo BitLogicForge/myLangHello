@@ -4,7 +4,14 @@
   "agent": {
     "verbose": true,
     "max_iterations": 10,
-    "max_execution_time": 60
+    "max_execution_time": 60,
+    "recursion_limit": 35,
+    "timeout_seconds": 160,
+    "max_tool_calls": 10,
+    "debug": false,
+    "sql": {
+      "include_tables": []
+    }
   },
   "azure": {
     "model": "gpt-4.1",

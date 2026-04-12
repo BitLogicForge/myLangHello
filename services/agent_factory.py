@@ -10,6 +10,8 @@ from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.language_models.chat_models import BaseChatModel
 
+from config import Config
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,6 +53,7 @@ class AgentFactory:
             LangGraph agent graph that can be invoked
         """
         logger.debug("Creating LangGraph toolkit agent...")
+        config = Config()
 
         # agent = create_agent(
         #     model=self.llm,
@@ -70,6 +73,8 @@ class AgentFactory:
             f"mssql+pyodbc://{db_user}:{db_password}@"
             f"{db_host}/{db_name}?driver={db_driver}&TrustServerCertificate=yes"
         )
+        include_tables = config.get("agent.sql.include_tables", [])
+        include_tables = include_tables if include_tables else None
 
         # Create SQL toolkit with view support enabled
         toolkit = SQLDatabaseToolkit(
@@ -84,7 +89,7 @@ class AgentFactory:
                 # },
                 # Schema and table filtering
                 schema="dbo",  # Restrict to specific schema
-                # include_tables=["nbp_countries_view", "table1"],  # Whitelist tables
+                include_tables=include_tables,
                 # ignore_tables=["audit_log", "temp_table"],  # Blacklist tables
                 # Table info and metadata
                 view_support=True,  # Enable querying database views
