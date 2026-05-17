@@ -100,13 +100,14 @@ class AgentApp:
             rounds=rounds,
         )
         transcript = result.get("transcript", [])
-        for turn in transcript:
-            self.output_formatter.print_discussion_turn(
-                round_number=turn.round_number,
-                speaker=turn.speaker,
-                role=turn.role,
-                content=turn.content,
-            )
+        if isinstance(transcript, list):
+            for turn in transcript:
+                self.output_formatter.print_discussion_turn(
+                    round_number=turn.round_number,
+                    speaker=turn.speaker,
+                    role=turn.role,
+                    content=turn.content,
+                )
         self.output_formatter.print_discussion_summary(str(result.get("output", "")))
         self.output_formatter.print_footer()
         return result

@@ -88,6 +88,17 @@ The project is organized around a few core layers:
 
 ## Installation
 
+Using uv:
+
+```powershell
+uv sync
+uv run python api.py
+```
+
+The devcontainer installs uv automatically and runs `uv sync` during post-create.
+
+Or with pip:
+
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
