@@ -109,6 +109,7 @@ This document lists all expected environment variables for the application.
 - **Description**: Base URL for the local LM Studio OpenAI-compatible API
 - **Default**: `http://localhost:1234/v1`
 - **Example**: `http://localhost:1234/v1`
+- **Devcontainer example**: `http://host.docker.internal:1234/v1`
 - **Used by**: LLM Factory for LM Studio provider
 
 #### `LMSTUDIO_API_KEY`
@@ -185,6 +186,8 @@ DB_USE_WINDOWS_AUTH=true
 
 # Optional - LM Studio (no auth required by default)
 # LMSTUDIO_BASE_URL=http://localhost:1234/v1
+# Inside the devcontainer, use the host alias instead:
+# LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1
 # LMSTUDIO_API_KEY=lm-studio
 
 # Optional - LangSmith Tracing
@@ -203,3 +206,4 @@ DB_USE_WINDOWS_AUTH=true
 - Use `.env.example` as a template without actual secrets
 - For production, use environment variables set directly on your server/container
 - Provider selection (`openai`, `azure`, or `lmstudio`) is configured in `config.json`
+- The devcontainer sets `LMSTUDIO_BASE_URL` to `http://host.docker.internal:1234/v1` so code running in the container can reach LM Studio on the host.

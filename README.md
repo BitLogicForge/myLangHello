@@ -126,6 +126,14 @@ LMSTUDIO_BASE_URL=http://localhost:1234/v1
 LMSTUDIO_API_KEY=lm-studio
 ```
 
+When running inside the devcontainer, `localhost` means the container itself. The devcontainer sets:
+
+```env
+LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1
+```
+
+Keep LM Studio's local server running on the host and make sure the port is allowed through your firewall.
+
 ### 3. Configure agent behavior
 
 Important settings live in `config.json`:
