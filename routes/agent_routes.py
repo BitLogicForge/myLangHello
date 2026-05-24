@@ -5,7 +5,7 @@ import time
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
-
+import anyio
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
 from main import AgentApp
@@ -76,16 +76,19 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         # Prepare messages using shared utility
         messages = prepare_messages_with_history(request.question, history_tuples)
 
+  
+
         start_time = time.time()
         if request.mode == "discussion":
-            response = agent_app.run_discussion(
-                question=request.question,
-                history=history_tuples,
-                rounds=request.discussion_rounds,
+            response = await anyio.to_thread.run_sync(
+                agent_app.run_discussion,
+                request.question,
+                history_tuples,
+                request.discussion_rounds,
             )
         else:
             runner = AgentRunner(agent_executor, AgentExecutionSettings.from_config(config))
-            response = runner.run({"messages": messages})
+            response = await anyio.to_thread.run_sync(runner.run, {"messages": messages})
         duration = time.time() - start_time
 
         logger.info(
