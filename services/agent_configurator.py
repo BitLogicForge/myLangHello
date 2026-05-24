@@ -53,6 +53,7 @@ class AgentConfigurator:
             raise RuntimeError("Agent factory creation failed")
 
         agent_executor = self.agent_factory.create_db_agent()
+        self.all_tools = self.agent_factory.all_tools
         logger.info("✅ Agent built successfully")
         return agent_executor
 

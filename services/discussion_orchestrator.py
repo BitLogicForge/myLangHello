@@ -20,21 +20,13 @@ class AgentPersona:
     name: str
     role: str
     instruction: str
+    allowed_tools: list[str] = None
 
 
 class DiscussionOrchestrator:
     """Run a bounded discussion between three persona agents and a moderator."""
 
     DEFAULT_PERSONAS = (
-        AgentPersona(
-            name="Titan",
-            role="dominant hype strategist",
-            instruction=(
-                "You are Titan, a hyper-confident alpha-style strategist. You speak with strong conviction, "
-                "push bold moves, care about winning attention, and hate timid ideas. Be punchy, persuasive, "
-                "and slightly dramatic, but still helpful."
-            ),
-        ),
         AgentPersona(
             name="Sterling",
             role="business operator",
@@ -43,6 +35,7 @@ class DiscussionOrchestrator:
                 "ROI, stakeholder perception, and what can realistically ship fast. Be crisp, practical, "
                 "and commercially minded."
             ),
+            allowed_tools=["loan_calculator", "currency_converter"],
         ),
         AgentPersona(
             name="Riot",
@@ -52,15 +45,16 @@ class DiscussionOrchestrator:
                 "memorable moments, and what would make people say 'wait, that is actually cool.' You may "
                 "suggest risky or slightly absurd ideas, but keep them usable for a product discussion."
             ),
+            allowed_tools=["random_joke", "weather"],
         ),
         AgentPersona(
-            name="Nova",
-            role="teenage future scout",
+            name="Forge",
+            role="database researcher",
             instruction=(
-                "You are Nova, a sharp teenager with strong opinions about what feels outdated, boring, or "
-                "actually exciting. You care about novelty, taste, and whether the experience feels fresh. "
-                "Be direct, opinionated, and concise."
+                "You are Forge, a data specialist with direct database access. Query the database to retrieve "
+                "actual facts and figures whenever needed. Always base your responses on real schema and table queries."
             ),
+            allowed_tools=["sql_db_query", "sql_db_schema"],
         ),
     )
 
@@ -91,7 +85,7 @@ class DiscussionOrchestrator:
                     transcript=transcript,
                     round_number=round_number,
                 )
-                content = self._invoke_text(prompt_messages)
+                content = self._invoke_text(prompt_messages, persona=persona)
                 self._log_turn(round_number, persona.name, persona.role, content)
                 transcript.append(
                     DiscussionTurn(
@@ -177,9 +171,50 @@ class DiscussionOrchestrator:
             ]
         )
 
-    def _invoke_text(self, messages: list[BaseMessage]) -> str:
-        """Invoke the LLM and normalize the returned text."""
-        response = self.llm.invoke(messages)
+    def _invoke_text(self, messages: list[BaseMessage], persona: AgentPersona = None) -> str:
+        """Invoke the LLM and normalize the returned text, executing tool calls allowed for the persona if any."""
+        # Filter self.tools to only those allowed for this specific persona
+        allowed_tools = []
+        if self.tools and persona and hasattr(persona, "allowed_tools") and persona.allowed_tools:
+            allowed_tools = [t for t in self.tools if t.name in persona.allowed_tools]
+
+        if allowed_tools and hasattr(self.llm, "bind_tools"):
+            bound_llm = self.llm.bind_tools(allowed_tools)
+            response = bound_llm.invoke(messages)
+
+            # Limit tool execution to a maximum of 3 iterations
+            loop_count = 0
+            while response.tool_calls and loop_count < 3:
+                loop_count += 1
+                logger.info(f"Persona {persona.name} triggered {len(response.tool_calls)} tool calls (iteration {loop_count})")
+
+                # Append the assistant's message with tool calls
+                messages.append(response)
+
+                for tool_call in response.tool_calls:
+                    tool_name = tool_call["name"]
+                    tool_args = tool_call["args"]
+                    tool_id = tool_call["id"]
+
+                    # Find tool in allowed tools list
+                    tool_obj = next((t for t in allowed_tools if t.name == tool_name), None)
+                    if tool_obj:
+                        try:
+                            logger.info(f"Executing tool {tool_name} for persona {persona.name} with args {tool_args}")
+                            tool_output = tool_obj.invoke(tool_args)
+                        except Exception as e:
+                            tool_output = f"Error executing tool {tool_name}: {str(e)}"
+                    else:
+                        tool_output = f"Error: Tool {tool_name} is not allowed or not found for persona {persona.name}."
+
+                    from langchain_core.messages import ToolMessage
+                    messages.append(ToolMessage(content=str(tool_output), tool_call_id=tool_id))
+
+                # Re-invoke LLM with tool outputs in context
+                response = bound_llm.invoke(messages)
+        else:
+            response = self.llm.invoke(messages)
+
         if isinstance(response, AIMessage):
             content = response.content
         else:

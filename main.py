@@ -38,13 +38,13 @@ class AgentApp:
         self.agent_executor = configurator.build_agent()
         self.llm = configurator.llm
         self.system_prompt = configurator.system_prompt
-        self.tools = getattr(configurator, "tools", None)
+        self.tools = getattr(configurator, "all_tools", None)
 
         if self.llm is None or self.system_prompt is None:
             raise RuntimeError("Discussion mode requires configured llm and system prompt")
 
         self.agent_runner = AgentRunner(self.agent_executor, self.execution_settings)
-        self.discussion_orchestrator = DiscussionOrchestrator(self.llm, self.system_prompt)
+        self.discussion_orchestrator = DiscussionOrchestrator(self.llm, self.system_prompt, self.tools)
         self.output_formatter = StreamingOutputFormatter()
 
         logger.info("AgentApp initialized successfully")

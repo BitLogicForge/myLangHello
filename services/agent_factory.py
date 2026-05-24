@@ -107,6 +107,7 @@ class AgentFactory:
 
         # Combine SQL toolkit tools with custom tools
         all_tools = toolkit.get_tools() + self.tools
+        self.all_tools = all_tools
 
         # Use create_agent to support custom tools
         agent = create_agent(
