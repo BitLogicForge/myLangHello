@@ -40,7 +40,7 @@ class AgentRunner:
         self.agent_executor = agent_executor
         self.settings = settings
 
-    def run(
+    async def run(
         self,
         agent_input: dict[str, Any],
         on_event: Optional[Callable[[dict[str, Any], int], None]] = None,
@@ -52,7 +52,8 @@ class AgentRunner:
         step_count = 0
         final_messages: list[Any] = []
 
-        for event in self.agent_executor.stream(agent_input, config=run_config):
+        # Use async streaming (astream) to support async tool invocation
+        async for event in self.agent_executor.astream(agent_input, config=run_config):
             step_count += 1
             self._enforce_timeout(start_time)
 

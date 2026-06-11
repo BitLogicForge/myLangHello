@@ -1,5 +1,6 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
+import asyncio
 import logging
 from typing import Any, List, Optional, Tuple
 
@@ -38,7 +39,7 @@ class AgentApp:
 
         logger.info("✅ AgentApp initialized successfully")
 
-    def run(self, question: str, history: Optional[List[Tuple[str, str]]] = None) -> Optional[dict]:
+    async def run(self, question: str, history: Optional[List[Tuple[str, str]]] = None) -> Optional[dict]:
         """
         Run the agent with a question and optional conversation history.
 
@@ -64,7 +65,7 @@ class AgentApp:
         try:
             self.output_formatter.print_header()
 
-            final_response = self.agent_runner.run(
+            final_response = await self.agent_runner.run(
                 agent_input,
                 on_event=self.output_formatter.print_event,
             )
@@ -78,7 +79,7 @@ class AgentApp:
             raise
 
 
-def main() -> None:
+async def main() -> None:
     """Main entry point."""
     print("Hello, Function Calling Agent!")
 
@@ -109,8 +110,8 @@ def main() -> None:
     ]
 
     app = AgentApp()
-    app.run(question=question, history=history)
+    await app.run(question=question, history=history)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

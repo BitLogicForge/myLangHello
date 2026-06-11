@@ -70,7 +70,7 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
 
         start_time = time.time()
         runner = AgentRunner(agent_executor, AgentExecutionSettings.from_config(config))
-        response = runner.run({"messages": messages})
+        response = await runner.run({"messages": messages})
         duration = time.time() - start_time
 
         logger.info(
