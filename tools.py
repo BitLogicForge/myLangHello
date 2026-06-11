@@ -1,6 +1,7 @@
 """Agent tools - all utility functions with LangChain tool decorators."""
 
 import ast
+import asyncio
 import operator
 import os
 import random
@@ -40,7 +41,7 @@ class CalculatorInput(BaseModel):
 
 
 @tool(args_schema=CalculatorInput)
-def calculator(expression: str) -> str:
+async def calculator(expression: str) -> str:
     """Evaluate a math expression safely and return the result as a string.
     Supports basic operations: +, -, *, /, ** (power)
     Use it when you need to perform calculations, but do not use it for anything else. 
@@ -97,7 +98,7 @@ class WeatherInput(BaseModel):
 
 
 @tool(args_schema=WeatherInput)
-def weather(city: str) -> str:
+async def weather(city: str) -> str:
     """Return a fake weather report for the given city."""
     temp_c = random.randint(-10, 35)
     possible_conditions = ["sunny", "cloudy", "rainy", "windy", "snowy"]
@@ -117,13 +118,13 @@ class ReadFileInput(BaseModel):
 
 
 @tool(args_schema=ReadFileInput)
-def read_file(path: str) -> str:
+async def read_file(path: str) -> str:
     """Read a file from the sandbox directory and return its contents or an error message."""
     try:
         safe_p = _safe_path(path)
         if not safe_p.exists() or not safe_p.is_file():
             return f"Error: file not found: {path}"
-        return safe_p.read_text(encoding="utf-8")
+        return await asyncio.to_thread(safe_p.read_text, encoding="utf-8")
     except PermissionError as pe:
         return str(pe)
     except Exception as e:
@@ -146,12 +147,12 @@ class WriteFileInput(BaseModel):
 
 
 @tool(args_schema=WriteFileInput)
-def write_file(path: str, content: str) -> str:
+async def write_file(path: str, content: str) -> str:
     """Write content to a file in the sandbox directory. Return success or error message."""
     try:
         safe_p = _safe_path(path)
-        safe_p.parent.mkdir(parents=True, exist_ok=True)
-        safe_p.write_text(content, encoding="utf-8")
+        await asyncio.to_thread(safe_p.parent.mkdir, parents=True, exist_ok=True)
+        await asyncio.to_thread(safe_p.write_text, content, encoding="utf-8")
         return f"Wrote {len(content)} bytes to sandbox file: {path}"
     except PermissionError as pe:
         return str(pe)
@@ -175,7 +176,7 @@ class CurrentDateInput(BaseModel):
 
 
 @tool(args_schema=CurrentDateInput)
-def current_date(with_date: bool = True, with_time: bool = False) -> str:
+async def current_date(with_date: bool = True, with_time: bool = False) -> str:
     """Return the current date and/or time as a string.
     Returns date only, time only, or both based on the parameters.
     """
@@ -203,10 +204,10 @@ class HttpGetInput(BaseModel):
 
 
 @tool(args_schema=HttpGetInput)
-def http_get(url: str) -> str:
+async def http_get(url: str) -> str:
     """Perform an HTTP GET and return a short summary/result."""
     try:
-        resp = requests.get(url, timeout=5)
+        resp = await asyncio.to_thread(requests.get, url, timeout=5)
         summary = f"Status: {resp.status_code}; Length: {len(resp.content)}"
         try:
             text_preview = resp.text[:1000]
@@ -229,7 +230,7 @@ class RandomJokeInput(BaseModel):
 
 
 @tool(args_schema=RandomJokeInput)
-def random_joke(query: str = "") -> str:
+async def random_joke(query: str = "") -> str:
     """Return a small, harmless random joke. Filters by the query keyword if provided.
     Enforces that the last word of the joke is capitalized.
     """
@@ -280,7 +281,7 @@ class JokeFormatInput(BaseModel):
 
 
 @tool(args_schema=JokeFormatInput)
-def joke_format(joke: str) -> str:
+async def joke_format(joke: str) -> str:
     """Format a joke with decorative borders for better presentation. Do not add any extra text."""
     border = "═" * (len(joke) + 2)
     spacex = " " * (len(joke) + 2)
@@ -317,7 +318,7 @@ class LoanCalculatorInput(BaseModel):
 
 
 @tool(args_schema=LoanCalculatorInput)
-def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
+async def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
     """Calculate loan payments given principal in USD, annual rate, and term in years."""
     try:
         if principal <= 0 or annual_rate < 0 or years <= 0:
@@ -384,7 +385,7 @@ class CurrencyConverterInput(BaseModel):
 
 
 @tool(args_schema=CurrencyConverterInput)
-def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
+async def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
     """Convert amount from one currency to another using simulated exchange rates."""
     try:
         from_curr = from_currency.strip().upper()
@@ -455,11 +456,11 @@ class CityToCoordinatesInput(BaseModel):
 
 
 @tool(args_schema=CityToCoordinatesInput)
-def city_to_coordinates(city: str) -> str:
+async def city_to_coordinates(city: str) -> str:
     """Find latitude, longitude, country, and timezone for a given city."""
     try:
         url = f"https://geocoding-api.open-meteo.com/v1/search?name={city.strip()}&count=1"
-        resp = requests.get(url, timeout=5)
+        resp = await asyncio.to_thread(requests.get, url, timeout=5)
         if resp.status_code != 200:
             return f"Error: Geocoding API returned status code {resp.status_code}"
 
