@@ -20,6 +20,7 @@ dependencies = [
     "requests==2.33.1",
     "types-colorama==0.4.15.20260408",
     "uvicorn[standard]==0.44.0",
+    "ruff",
 ]
 
 [tool.uv]

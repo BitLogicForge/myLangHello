@@ -17,3 +17,6 @@ langserve[all]==0.3.3           # LangChain server with streaming support (recom
 
 # Metrics and Monitoring (Self-hosted)
 prometheus-client==0.25       # Prometheus metrics for self-hosted monitoring
+
+# Development Tools
+ruff                          # Linter and formatter
