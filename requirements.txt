@@ -20,3 +20,6 @@ prometheus-client==0.25       # Prometheus metrics for self-hosted monitoring
 
 # Development Tools
 ruff                          # Linter and formatter
+mypy                          # Static type checker
+pytest                        # Testing framework
+pytest-asyncio                # Async testing support
