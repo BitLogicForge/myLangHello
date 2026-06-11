@@ -56,6 +56,9 @@ class AppSettings(BaseSettings):
     # Logging Configuration
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
+    # Server Configuration
+    port: int = Field(default=8000, alias="PORT")
+
 
 class Config:
     """Singleton configuration manager that loads config once and caches it."""

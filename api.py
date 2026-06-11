@@ -87,11 +87,19 @@ app.include_router(config_routes.router)
 
 # Mount Chainlit Chat UI
 try:
+    import os
     from chainlit.utils import mount_chainlit
-    mount_chainlit(app=app, target="chat_app.py", path="/chat")
-    logger.info("✅ Chainlit Chat UI mounted at /chat")
+    from fastapi.responses import RedirectResponse
+
+    @app.get("/chat", include_in_schema=False)
+    async def redirect_to_chat():
+        return RedirectResponse(url="/chat/")
+
+    target_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_app.py")
+    mount_chainlit(app=app, target=target_path, path="/chat")
+    print("✅ Chainlit Chat UI mounted at /chat")
 except Exception as e:
-    logger.warning(f"⚠️ Failed to mount Chainlit: {e}")
+    print(f"⚠️ Failed to mount Chainlit: {e}")
 
 
 @app.get("/", tags=["Root"])
@@ -127,7 +135,7 @@ if LANGSERVE_AVAILABLE and agent_executor:
 
 class StructuredInputExample(BaseModel):
     """Example of a structured input payload.
-    
+
     Includes a basket of vegetables, amount of money, desire to buy list of groceries, and a query.
     """
     basket: List[str] = Field(
@@ -148,13 +156,15 @@ class StructuredInputExample(BaseModel):
     query: str = Field(
         ...,
         description="Specific question or query to run with this context",
-        json_schema_extra={"example": "Can I afford all the items in my desire list? What recipe can I make with my basket?"}
+        json_schema_extra={
+            "example": "Can I afford all the items in my desire list? What recipe can I make with my basket?"}
     )
 
 
 class StructuredResponse(BaseModel):
     """Response model for the structured query endpoint."""
-    formatted_prompt: str = Field(..., description="The formatted prompt sent to the agent")
+    formatted_prompt: str = Field(...,
+                                  description="The formatted prompt sent to the agent")
     output: str = Field(..., description="The agent's response")
     status: str = Field(..., description="Status of the query execution")
 
@@ -171,7 +181,8 @@ async def structured_query(request: StructuredInputExample):
     (basket list, budget, grocery list, and a natural language query) to the agent.
     """
     if not AGENT_LOADED or agent_app is None:
-        raise HTTPException(status_code=503, detail="Agent application is not loaded")
+        raise HTTPException(
+            status_code=503, detail="Agent application is not loaded")
 
     # Format the structured parameters into a cohesive prompt for the agent
     formatted_prompt = (
@@ -184,7 +195,7 @@ async def structured_query(request: StructuredInputExample):
     try:
         logger.info("Executing agent query with structured input...")
         response = await agent_app.run(question=formatted_prompt)
-        
+
         # Extract the final message content from the LangGraph response
         output_text = "No response generated"
         if response and isinstance(response, dict) and "messages" in response:
@@ -213,15 +224,15 @@ async def structured_query(request: StructuredInputExample):
 class RecipeAndBudgetAnalysis(BaseModel):
     """Structured response containing budget calculation and recipe recommendations."""
     can_afford_all: bool = Field(
-        ..., 
+        ...,
         description="True if the total estimated cost of all desired groceries is within the budget"
     )
     total_estimated_cost: float = Field(
-        ..., 
+        ...,
         description="The estimated total cost of the desired groceries"
     )
     remaining_budget: float = Field(
-        ..., 
+        ...,
         description="The remaining money after buying the groceries (budget - estimated cost)"
     )
     affordable_items: List[str] = Field(
@@ -233,11 +244,11 @@ class RecipeAndBudgetAnalysis(BaseModel):
         description="List of desired items that CANNOT be bought within the budget"
     )
     suggested_recipes: List[str] = Field(
-        ..., 
+        ...,
         description="1-3 recipes we can cook using the vegetables in the basket and/or groceries"
     )
     explanation: str = Field(
-        ..., 
+        ...,
         description="A short explanation of the cost estimates, budget check, and recipe selections"
     )
 
@@ -264,21 +275,21 @@ async def structured_output(request: StructuredInputExample):
 
     try:
         logger.info("Executing structured output query directly with LLM...")
-        
+
         # Instantiate LLM from factory
         from services.llm_factory import LLMFactory
         llm = LLMFactory.create_llm()
-            
+
         # Bind the schema to the LLM to enforce structured output
         structured_llm = llm.with_structured_output(RecipeAndBudgetAnalysis)
-        
+
         response = cast(RecipeAndBudgetAnalysis, await structured_llm.ainvoke(formatted_prompt))
         return response
-        
+
     except Exception as e:
         logger.error(f"Error executing structured output: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Structured output error: {str(e)}. (Make sure your configured provider supports structured output)."
         )
 
@@ -289,7 +300,8 @@ async def not_found_handler(request, exc):
     """Handle 404 errors."""
     return JSONResponse(
         status_code=404,
-        content={"detail": "Endpoint not found. Check /docs for available endpoints."},
+        content={
+            "detail": "Endpoint not found. Check /docs for available endpoints."},
     )
 
 
@@ -303,27 +315,31 @@ async def internal_error_handler(request, exc):
 
 def main():
     """Run the FastAPI application."""
+    from config import settings
+    port = settings.port
+
     print("\n" + "=" * 60)
     print("🚀 Starting LangChain Agent API Server")
     print("=" * 60)
-    print("📍 Server: http://localhost:8000")
-    print("📚 API Docs: http://localhost:8000/docs")
-    print("🔄 ReDoc: http://localhost:8000/redoc")
-    print("💬 Chat Interface: http://localhost:8000/chat")
+    print(f"📍 Server: http://localhost:{port}")
+    print(f"📚 API Docs: http://localhost:{port}/docs")
+    print(f"🔄 ReDoc: http://localhost:{port}/redoc")
+    print(f"💬 Chat Interface: http://localhost:{port}/chat")
 
     if LANGSERVE_AVAILABLE:
-        print("🎮 Playground: http://localhost:8000/agent/playground")
-        print("📡 Streaming: POST http://localhost:8000/agent/stream")
+        print(f"🎮 Playground: http://localhost:{port}/agent/playground")
+        print(f"📡 Streaming: POST http://localhost:{port}/agent/stream")
     else:
-        print("⚠️  LangServe not available - install with: pip install langserve[all]")
-        print("📡 Query endpoint: POST http://localhost:8000/query")
+        print(
+            "⚠️  LangServe not available - install with: pip install langserve[all]")
+        print(f"📡 Query endpoint: POST http://localhost:{port}/query")
 
     print("=" * 60 + "\n")
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=port,
         log_level="info",
         access_log=True,
     )
