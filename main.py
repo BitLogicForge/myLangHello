@@ -26,12 +26,14 @@ class AgentApp:
         logger.info("Initializing AgentApp...")
 
         self.config = app_config
-        self.execution_settings = AgentExecutionSettings.from_config(self.config)
+        self.execution_settings = AgentExecutionSettings.from_config(
+            self.config)
 
         # Create configurator and build agent
         configurator = AgentConfigurator()
         self.agent_executor = configurator.build_agent()
-        self.agent_runner = AgentRunner(self.agent_executor, self.execution_settings)
+        self.agent_runner = AgentRunner(
+            self.agent_executor, self.execution_settings)
         self.output_formatter = StreamingOutputFormatter()
 
         logger.info("✅ AgentApp initialized successfully")
@@ -54,7 +56,8 @@ class AgentApp:
         # Prepare messages using shared utility
         messages = prepare_messages_with_history(question, history)
         if history:
-            logger.info(f"Including {len(history)} history messages + current question")
+            logger.info(
+                f"Including {len(history)} history messages + current question")
 
         agent_input: dict[str, Any] = {"messages": messages}
 
@@ -82,8 +85,10 @@ def main() -> None:
     # Example question
     question = (
         "tell me weather in poznan today, and what date is today, and weather in london"
+        "tell me their coordinetses"
+        # "calculate 2+666*7, and convert 100 USD to EUR"
         # "list first 5 countries on letter B and their codes from db"
-        "then check weather for each country treating them as city"
+        # "then check weather for each country treating them as city"
         # "write it to file weather.txt"
         # "what is my name? do i have sibilings?"
         # "calculate loan for amount 25000 USD, term 5 years, interest rate 4.5 and convert to EUR"

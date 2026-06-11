@@ -17,6 +17,7 @@ load_dotenv()
 # Sandbox folder inside workspace directory
 SANDBOX_DIR = Path(__file__).parent.resolve() / "sandbox"
 
+
 def _safe_path(user_path: str) -> Path:
     """Resolve user path relative to sandbox folder and ensure it doesn't escape."""
     SANDBOX_DIR.mkdir(exist_ok=True)
@@ -37,10 +38,13 @@ class CalculatorInput(BaseModel):
         description="The mathematical expression to evaluate safely (e.g. '2 + 2 * (3 - 1)'). Supports basic operations: +, -, *, /, **"
     )
 
+
 @tool(args_schema=CalculatorInput)
 def calculator(expression: str) -> str:
     """Evaluate a math expression safely and return the result as a string.
     Supports basic operations: +, -, *, /, ** (power)
+    Use it when you need to perform calculations, but do not use it for anything else. 
+    Do not execute any code or access files. Just evaluate the math expression and return the result.
     """
     try:
         # Define allowed operations
@@ -60,14 +64,17 @@ def calculator(expression: str) -> str:
                 return node.value
             elif isinstance(node, ast.BinOp):  # Binary operation
                 if type(node.op) not in allowed_ops:
-                    raise ValueError(f"Unsupported operation: {type(node.op).__name__}")
+                    raise ValueError(
+                        f"Unsupported operation: {type(node.op).__name__}")
                 return allowed_ops[type(node.op)](eval_node(node.left), eval_node(node.right))
             elif isinstance(node, ast.UnaryOp):  # Unary operation (e.g., -5)
                 if type(node.op) not in allowed_ops:
-                    raise ValueError(f"Unsupported operation: {type(node.op).__name__}")
+                    raise ValueError(
+                        f"Unsupported operation: {type(node.op).__name__}")
                 return allowed_ops[type(node.op)](eval_node(node.operand))
             else:
-                raise ValueError(f"Unsupported expression type: {type(node).__name__}")
+                raise ValueError(
+                    f"Unsupported expression type: {type(node).__name__}")
 
         tree = ast.parse(expression, mode="eval")
         result = eval_node(tree.body)
@@ -88,6 +95,7 @@ class WeatherInput(BaseModel):
         description="The city name to get weather for (e.g. 'Poznan', 'London')."
     )
 
+
 @tool(args_schema=WeatherInput)
 def weather(city: str) -> str:
     """Return a fake weather report for the given city."""
@@ -106,6 +114,7 @@ class ReadFileInput(BaseModel):
         ...,
         description="The path of the file to read (relative to the safe sandbox folder)."
     )
+
 
 @tool(args_schema=ReadFileInput)
 def read_file(path: str) -> str:
@@ -135,6 +144,7 @@ class WriteFileInput(BaseModel):
         description="The text content to write into the file."
     )
 
+
 @tool(args_schema=WriteFileInput)
 def write_file(path: str, content: str) -> str:
     """Write content to a file in the sandbox directory. Return success or error message."""
@@ -163,6 +173,7 @@ class CurrentDateInput(BaseModel):
         description="Include time (defaults to False)."
     )
 
+
 @tool(args_schema=CurrentDateInput)
 def current_date(with_date: bool = True, with_time: bool = False) -> str:
     """Return the current date and/or time as a string.
@@ -190,6 +201,7 @@ class HttpGetInput(BaseModel):
         description="The HTTP/HTTPS URL to perform a GET request on."
     )
 
+
 @tool(args_schema=HttpGetInput)
 def http_get(url: str) -> str:
     """Perform an HTTP GET and return a short summary/result."""
@@ -215,6 +227,7 @@ class RandomJokeInput(BaseModel):
         description="Optional keyword search query to filter jokes by topic (e.g. 'bug', 'Java')."
     )
 
+
 @tool(args_schema=RandomJokeInput)
 def random_joke(query: str = "") -> str:
     """Return a small, harmless random joke. Filters by the query keyword if provided.
@@ -231,14 +244,15 @@ def random_joke(query: str = "") -> str:
         "What do you call 8 hobbits? A hobbyte.",
         "Why did the programmer quit his job? Because he didn't get arrays.",
     ]
-    
+
     filtered_jokes = jokes
     if query:
         q = query.lower().strip()
         filtered_jokes = [j for j in jokes if q in j.lower()]
-        
-    selected_joke = random.choice(filtered_jokes) if filtered_jokes else random.choice(jokes)
-    
+
+    selected_joke = random.choice(
+        filtered_jokes) if filtered_jokes else random.choice(jokes)
+
     # Capitalize the last word to satisfy the docstring instruction
     words = selected_joke.split()
     if words:
@@ -250,7 +264,7 @@ def random_joke(query: str = "") -> str:
             punctuation = last_word[-1]
             last_word = last_word[:-1]
         words[-1] = last_word.upper() + punctuation
-        
+
     return " ".join(words)
 
 
@@ -263,6 +277,7 @@ class JokeFormatInput(BaseModel):
         ...,
         description="The raw joke text to format with decorative borders."
     )
+
 
 @tool(args_schema=JokeFormatInput)
 def joke_format(joke: str) -> str:
@@ -299,6 +314,7 @@ class LoanCalculatorInput(BaseModel):
         gt=0,
         description="The term of the loan in years (must be positive)."
     )
+
 
 @tool(args_schema=LoanCalculatorInput)
 def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
@@ -365,6 +381,7 @@ class CurrencyConverterInput(BaseModel):
         max_length=3,
         description="The 3-letter currency code to convert to (e.g., 'EUR')."
     )
+
 
 @tool(args_schema=CurrencyConverterInput)
 def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
@@ -436,6 +453,7 @@ class CityToCoordinatesInput(BaseModel):
         description="The city name to find coordinates for (e.g. 'Paris', 'New York')."
     )
 
+
 @tool(args_schema=CityToCoordinatesInput)
 def city_to_coordinates(city: str) -> str:
     """Find latitude, longitude, country, and timezone for a given city."""
@@ -444,21 +462,19 @@ def city_to_coordinates(city: str) -> str:
         resp = requests.get(url, timeout=5)
         if resp.status_code != 200:
             return f"Error: Geocoding API returned status code {resp.status_code}"
-        
+
         data = resp.json()
         results = data.get("results")
         if not results:
             return f"Error: City '{city}' not found."
-        
+
         loc = results[0]
         name = loc.get("name")
         country = loc.get("country", "Unknown")
         lat = loc.get("latitude")
         lon = loc.get("longitude")
         timezone = loc.get("timezone", "Unknown")
-        
+
         return f"City: {name}, Country: {country}, Latitude: {lat}, Longitude: {lon}, Timezone: {timezone}"
     except Exception as e:
         return f"Error finding coordinates: {e}"
-
-
