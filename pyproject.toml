@@ -24,6 +24,7 @@ dependencies = [
     "mypy",
     "pytest",
     "pytest-asyncio",
+    "pydantic-settings",
 ]
 
 [tool.uv]

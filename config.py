@@ -3,9 +3,58 @@
 import logging
 from typing import Any, Optional
 
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from utils import read_json_file
 
 logger = logging.getLogger(__name__)
+
+
+class AppSettings(BaseSettings):
+    """Application settings loaded from environment variables and .env file."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+    # OpenAI Configuration
+    openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
+    openai_organization: Optional[str] = Field(default=None, alias="OPENAI_ORGANIZATION")
+    openai_base_url: Optional[str] = Field(default=None, alias="OPENAI_BASE_URL")
+
+    # Database Configuration
+    db_enabled: bool = Field(default=False, alias="DB_ENABLED")
+    db_host: Optional[str] = Field(default=None, alias="DB_HOST")
+    db_name: Optional[str] = Field(default=None, alias="DB_NAME")
+    db_username: Optional[str] = Field(default=None, alias="DB_USERNAME")
+    db_password: Optional[str] = Field(default=None, alias="DB_PASSWORD")
+    db_use_windows_auth: bool = Field(default=False, alias="DB_USE_WINDOWS_AUTH")
+    db_driver: str = Field(default="ODBC Driver 17 for SQL Server", alias="DB_DRIVER")
+
+    # Azure OpenAI Configuration
+    azure_openai_api_key: Optional[str] = Field(default=None, alias="AZURE_OPENAI_API_KEY")
+    azure_openai_endpoint: Optional[str] = Field(default=None, alias="AZURE_OPENAI_ENDPOINT")
+    azure_openai_api_version: str = Field(default="2024-02-15-preview", alias="AZURE_OPENAI_API_VERSION")
+    azure_openai_deployment_name: Optional[str] = Field(default=None, alias="AZURE_OPENAI_DEPLOYMENT_NAME")
+
+    # LM Studio Configuration
+    lmstudio_base_url: str = Field(default="http://localhost:1234/v1", alias="LMSTUDIO_BASE_URL")
+    lmstudio_api_key: str = Field(default="lm-studio", alias="LMSTUDIO_API_KEY")
+
+    # Ollama Configuration
+    ollama_base_url: Optional[str] = Field(default=None, alias="OLLAMA_BASE_URL")
+    ollama_api_key: Optional[str] = Field(default=None, alias="OLLAMA_API_KEY")
+
+    # LangChain Tracing
+    langchain_tracing_v2: bool = Field(default=False, alias="LANGCHAIN_TRACING_V2")
+    langchain_api_key: Optional[str] = Field(default=None, alias="LANGCHAIN_API_KEY")
+    langchain_project: str = Field(default="default", alias="LANGCHAIN_PROJECT")
+
+    # Logging Configuration
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
 
 class Config:
@@ -87,3 +136,7 @@ class Config:
         """Reset the singleton instance (useful for testing)."""
         cls._instance = None
         cls._config = None
+
+
+# Global settings instance loaded from environment variables and .env file
+settings = AppSettings()
