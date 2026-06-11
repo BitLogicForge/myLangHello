@@ -425,3 +425,40 @@ Note: These are simulated rates for demonstration
     except Exception as e:
         return f"Error converting currency: {e}"
 
+
+# ==========================================
+# MARK: city to coordinates tool
+# ==========================================
+
+class CityToCoordinatesInput(BaseModel):
+    city: str = Field(
+        ...,
+        description="The city name to find coordinates for (e.g. 'Paris', 'New York')."
+    )
+
+@tool(args_schema=CityToCoordinatesInput)
+def city_to_coordinates(city: str) -> str:
+    """Find latitude, longitude, country, and timezone for a given city."""
+    try:
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={city.strip()}&count=1"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code != 200:
+            return f"Error: Geocoding API returned status code {resp.status_code}"
+        
+        data = resp.json()
+        results = data.get("results")
+        if not results:
+            return f"Error: City '{city}' not found."
+        
+        loc = results[0]
+        name = loc.get("name")
+        country = loc.get("country", "Unknown")
+        lat = loc.get("latitude")
+        lon = loc.get("longitude")
+        timezone = loc.get("timezone", "Unknown")
+        
+        return f"City: {name}, Country: {country}, Latitude: {lat}, Longitude: {lon}, Timezone: {timezone}"
+    except Exception as e:
+        return f"Error finding coordinates: {e}"
+
+

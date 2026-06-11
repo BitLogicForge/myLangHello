@@ -7,6 +7,7 @@ from langchain_core.tools import BaseTool
 
 from tools import (
     calculator,
+    city_to_coordinates,
     currency_converter,
     current_date,
     http_get,
@@ -43,6 +44,7 @@ class ToolsManager:
 
         tools_list = [
             calculator,
+            city_to_coordinates,
             weather,
             read_file,
             write_file,
