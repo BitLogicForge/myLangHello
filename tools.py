@@ -4,20 +4,43 @@ import ast
 import operator
 import os
 import random
+from datetime import datetime
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
+# Sandbox folder inside workspace directory
+SANDBOX_DIR = Path(__file__).parent.resolve() / "sandbox"
 
+def _safe_path(user_path: str) -> Path:
+    """Resolve user path relative to sandbox folder and ensure it doesn't escape."""
+    SANDBOX_DIR.mkdir(exist_ok=True)
+    clean_path = user_path.lstrip("/\\")
+    resolved_path = (SANDBOX_DIR / clean_path).resolve()
+    if not resolved_path.is_relative_to(SANDBOX_DIR):
+        raise PermissionError("Access denied: path is outside the sandbox.")
+    return resolved_path
+
+
+# ==========================================
 # MARK: calculator tool
-@tool
+# ==========================================
+
+class CalculatorInput(BaseModel):
+    expression: str = Field(
+        ...,
+        description="The mathematical expression to evaluate safely (e.g. '2 + 2 * (3 - 1)'). Supports basic operations: +, -, *, /, **"
+    )
+
+@tool(args_schema=CalculatorInput)
 def calculator(expression: str) -> str:
     """Evaluate a math expression safely and return the result as a string.
     Supports basic operations: +, -, *, /, ** (power)
-    Example: "2 + 2 * (3 - 1)"
     """
     try:
         # Define allowed operations
@@ -55,8 +78,17 @@ def calculator(expression: str) -> str:
         return f"Error: {e}"
 
 
+# ==========================================
 # MARK: weather tool
-@tool
+# ==========================================
+
+class WeatherInput(BaseModel):
+    city: str = Field(
+        ...,
+        description="The city name to get weather for (e.g. 'Poznan', 'London')."
+    )
+
+@tool(args_schema=WeatherInput)
 def weather(city: str) -> str:
     """Return a fake weather report for the given city."""
     temp_c = random.randint(-10, 35)
@@ -65,47 +97,77 @@ def weather(city: str) -> str:
     return f"The weather in {city} is {condition} and {temp_c}°C."
 
 
+# ==========================================
 # MARK: read file tools
-@tool
+# ==========================================
+
+class ReadFileInput(BaseModel):
+    path: str = Field(
+        ...,
+        description="The path of the file to read (relative to the safe sandbox folder)."
+    )
+
+@tool(args_schema=ReadFileInput)
 def read_file(path: str) -> str:
-    """Read a file and return its contents or an error message."""
+    """Read a file from the sandbox directory and return its contents or an error message."""
     try:
-        if not os.path.exists(path):
+        safe_p = _safe_path(path)
+        if not safe_p.exists() or not safe_p.is_file():
             return f"Error: file not found: {path}"
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
+        return safe_p.read_text(encoding="utf-8")
+    except PermissionError as pe:
+        return str(pe)
     except Exception as e:
         return f"Error reading file: {e}"
 
 
+# ==========================================
 # MARK: write file tool
-@tool
+# ==========================================
+
+class WriteFileInput(BaseModel):
+    path: str = Field(
+        ...,
+        description="The path of the file to write to (relative to the safe sandbox folder)."
+    )
+    content: str = Field(
+        ...,
+        description="The text content to write into the file."
+    )
+
+@tool(args_schema=WriteFileInput)
 def write_file(path: str, content: str) -> str:
-    """Write content to a file. Return success or error message."""
+    """Write content to a file in the sandbox directory. Return success or error message."""
     try:
-        dirpath = os.path.dirname(path)
-        if dirpath and not os.path.exists(dirpath):
-            os.makedirs(dirpath, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(content)
-        return f"Wrote {len(content)} bytes to {path}"
+        safe_p = _safe_path(path)
+        safe_p.parent.mkdir(parents=True, exist_ok=True)
+        safe_p.write_text(content, encoding="utf-8")
+        return f"Wrote {len(content)} bytes to sandbox file: {path}"
+    except PermissionError as pe:
+        return str(pe)
     except Exception as e:
         return f"Error writing file: {e}"
 
 
+# ==========================================
 # MARK: current date/time tool
-@tool
+# ==========================================
+
+class CurrentDateInput(BaseModel):
+    with_date: bool = Field(
+        default=True,
+        description="Include date (defaults to True)."
+    )
+    with_time: bool = Field(
+        default=False,
+        description="Include time (defaults to False)."
+    )
+
+@tool(args_schema=CurrentDateInput)
 def current_date(with_date: bool = True, with_time: bool = False) -> str:
     """Return the current date and/or time as a string.
-
-    Args:
-        with_date: Include date (default: True)
-        with_time: Include time (default: False)
-
     Returns date only, time only, or both based on the parameters.
     """
-    from datetime import datetime
-
     now = datetime.now()
 
     if with_date and with_time:
@@ -118,8 +180,17 @@ def current_date(with_date: bool = True, with_time: bool = False) -> str:
         return now.strftime("%Y-%m-%d")  # Default to date if both are False
 
 
+# ==========================================
 # MARK: http get tool
-@tool
+# ==========================================
+
+class HttpGetInput(BaseModel):
+    url: str = Field(
+        ...,
+        description="The HTTP/HTTPS URL to perform a GET request on."
+    )
+
+@tool(args_schema=HttpGetInput)
 def http_get(url: str) -> str:
     """Perform an HTTP GET and return a short summary/result."""
     try:
@@ -134,11 +205,20 @@ def http_get(url: str) -> str:
         return f"HTTP GET error: {e}"
 
 
+# ==========================================
 # MARK: random joke tool
-@tool
+# ==========================================
+
+class RandomJokeInput(BaseModel):
+    query: str = Field(
+        default="",
+        description="Optional keyword search query to filter jokes by topic (e.g. 'bug', 'Java')."
+    )
+
+@tool(args_schema=RandomJokeInput)
 def random_joke(query: str = "") -> str:
-    """Return a small, harmless random joke. The query parameter is ignored.
-    make sure last word is  capital in final output.
+    """Return a small, harmless random joke. Filters by the query keyword if provided.
+    Enforces that the last word of the joke is capitalized.
     """
     jokes = [
         "Why do programmers prefer dark mode? Because light attracts bugs.",
@@ -151,19 +231,42 @@ def random_joke(query: str = "") -> str:
         "What do you call 8 hobbits? A hobbyte.",
         "Why did the programmer quit his job? Because he didn't get arrays.",
     ]
-    return random.choice(jokes)
+    
+    filtered_jokes = jokes
+    if query:
+        q = query.lower().strip()
+        filtered_jokes = [j for j in jokes if q in j.lower()]
+        
+    selected_joke = random.choice(filtered_jokes) if filtered_jokes else random.choice(jokes)
+    
+    # Capitalize the last word to satisfy the docstring instruction
+    words = selected_joke.split()
+    if words:
+        # strip final punctuation before capitalizing, or just capitalize the token
+        last_word = words[-1]
+        # remove common trailing punctuation if any (like .) to capitalize word correctly, then re-append
+        punctuation = ""
+        if last_word and last_word[-1] in ".?!":
+            punctuation = last_word[-1]
+            last_word = last_word[:-1]
+        words[-1] = last_word.upper() + punctuation
+        
+    return " ".join(words)
 
 
+# ==========================================
 # MARK: joke formatting tool
-@tool
+# ==========================================
+
+class JokeFormatInput(BaseModel):
+    joke: str = Field(
+        ...,
+        description="The raw joke text to format with decorative borders."
+    )
+
+@tool(args_schema=JokeFormatInput)
 def joke_format(joke: str) -> str:
-    """Format a joke with decorative borders for better presentation.
-
-    Args:
-        joke: The joke text to format
-
-    Returns a nicely formatted joke with visual separators.Do not add any extra text.
-    """
+    """Format a joke with decorative borders for better presentation. Do not add any extra text."""
     border = "═" * (len(joke) + 2)
     spacex = " " * (len(joke) + 2)
     return f"""
@@ -176,8 +279,28 @@ Best joke for you:
 """
 
 
+# ==========================================
 # MARK: loan calculator tool
-@tool
+# ==========================================
+
+class LoanCalculatorInput(BaseModel):
+    principal: float = Field(
+        ...,
+        gt=0,
+        description="The principal loan amount in USD (must be positive)."
+    )
+    annual_rate: float = Field(
+        ...,
+        ge=0,
+        description="The annual interest rate as a percentage (e.g., 5.5 for 5.5%)."
+    )
+    years: int = Field(
+        ...,
+        gt=0,
+        description="The term of the loan in years (must be positive)."
+    )
+
+@tool(args_schema=LoanCalculatorInput)
 def loan_calculator(principal: float, annual_rate: float, years: int) -> str:
     """Calculate loan payments given principal in USD, annual rate, and term in years."""
     try:
@@ -220,8 +343,30 @@ Interest Percentage: {(total_interest/principal)*100:.2f}% of principal
         return f"Error calculating loan: {e}"
 
 
+# ==========================================
 # MARK: currency converter tool
-@tool
+# ==========================================
+
+class CurrencyConverterInput(BaseModel):
+    amount: float = Field(
+        ...,
+        gt=0,
+        description="The currency amount to convert (must be positive)."
+    )
+    from_currency: str = Field(
+        ...,
+        min_length=3,
+        max_length=3,
+        description="The 3-letter currency code to convert from (e.g., 'USD')."
+    )
+    to_currency: str = Field(
+        ...,
+        min_length=3,
+        max_length=3,
+        description="The 3-letter currency code to convert to (e.g., 'EUR')."
+    )
+
+@tool(args_schema=CurrencyConverterInput)
 def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
     """Convert amount from one currency to another using simulated exchange rates."""
     try:
@@ -279,3 +424,4 @@ Note: These are simulated rates for demonstration
         return "Error: Invalid amount. First parameter must be a number"
     except Exception as e:
         return f"Error converting currency: {e}"
+
