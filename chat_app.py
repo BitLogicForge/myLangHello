@@ -70,8 +70,7 @@ async def main(message: cl.Message):
                     elif hasattr(msg, "content") and msg.content and not (hasattr(msg, "tool_calls") and msg.tool_calls):
                         # Avoid adding raw tool feedback back as text message
                         if node_name != "tools" and msg.type == "ai":
-                            final_message.content += msg.content
-                            # Update the UI incrementally
+                            # Update the UI incrementally (stream_token automatically appends to final_message.content)
                             await final_message.stream_token(msg.content)
 
         # Finalize the message stream
