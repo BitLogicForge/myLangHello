@@ -7,6 +7,7 @@ from .discussion_orchestrator import DiscussionOrchestrator
 from .llm_factory import LLMFactory
 from .llm_provider_azure import AzureLLMProvider
 from .llm_provider_lmstudio import LMStudioLLMProvider
+from .llm_provider_ollama import OllamaLLMProvider
 from .llm_provider_openai import OpenAILLMProvider
 from .output_formatter import StreamingOutputFormatter
 from .prompt_builder import PromptBuilder
@@ -23,6 +24,7 @@ __all__ = [
     "DiscussionOrchestrator",
     "AzureLLMProvider",
     "LMStudioLLMProvider",
+    "OllamaLLMProvider",
     "OpenAILLMProvider",
     "StreamingOutputFormatter",
     "AgentConfigurator",

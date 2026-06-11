@@ -119,6 +119,24 @@ This document lists all expected environment variables for the application.
 - **Default**: internal placeholder value
 - **Used by**: LLM Factory for LM Studio provider
 
+### Ollama Configuration
+
+#### `OLLAMA_BASE_URL`
+
+- **Required**: No
+- **Description**: Base URL for the local Ollama OpenAI-compatible API
+- **Default**: `http://localhost:11434/v1`
+- **Example**: `http://localhost:11434/v1`
+- **Devcontainer example**: `http://host.docker.internal:11434/v1`
+- **Used by**: LLM Factory for Ollama provider
+
+#### `OLLAMA_API_KEY`
+
+- **Required**: No
+- **Description**: Optional compatibility value for clients that expect an API key field
+- **Default**: `ollama`
+- **Used by**: LLM Factory for Ollama provider
+
 ### Observability & Monitoring
 
 #### `LANGCHAIN_TRACING_V2`
@@ -190,6 +208,12 @@ DB_USE_WINDOWS_AUTH=true
 # LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1
 # LMSTUDIO_API_KEY=lm-studio
 
+# Optional - Ollama (no auth required by default)
+# OLLAMA_BASE_URL=http://localhost:11434/v1
+# Inside the devcontainer, use the host alias instead:
+# OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+# OLLAMA_API_KEY=ollama
+
 # Optional - LangSmith Tracing
 # LANGCHAIN_TRACING_V2=true
 # LANGCHAIN_API_KEY=ls__your-langsmith-key
@@ -205,5 +229,5 @@ DB_USE_WINDOWS_AUTH=true
 - Add `.env` to your `.gitignore` file
 - Use `.env.example` as a template without actual secrets
 - For production, use environment variables set directly on your server/container
-- Provider selection (`openai`, `azure`, or `lmstudio`) is configured in `config.json`
-- The devcontainer sets `LMSTUDIO_BASE_URL` to `http://host.docker.internal:1234/v1` so code running in the container can reach LM Studio on the host.
+- Provider selection (`openai`, `azure`, `lmstudio`, or `ollama`) is configured in `config.json`
+- The devcontainer sets `LMSTUDIO_BASE_URL` and `OLLAMA_BASE_URL` to point to the host machine so code running in the container can reach services on the host.

@@ -6,6 +6,7 @@
 
   "containerEnv": {
     "LMSTUDIO_BASE_URL": "http://host.docker.internal:1234/v1",
+    "OLLAMA_BASE_URL": "http://host.docker.internal:11434/v1",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
     "UV_LINK_MODE": "copy"
   },

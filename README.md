@@ -17,7 +17,7 @@ This project exposes an agent that can:
 ## Main Capabilities
 
 - Provider selection through `config.json`
-- OpenAI, Azure OpenAI, and LM Studio support
+- OpenAI, Azure OpenAI, LM Studio, and Ollama support
 - Config-driven runtime guardrails
 - SQL database toolkit integration
 - GitHub MCP integration available for repository and PR workflows
@@ -83,6 +83,7 @@ The project is organized around a few core layers:
   - OpenAI
   - Azure OpenAI
   - LM Studio
+  - Ollama
 - SQL Server access if you want database tooling enabled
 - A `.env` file with the required secrets and connection values
 
@@ -114,6 +115,7 @@ Set the `provider` field in `config.json`:
 - `openai`
 - `azure`
 - `lmstudio`
+- `ollama`
 
 ### 2. Add environment variables
 
@@ -144,6 +146,22 @@ LMSTUDIO_BASE_URL=http://host.docker.internal:1234/v1
 ```
 
 Keep LM Studio's local server running on the host and make sure the port is allowed through your firewall.
+
+For Ollama, a typical local setup is:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_API_KEY=ollama
+```
+
+When running inside the devcontainer, the devcontainer sets:
+
+```env
+OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+```
+
+Keep Ollama running on the host and ensure the model (e.g. `gemma4:e4b`) has been pulled (`ollama run gemma4:e4b`).
+
 
 ### 3. Configure agent behavior
 
