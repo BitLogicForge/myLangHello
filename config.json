@@ -2,6 +2,7 @@
   "provider": "ollama",
   "system_prompt_path": "messages/system_prompt.txt",
   "agent": {
+    "enable_db": false,
     "verbose": true,
     "max_iterations": 10,
     "max_execution_time": 60,

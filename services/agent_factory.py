@@ -63,50 +63,59 @@ class AgentFactory:
         #     verbose=verbose,
         # )
 
+        enable_db = os.getenv("DB_ENABLED", "false").lower() in ("true", "1")
+        enable_db = enable_db and config.get("agent.enable_db", False)
+
         db_host = os.getenv("DB_HOST")
-        db_name = os.getenv("DB_NAME")
-        db_user = os.getenv("DB_USERNAME")
-        db_password = os.getenv("DB_PASSWORD")
-        db_driver = os.getenv("DB_DRIVER")
 
-        conn_str = (
-            f"mssql+pyodbc://{db_user}:{db_password}@"
-            f"{db_host}/{db_name}?driver={db_driver}&TrustServerCertificate=yes"
-        )
-        include_tables = config.get("agent.sql.include_tables", [])
-        include_tables = include_tables if include_tables else None
+        if not enable_db or not db_host:
+            logger.info("Database tools are disabled or DB_HOST is not configured. Starting agent with utility tools only.")
+            all_tools = self.tools
+        else:
+            db_name = os.getenv("DB_NAME")
+            db_user = os.getenv("DB_USERNAME")
+            db_password = os.getenv("DB_PASSWORD")
+            db_driver = os.getenv("DB_DRIVER")
 
-        # Create SQL toolkit with view support enabled
-        toolkit = SQLDatabaseToolkit(
-            db=SQLDatabase.from_uri(
-                database_uri=conn_str,
-                # SQLAlchemy engine configuration
-                # engine_args={
-                #     "pool_size": 5,
-                #     "max_overflow": 10,
-                #     "pool_recycle": 3600,
-                #     "pool_pre_ping": True,
-                # },
-                # Schema and table filtering
-                schema="dbo",  # Restrict to specific schema
-                include_tables=include_tables,
-                # ignore_tables=["audit_log", "temp_table"],  # Blacklist tables
-                # Table info and metadata
-                view_support=True,  # Enable querying database views
-                # sample_rows_in_table_info=3,  # Sample rows in table info (default: 3)
-                # indexes_in_table_info=False,  # Include indexes (default: False)
-                # custom_table_info={"table_name": "Custom description"},  # Custom desc
-                # max_string_length=300,  # Max string length (default: 300)
-                # Performance optimization
-                # lazy_table_reflection=False,  # Delay table metadata loading (default)
-                # Advanced (rarely needed)
-                # metadata=None,  # SQLAlchemy MetaData object
-            ),
-            llm=self.llm,
-        )
+            conn_str = (
+                f"mssql+pyodbc://{db_user}:{db_password}@"
+                f"{db_host}/{db_name}?driver={db_driver}&TrustServerCertificate=yes"
+            )
+            include_tables = config.get("agent.sql.include_tables", [])
+            include_tables = include_tables if include_tables else None
 
-        # Combine SQL toolkit tools with custom tools
-        all_tools = toolkit.get_tools() + self.tools
+            logger.info(f"Database tools enabled. Connecting to database at {db_host}...")
+            # Create SQL toolkit with view support enabled
+            toolkit = SQLDatabaseToolkit(
+                db=SQLDatabase.from_uri(
+                    database_uri=conn_str,
+                    # SQLAlchemy engine configuration
+                    # engine_args={
+                    #     "pool_size": 5,
+                    #     "max_overflow": 10,
+                    #     "pool_recycle": 3600,
+                    #     "pool_pre_ping": True,
+                    # },
+                    # Schema and table filtering
+                    schema="dbo",  # Restrict to specific schema
+                    include_tables=include_tables,
+                    # ignore_tables=["audit_log", "temp_table"],  # Blacklist tables
+                    # Table info and metadata
+                    view_support=True,  # Enable querying database views
+                    # sample_rows_in_table_info=3,  # Sample rows in table info (default: 3)
+                    # indexes_in_table_info=False,  # Include indexes (default: False)
+                    # custom_table_info={"table_name": "Custom description"},  # Custom desc
+                    # max_string_length=300,  # Max string length (default: 300)
+                    # Performance optimization
+                    # lazy_table_reflection=False,  # Delay table metadata loading (default)
+                    # Advanced (rarely needed)
+                    # metadata=None,  # SQLAlchemy MetaData object
+                ),
+                llm=self.llm,
+            )
+
+            # Combine SQL toolkit tools with custom tools
+            all_tools = toolkit.get_tools() + self.tools
 
         # Use create_agent to support custom tools
         agent = create_agent(

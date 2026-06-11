@@ -15,6 +15,14 @@ This document lists all expected environment variables for the application.
 
 ### Database Configuration
 
+#### `DB_ENABLED`
+
+- **Required**: No
+- **Description**: Enable or disable database agent tools
+- **Values**: `true` or `false`
+- **Default**: `true`
+- **Used by**: Agent Factory
+
 #### `DB_HOST`
 
 - **Required**: Yes (when using database tools)
@@ -177,6 +185,9 @@ This document lists all expected environment variables for the application.
 ```env
 # Required - OpenAI API Key
 OPENAI_API_KEY=sk-proj-your-api-key-here
+
+# Optional - Enable Database Tools (set to false to bypass DB connection)
+DB_ENABLED=true
 
 # Required - Database Connection
 DB_HOST=localhost
