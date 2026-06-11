@@ -1,10 +1,11 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, List, cast
+from pydantic import BaseModel, Field
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -110,6 +111,168 @@ if LANGSERVE_AVAILABLE and agent_executor:
     )
     print("✅ LangServe routes added at /agent")
     print("📊 Playground available at http://localhost:8000/agent/playground")
+
+
+# ==========================================
+# MARK: Structured Input Example Route
+# ==========================================
+
+class StructuredInputExample(BaseModel):
+    """Example of a structured input payload.
+    
+    Includes a basket of vegetables, amount of money, desire to buy list of groceries, and a query.
+    """
+    basket: List[str] = Field(
+        ...,
+        description="List of vegetables currently in the basket",
+        json_schema_extra={"example": ["carrot", "cucumber", "spinach"]}
+    )
+    amount_of_money: float = Field(
+        ...,
+        description="Amount of money available to spend",
+        json_schema_extra={"example": 50.0}
+    )
+    desire_to_buy: List[str] = Field(
+        ...,
+        description="List of groceries that the user wants to buy",
+        json_schema_extra={"example": ["milk", "bread", "butter", "cheese"]}
+    )
+    query: str = Field(
+        ...,
+        description="Specific question or query to run with this context",
+        json_schema_extra={"example": "Can I afford all the items in my desire list? What recipe can I make with my basket?"}
+    )
+
+
+class StructuredResponse(BaseModel):
+    """Response model for the structured query endpoint."""
+    formatted_prompt: str = Field(..., description="The formatted prompt sent to the agent")
+    output: str = Field(..., description="The agent's response")
+    status: str = Field(..., description="Status of the query execution")
+
+
+@app.post(
+    "/structured-query",
+    response_model=StructuredResponse,
+    tags=["Examples"],
+    summary="Example endpoint showing how to handle structured inputs (e.g. basket, budget, grocery desires)"
+)
+async def structured_query(request: StructuredInputExample):
+    """
+    Example endpoint showing how to pass a structured request
+    (basket list, budget, grocery list, and a natural language query) to the agent.
+    """
+    if not AGENT_LOADED or agent_app is None:
+        raise HTTPException(status_code=503, detail="Agent application is not loaded")
+
+    # Format the structured parameters into a cohesive prompt for the agent
+    formatted_prompt = (
+        f"Vegetables in my basket: {', '.join(request.basket)}\n"
+        f"Amount of money I have: ${request.amount_of_money:.2f}\n"
+        f"Groceries I desire to buy: {', '.join(request.desire_to_buy)}\n"
+        f"Query: {request.query}"
+    )
+
+    try:
+        logger.info("Executing agent query with structured input...")
+        response = await agent_app.run(question=formatted_prompt)
+        
+        # Extract the final message content from the LangGraph response
+        output_text = "No response generated"
+        if response and isinstance(response, dict) and "messages" in response:
+            messages_list = response["messages"]
+            if messages_list:
+                final_message = messages_list[-1]
+                if hasattr(final_message, "content"):
+                    output_text = final_message.content
+                elif isinstance(final_message, tuple) and len(final_message) > 1:
+                    output_text = final_message[1]
+                else:
+                    output_text = str(final_message)
+        elif response is not None:
+            output_text = response.get("output", str(response))
+
+        return StructuredResponse(
+            formatted_prompt=formatted_prompt,
+            output=output_text,
+            status="success"
+        )
+    except Exception as e:
+        logger.error(f"Error executing structured query: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+
+
+class RecipeAndBudgetAnalysis(BaseModel):
+    """Structured response containing budget calculation and recipe recommendations."""
+    can_afford_all: bool = Field(
+        ..., 
+        description="True if the total estimated cost of all desired groceries is within the budget"
+    )
+    total_estimated_cost: float = Field(
+        ..., 
+        description="The estimated total cost of the desired groceries"
+    )
+    remaining_budget: float = Field(
+        ..., 
+        description="The remaining money after buying the groceries (budget - estimated cost)"
+    )
+    affordable_items: List[str] = Field(
+        ...,
+        description="List of desired items that CAN be bought within the budget"
+    )
+    missing_items: List[str] = Field(
+        ...,
+        description="List of desired items that CANNOT be bought within the budget"
+    )
+    suggested_recipes: List[str] = Field(
+        ..., 
+        description="1-3 recipes we can cook using the vegetables in the basket and/or groceries"
+    )
+    explanation: str = Field(
+        ..., 
+        description="A short explanation of the cost estimates, budget check, and recipe selections"
+    )
+
+
+@app.post(
+    "/structured-output",
+    response_model=RecipeAndBudgetAnalysis,
+    tags=["Examples"],
+    summary="Example endpoint showing how to get a structured JSON response directly from the LLM"
+)
+async def structured_output(request: StructuredInputExample):
+    """
+    Example endpoint demonstrating how to force the LLM to return
+    a fully structured JSON response (matching a Pydantic model)
+    instead of plain text.
+    """
+    # Format the input parameters into the prompt
+    formatted_prompt = (
+        f"Basket of vegetables: {', '.join(request.basket)}\n"
+        f"Available budget: ${request.amount_of_money:.2f}\n"
+        f"Groceries to buy: {', '.join(request.desire_to_buy)}\n"
+        f"Question: {request.query}\n"
+    )
+
+    try:
+        logger.info("Executing structured output query directly with LLM...")
+        
+        # Instantiate LLM from factory
+        from services.llm_factory import LLMFactory
+        llm = LLMFactory.create_llm()
+            
+        # Bind the schema to the LLM to enforce structured output
+        structured_llm = llm.with_structured_output(RecipeAndBudgetAnalysis)
+        
+        response = cast(RecipeAndBudgetAnalysis, await structured_llm.ainvoke(formatted_prompt))
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error executing structured output: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Structured output error: {str(e)}. (Make sure your configured provider supports structured output)."
+        )
 
 
 # Error handlers
