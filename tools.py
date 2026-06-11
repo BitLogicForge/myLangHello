@@ -8,7 +8,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 
-import requests
+import httpx
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
@@ -207,7 +207,8 @@ class HttpGetInput(BaseModel):
 async def http_get(url: str) -> str:
     """Perform an HTTP GET and return a short summary/result."""
     try:
-        resp = await asyncio.to_thread(requests.get, url, timeout=5)
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=5.0)
         summary = f"Status: {resp.status_code}; Length: {len(resp.content)}"
         try:
             text_preview = resp.text[:1000]
@@ -460,7 +461,8 @@ async def city_to_coordinates(city: str) -> str:
     """Find latitude, longitude, country, and timezone for a given city."""
     try:
         url = f"https://geocoding-api.open-meteo.com/v1/search?name={city.strip()}&count=1"
-        resp = await asyncio.to_thread(requests.get, url, timeout=5)
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=5.0)
         if resp.status_code != 200:
             return f"Error: Geocoding API returned status code {resp.status_code}"
 
