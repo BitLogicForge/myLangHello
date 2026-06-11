@@ -81,8 +81,8 @@ def main() -> None:
 
     # Example question
     question = (
-        # "tell me weather in poznan today, and what date is today, and weather in london"
-        "list first 5 countries on letter B and their codes from db"
+        "tell me weather in poznan today, and what date is today, and weather in london"
+        # "list first 5 countries on letter B and their codes from db"
         "then check weather for each country treating them as city"
         # "write it to file weather.txt"
         # "what is my name? do i have sibilings?"
