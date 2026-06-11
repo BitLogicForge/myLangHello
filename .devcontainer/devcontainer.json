@@ -4,7 +4,7 @@
 
   "runArgs": [
     "--name=${containerWorkspaceFolder}-python-dev",
-    "--add-host=host.docker.internal:host-gateway"
+    "--network=host"
   ],
 
   "containerEnv": {
