@@ -8,6 +8,7 @@ from config import Config
 
 from .llm_provider_azure import AzureLLMProvider
 from .llm_provider_lmstudio import LMStudioLLMProvider
+from .llm_provider_ollama import OllamaLLMProvider
 from .llm_provider_openai import OpenAILLMProvider
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class LLMFactory:
     """Factory for creating LLM instances based on provider configuration."""
 
-    SUPPORTED_PROVIDERS = ("azure", "lmstudio", "openai")
+    SUPPORTED_PROVIDERS = ("azure", "lmstudio", "openai", "ollama")
 
     @staticmethod
     def create_llm() -> BaseChatModel:
@@ -49,6 +50,8 @@ class LLMFactory:
             return AzureLLMProvider.create(provider_config)
         elif selected_provider == "lmstudio":
             return LMStudioLLMProvider.create(provider_config)
+        elif selected_provider == "ollama":
+            return OllamaLLMProvider.create(provider_config)
         elif selected_provider == "openai":
             return OpenAILLMProvider.create(provider_config)
         else:
