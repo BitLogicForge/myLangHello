@@ -25,6 +25,7 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "pydantic-settings",
+    "chainlit",
 ]
 
 [tool.uv]

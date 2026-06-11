@@ -15,6 +15,7 @@ types-colorama==0.4.15.20260408         # Type stubs for Colorama
 fastapi==0.135.3                # Modern web framework for building APIs
 uvicorn[standard]==0.44.0       # ASGI server for FastAPI
 langserve[all]==0.3.3           # LangChain server with streaming support (recommended)
+chainlit                        # Conversational AI UI framework
 
 # Metrics and Monitoring (Self-hosted)
 prometheus-client==0.25       # Prometheus metrics for self-hosted monitoring

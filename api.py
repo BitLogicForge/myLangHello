@@ -85,6 +85,14 @@ app.include_router(health_routes.router)
 app.include_router(agent_routes.router)
 app.include_router(config_routes.router)
 
+# Mount Chainlit Chat UI
+try:
+    from chainlit.utils import mount_chainlit
+    mount_chainlit(app=app, target="chat_app.py", path="/chat")
+    logger.info("✅ Chainlit Chat UI mounted at /chat")
+except Exception as e:
+    logger.warning(f"⚠️ Failed to mount Chainlit: {e}")
+
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -301,6 +309,7 @@ def main():
     print("📍 Server: http://localhost:8000")
     print("📚 API Docs: http://localhost:8000/docs")
     print("🔄 ReDoc: http://localhost:8000/redoc")
+    print("💬 Chat Interface: http://localhost:8000/chat")
 
     if LANGSERVE_AVAILABLE:
         print("🎮 Playground: http://localhost:8000/agent/playground")
