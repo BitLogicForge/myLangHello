@@ -37,7 +37,7 @@ The project is organized around a few core layers:
 
 ### Agent orchestration
 
-- `main.py`: top-level app orchestrator
+- `main.py`: defines the core `AgentApp` class (orchestrating configuration, runner, and formatter)
 - `services/agent_configurator.py`: builds the agent and dependencies
 - `services/agent_factory.py`: creates the LangGraph/LangChain agent
 - `services/agent_runner.py`: enforces runtime guardrails such as timeout and tool-call limits
@@ -77,7 +77,7 @@ The project is organized around a few core layers:
 
 ## Requirements
 
-- Python 3.11+ recommended
+- Python 3.13 (configured in `.python-version` and `pyproject.toml`)
 - Access to a configured LLM provider:
   - OpenAI
   - Azure OpenAI
@@ -87,9 +87,20 @@ The project is organized around a few core layers:
 
 ## Installation
 
-```powershell
+### Using `uv` (Recommended)
+This project is configured with `uv` for dependency management:
+```bash
+# Setup the virtual environment and install all pinned dependencies
+uv sync
+```
+
+### Using standard pip
+```bash
+# Create and activate virtual environment
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install requirements
 pip install -r requirements.txt
 ```
 
@@ -139,14 +150,16 @@ Important settings live in `config.json`:
 
 Run the API server:
 
-```powershell
-python api.py
+```bash
+uv run python api.py
+# Or with standard python: python api.py
 ```
 
-Run the local console app:
+Run the local console test app:
 
-```powershell
-python main.py
+```bash
+uv run python examples/main_example.py
+# Or with standard python: python examples/main_example.py
 ```
 
 ## API Endpoints
@@ -237,19 +250,22 @@ Note: some tools are intentionally demo-oriented rather than production-grade.
 
 ```text
 .
-|-- api.py
-|-- main.py
-|-- config.py
-|-- config.json
-|-- tools.py
-|-- routes/
-|-- services/
-|-- models/
-|-- utils/
-|-- messages/
-|-- examples/
-|-- ENV_VARIABLES.md
-|-- DOCUMENTATION_IDEAS.md
+|-- api.py                    # FastAPI application entry point
+|-- main.py                   # Library entry point defining AgentApp orchestrator
+|-- config.py                 # Singleton config loader
+|-- config.json               # Config provider and runtime settings
+|-- tools.py                  # Custom tool definitions
+|-- pyproject.toml            # Project dependencies and configuration
+|-- uv.lock                   # Pinned dependency lockfile
+|-- .python-version           # Pinned python version (3.13)
+|-- routes/                   # API routes (agent, health, config)
+|-- services/                 # Agent orchestration, LLM factories, output, telemetry
+|-- models/                   # Request/Response schemas
+|-- utils/                    # Utility scripts (logging, history messages)
+|-- messages/                 # Prompt definitions
+|-- examples/                 # Executable examples (main_example.py, streaming_example.py)
+|-- ENV_VARIABLES.md          # Environment variables reference
+|-- DOCUMENTATION_IDEAS.md    # Ideas for future documentation
 ```
 
 ## Known Limitations
