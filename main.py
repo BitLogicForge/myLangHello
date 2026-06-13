@@ -7,7 +7,12 @@ from typing import Any, List, Optional, Tuple
 from dotenv import load_dotenv
 
 from config import Config
-from services import AgentConfigurator, AgentExecutionSettings, AgentRunner, StreamingOutputFormatter
+from services import (
+    AgentConfigurator,
+    AgentExecutionSettings,
+    AgentRunner,
+    StreamingOutputFormatter,
+)
 from utils import prepare_messages_with_history, setup_logging
 
 # Load environment variables
@@ -27,19 +32,19 @@ class AgentApp:
         logger.info("Initializing AgentApp...")
 
         self.config = app_config
-        self.execution_settings = AgentExecutionSettings.from_config(
-            self.config)
+        self.execution_settings = AgentExecutionSettings.from_config(self.config)
 
         # Create configurator and build agent
         configurator = AgentConfigurator()
         self.agent_executor = configurator.build_agent()
-        self.agent_runner = AgentRunner(
-            self.agent_executor, self.execution_settings)
+        self.agent_runner = AgentRunner(self.agent_executor, self.execution_settings)
         self.output_formatter = StreamingOutputFormatter()
 
         logger.info("✅ AgentApp initialized successfully")
 
-    async def run(self, question: str, history: Optional[List[Tuple[str, str]]] = None) -> Optional[dict]:
+    async def run(
+        self, question: str, history: Optional[List[Tuple[str, str]]] = None
+    ) -> Optional[dict]:
         """
         Run the agent with a question and optional conversation history.
 
@@ -57,8 +62,7 @@ class AgentApp:
         # Prepare messages using shared utility
         messages = prepare_messages_with_history(question, history)
         if history:
-            logger.info(
-                f"Including {len(history)} history messages + current question")
+            logger.info(f"Including {len(history)} history messages + current question")
 
         agent_input: dict[str, Any] = {"messages": messages}
 
