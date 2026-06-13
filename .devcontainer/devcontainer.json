@@ -43,7 +43,7 @@
 
   "customizations": {
     "vscode": {
-      "extensions": [],
+      "extensions": ["detachhead.basedpyright","ms-python.mypy-type-checker","ms-python.python"],
       "settings": {
         "python.defaultInterpreterPath": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin/python",
         "python.terminal.activateEnvironment": true
