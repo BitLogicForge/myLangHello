@@ -1,3 +1,4 @@
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from chainlit.utils import mount_chainlit

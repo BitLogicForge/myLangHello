@@ -1,26 +1,44 @@
 import json
+from typing import TypedDict, NotRequired, cast
 
 
-def format_table_info(table_data):
+class ColumnInfo(TypedDict):
+    name: str
+    desc: str
+
+
+class TableData(TypedDict):
+    description: str
+    usage_notes: NotRequired[str]
+    columns: NotRequired[list[ColumnInfo]]
+    business_rules: NotRequired[list[str]]
+    common_queries: NotRequired[list[str]]
+
+
+def format_table_info(table_data: TableData) -> str:
     """Convert JSON structure to formatted string."""
     lines = [f"Table: {table_data['description']}"]
 
-    if table_data.get("usage_notes"):
-        lines.append(f"\nUsage: {table_data['usage_notes']}")
+    usage_notes = table_data.get("usage_notes")
+    if usage_notes:
+        lines.append(f"\nUsage: {usage_notes}")
 
-    if table_data.get("columns"):
+    columns = table_data.get("columns")
+    if columns:
         lines.append("\nImportant Columns:")
-        for col in table_data["columns"]:
+        for col in columns:
             lines.append(f"  - {col['name']}: {col['desc']}")
 
-    if table_data.get("business_rules"):
+    business_rules = table_data.get("business_rules")
+    if business_rules:
         lines.append("\nBusiness Rules:")
-        for rule in table_data["business_rules"]:
+        for rule in business_rules:
             lines.append(f"  - {rule}")
 
-    if table_data.get("common_queries"):
+    common_queries = table_data.get("common_queries")
+    if common_queries:
         lines.append("\nCommon Query Patterns:")
-        for query in table_data["common_queries"]:
+        for query in common_queries:
             lines.append(f"  - {query}")
 
     return "\n".join(lines)
@@ -28,7 +46,7 @@ def format_table_info(table_data):
 
 # Load from file
 with open("table_info.json", "r", encoding="utf-8") as f:
-    schema_json = json.load(f)
+    schema_json = cast(dict[str, TableData], json.load(f))
 
 # Convert to custom_table_info format
 custom_table_info = {
@@ -38,3 +56,4 @@ custom_table_info = {
 # print with new lines
 for table, info in custom_table_info.items():
     print(f'"{table}": """\n{info}\n""",')
+

@@ -1,11 +1,11 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from typing import cast
+from typing import cast, TypeGuard
 from pydantic import BaseModel, Field
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -22,12 +22,17 @@ setup_logging(debug=bool(api_config.get("agent.debug", False)))
 logger = logging.getLogger(__name__)
 
 
-try:
-    from langserve import add_routes
+def _is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
+    """Type guard to check if a value is a tuple."""
+    return isinstance(val, tuple)
 
-    LANGSERVE_AVAILABLE = True
+
+try:
+    from langserve import add_routes  # pyright: ignore[reportUnknownVariableType]
+    is_langserve_available = True
 except ImportError:
-    LANGSERVE_AVAILABLE = False
+    add_routes = None
+    is_langserve_available = False
     logger.warning("langserve not installed. Run: pip install langserve[all]")
 
 
@@ -67,19 +72,19 @@ try:
     logger.info("Initializing agent application...")
     agent_app = AgentApp()
     agent_executor = agent_app.agent_executor
-    AGENT_LOADED = True
+    is_agent_loaded = True
     logger.info("✅ Agent loaded successfully")
 except Exception as e:
     logger.error(f"❌ Error loading agent: {e}", exc_info=True)
     agent_executor = None
     agent_app = None
-    AGENT_LOADED = False
+    is_agent_loaded = False
 
 
 # Configure route modules with agent state
-health_routes.set_agent_state(agent_app, AGENT_LOADED, LANGSERVE_AVAILABLE)
-agent_routes.set_agent_executor(agent_executor, AGENT_LOADED, telemetry)
-config_routes.set_agent_app(agent_app, AGENT_LOADED)
+health_routes.set_agent_state(agent_app, is_agent_loaded, is_langserve_available)
+agent_routes.set_agent_executor(agent_executor, is_agent_loaded, telemetry)
+config_routes.set_agent_app(agent_app, is_agent_loaded)
 
 # Register routers
 app.include_router(health_routes.router)
@@ -110,17 +115,17 @@ async def root():
         "message": "LangChain Agent API",
         "docs": "/docs",
         "health": "/health",
-        "agent_endpoint": "/agent" if LANGSERVE_AVAILABLE else "/query",
-        "playground": "/agent/playground" if LANGSERVE_AVAILABLE else None,
+        "agent_endpoint": "/agent" if is_langserve_available else "/query",
+        "playground": "/agent/playground" if is_langserve_available else None,
         "metrics": "http://localhost:9090/metrics" if telemetry else None,
     }
 
 
 # LangServe Routes (Recommended - with streaming support)
-if LANGSERVE_AVAILABLE and agent_executor:
-    add_routes(  # type: ignore
+if is_langserve_available and agent_executor and add_routes is not None:
+    add_routes(
         app,
-        agent_executor,  # type: ignore
+        agent_executor,  # pyright: ignore[reportArgumentType]
         path="/agent",
         # Let LangServe enable all endpoints by default for playground to work
         playground_type="default",  # Default playground works with LangGraph agents
@@ -181,7 +186,7 @@ async def structured_query(request: StructuredInputExample):
     Example endpoint showing how to pass a structured request
     (basket list, budget, grocery list, and a natural language query) to the agent.
     """
-    if not AGENT_LOADED or agent_app is None:
+    if not is_agent_loaded or agent_app is None:
         raise HTTPException(
             status_code=503, detail="Agent application is not loaded")
 
@@ -199,18 +204,20 @@ async def structured_query(request: StructuredInputExample):
 
         # Extract the final message content from the LangGraph response
         output_text = "No response generated"
-        if response and isinstance(response, dict) and "messages" in response:
+        if response and "messages" in response:
             messages_list = response["messages"]
-            if messages_list:
-                final_message = messages_list[-1]
-                if hasattr(final_message, "content"):
-                    output_text = final_message.content
-                elif isinstance(final_message, tuple) and len(final_message) > 1:
-                    output_text = final_message[1]
+            if isinstance(messages_list, list) and messages_list:
+                final_message = cast(object, messages_list[-1])
+                content = cast(object, getattr(final_message, "content", None))
+                if content is not None:
+                    output_text = str(content)
+                elif _is_tuple(final_message) and len(final_message) > 1:
+                    final_msg_tuple = cast(tuple[object, ...], final_message)
+                    output_text = str(final_msg_tuple[1])
                 else:
                     output_text = str(final_message)
         elif response is not None:
-            output_text = response.get("output", str(response))
+            output_text = str(response.get("output", response))
 
         return StructuredResponse(
             formatted_prompt=formatted_prompt,
@@ -297,7 +304,7 @@ async def structured_output(request: StructuredInputExample):
 
 # Error handlers
 @app.exception_handler(404)
-async def not_found_handler(request, exc):
+async def not_found_handler(_request: Request, _exc: Exception):
     """Handle 404 errors."""
     return JSONResponse(
         status_code=404,
@@ -307,7 +314,7 @@ async def not_found_handler(request, exc):
 
 
 @app.exception_handler(500)
-async def internal_error_handler(request, exc):
+async def internal_error_handler(_request: Request, _exc: Exception):
     """Handle 500 errors."""
     return JSONResponse(
         status_code=500, content={"detail": "Internal server error. Check logs for details."}
@@ -327,7 +334,7 @@ def main():
     print(f"🔄 ReDoc: http://localhost:{port}/redoc")
     print(f"💬 Chat Interface: http://localhost:{port}/chat")
 
-    if LANGSERVE_AVAILABLE:
+    if is_langserve_available:
         print(f"🎮 Playground: http://localhost:{port}/agent/playground")
         print(f"📡 Streaming: POST http://localhost:{port}/agent/stream")
     else:

@@ -10,7 +10,8 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import TypedDict, Annotated, Sequence, cast
+from typing import TypedDict, Annotated, cast
+from collections.abc import Sequence
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -19,8 +20,8 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 from services.llm_factory import LLMFactory
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END  # pyright: ignore[reportMissingTypeStubs]
+from langgraph.graph.message import add_messages  # pyright: ignore[reportMissingTypeStubs]
 from langgraph.checkpoint.memory import MemorySaver
 
 _ = load_dotenv()
@@ -78,7 +79,12 @@ async def main():
                 elif "```" in content:
                     content = content.split("```")[1].split("```")[0].strip()
                 
-                data = json.loads(content)
+                parsed_data = cast(object, json.loads(content))
+                if not isinstance(parsed_data, dict):
+                    error_msg = "Expected JSON object."
+                    print(f"❌ Validation Failed: {error_msg}")
+                    return {"validation_error": error_msg}
+                data = cast(dict[str, object], parsed_data)
                 
                 # Check for mandatory keys: name, email, role, and a specific check: verified must be True
                 required_keys = ["name", "email", "role", "verified"]
@@ -123,16 +129,16 @@ async def main():
         # 3. Construct the LangGraph StateGraph
         workflow = StateGraph(ReflectionState)
         
-        workflow.add_node("generator", generator_node)
-        workflow.add_node("validator", validator_node)
+        _ = workflow.add_node("generator", generator_node)  # pyright: ignore[reportUnknownMemberType]
+        _ = workflow.add_node("validator", validator_node)  # pyright: ignore[reportUnknownMemberType]
         
-        workflow.add_edge(START, "generator")
-        workflow.add_edge("generator", "validator")
-        workflow.add_conditional_edges("validator", route_after_validation, ["generator", END])
+        _ = workflow.add_edge(START, "generator")
+        _ = workflow.add_edge("generator", "validator")
+        _ = workflow.add_conditional_edges("validator", route_after_validation, ["generator", END])
         
         # Compile graph
         memory = MemorySaver()
-        graph = workflow.compile(checkpointer=memory)
+        graph = workflow.compile(checkpointer=memory)  # pyright: ignore[reportUnknownMemberType]
         
         # 4. Run the experiment
         # We instruct the model to create a JSON but we intentionally make it tricky (like asking for a verified flag but not explicitly saying how)
@@ -145,7 +151,7 @@ async def main():
         
         print(f"\nPrompt: {prompt}\n")
         
-        result = cast(ReflectionState, await graph.ainvoke(
+        result = cast(ReflectionState, await graph.ainvoke(  # pyright: ignore[reportUnknownMemberType]
             {"messages": [HumanMessage(content=prompt)], "retry_count": 0, "validation_error": None},
             config=thread_config
         ))

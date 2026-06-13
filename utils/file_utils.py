@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,11 @@ def read_json_file(file_path: str) -> dict[str, object]:
     logger.debug(f"Reading JSON file: {file_path}")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            content = json.load(f)
+            raw_content = cast(object, json.load(f))
+        if not isinstance(raw_content, dict):
+            raise ValueError(f"Expected JSON content in {file_path} to be a dictionary")
         logger.debug(f"Successfully loaded JSON from {file_path}")
-        return content
+        return cast(dict[str, object], raw_content)
     except FileNotFoundError:
         logger.error(f"JSON file not found: {file_path}")
         raise

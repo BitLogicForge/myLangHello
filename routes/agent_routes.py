@@ -5,6 +5,7 @@ import time
 
 from fastapi import APIRouter, HTTPException
 
+from typing import TypeGuard
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
 from services import AgentExecutionSettings, AgentRunner, TelemetryManager, SupportsAStream
@@ -15,18 +16,33 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="", tags=["Agent"])
 
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+
+def _is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
+
+
+def _is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
+    """Type guard to check if a value is a tuple."""
+    return isinstance(val, tuple)
+
+
 # Module-level variables to be set by main app
 agent_executor: SupportsAStream | None = None
-AGENT_LOADED: bool = False
+agent_loaded_state: bool = False
 telemetry: TelemetryManager | None = None
 config = Config()
 
 
 def set_agent_executor(executor: SupportsAStream | None, loaded: bool, telem: TelemetryManager | None = None) -> None:
     """Set the agent executor for query handling."""
-    global agent_executor, AGENT_LOADED, telemetry
+    global agent_executor, agent_loaded_state, telemetry
     agent_executor = executor
-    AGENT_LOADED = loaded
+    agent_loaded_state = loaded
     telemetry = telem
 
 
@@ -37,7 +53,7 @@ async def query_agent(request: QueryRequest):
 
     For streaming support, install langserve and use /agent/stream endpoint.
     """
-    if not AGENT_LOADED or agent_executor is None:
+    if not agent_loaded_state or agent_executor is None:
         logger.warning("Query attempted but agent not loaded")
         raise HTTPException(status_code=503, detail="Agent not loaded")
 
@@ -77,35 +93,35 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         )
 
         # Track basic metrics if available
-        # Track basic metrics if available
         if telemetry and isinstance(response, dict):
             # Try to extract iteration count from response metadata
             metadata = response.get("metadata")
-            if isinstance(metadata, dict) and "iterations" in metadata:
-                iterations = metadata["iterations"]
+            if _is_str_dict(metadata):
+                iterations = metadata.get("iterations")
                 if isinstance(iterations, int):
                     telemetry.track_agent_iterations(iterations)
 
         # Extract the final message from LangGraph response
         # LangGraph returns {"messages": [...]} where last message is the response
-        if isinstance(response, dict) and "messages" in response:
-            messages_list = response["messages"]
-            if isinstance(messages_list, list) and len(messages_list) > 0:
+        if isinstance(response, dict):
+            messages_list = response.get("messages")
+            if _is_list(messages_list) and len(messages_list) > 0:
                 # Get the last message (agent's response)
                 final_message = messages_list[-1]
                 # Extract content from the message
-                content = getattr(final_message, "content", None)
+                content: object = getattr(final_message, "content", None)
                 if content is not None:
                     output_text = str(content)
-                elif isinstance(final_message, tuple) and len(final_message) > 1:
+                elif _is_tuple(final_message) and len(final_message) > 1:
                     output_text = str(final_message[1])
                 else:
                     output_text = str(final_message)
             else:
-                output_text = "No response generated"
+                # Fallback if "messages" is missing or empty but response is a dict
+                output_text = str(response.get("output", response))
         elif response is not None:
-            # Fallback for old format
-            output_text = str(response.get("output", response))
+            # Fallback for non-dict response format
+            output_text = str(response)
         else:
             output_text = "No response generated"
 

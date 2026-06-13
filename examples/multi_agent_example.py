@@ -9,7 +9,8 @@ This script shows how to:
 import asyncio
 import sys
 from pathlib import Path
-from typing import TypedDict, Annotated, Sequence, cast
+from typing import TypedDict, Annotated, cast
+from collections.abc import Sequence
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -18,8 +19,8 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 from services.llm_factory import LLMFactory
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END  # pyright: ignore[reportMissingTypeStubs]
+from langgraph.graph.message import add_messages  # pyright: ignore[reportMissingTypeStubs]
 from langgraph.checkpoint.memory import MemorySaver
 
 # Import some tools from the workspace
@@ -103,13 +104,13 @@ async def main():
         workflow = StateGraph(MultiAgentState)
         
         # Add nodes
-        workflow.add_node("supervisor", supervisor_agent)
-        workflow.add_node("researcher", researcher_agent)
-        workflow.add_node("writer", writer_agent)
-        workflow.add_node("tools", ToolNode(research_tools))
+        _ = workflow.add_node("supervisor", supervisor_agent)  # pyright: ignore[reportUnknownMemberType]
+        _ = workflow.add_node("researcher", researcher_agent)  # pyright: ignore[reportUnknownMemberType]
+        _ = workflow.add_node("writer", writer_agent)  # pyright: ignore[reportUnknownMemberType]
+        _ = workflow.add_node("tools", ToolNode(research_tools))  # pyright: ignore[reportUnknownMemberType]
         
         # Add routing edges
-        workflow.add_edge(START, "supervisor")
+        _ = workflow.add_edge(START, "supervisor")
         
         # Supervisor routes to researcher, writer, or ends
         def route_supervisor(state: MultiAgentState):
@@ -120,7 +121,7 @@ async def main():
                 return "writer"
             return END
             
-        workflow.add_conditional_edges(
+        _ = workflow.add_conditional_edges(
             "supervisor", 
             route_supervisor, 
             {"researcher": "researcher", "writer": "writer", END: END}
@@ -130,21 +131,21 @@ async def main():
         def route_researcher(state: MultiAgentState):
             return state["next_agent"]
             
-        workflow.add_conditional_edges(
+        _ = workflow.add_conditional_edges(
             "researcher",
             route_researcher,
             {"tools": "tools", "supervisor": "supervisor"}
         )
         
         # Tools always route back to researcher to evaluate findings
-        workflow.add_edge("tools", "researcher")
+        _ = workflow.add_edge("tools", "researcher")
         
         # Writer routes back to supervisor for final check
-        workflow.add_edge("writer", "supervisor")
+        _ = workflow.add_edge("writer", "supervisor")
         
         # Compile
         memory = MemorySaver()
-        graph = workflow.compile(checkpointer=memory)
+        graph = workflow.compile(checkpointer=memory)  # pyright: ignore[reportUnknownMemberType]
         
         # 4. Run the Multi-Agent setup
         thread_config: RunnableConfig = {"configurable": {"thread_id": "multi_agent_session_1"}}
@@ -152,7 +153,7 @@ async def main():
         
         print(f"\nUser Question: {question}\n")
         
-        result = cast(MultiAgentState, await graph.ainvoke(
+        result = cast(MultiAgentState, await graph.ainvoke(  # pyright: ignore[reportUnknownMemberType]
             {"messages": [HumanMessage(content=question)], "next_agent": "supervisor"},
             config=thread_config
         ))

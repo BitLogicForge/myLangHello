@@ -9,7 +9,7 @@ This script shows how to:
 import asyncio
 import sys
 from pathlib import Path
-from typing import TypedDict, Annotated
+from typing import TypedDict, Annotated, TypeGuard, cast
 from collections.abc import Sequence
 from dotenv import load_dotenv
 
@@ -26,6 +26,16 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
 
 _ = load_dotenv()
+
+
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+
+def _is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
 
 
 # 1. Define the Agent State
@@ -68,17 +78,17 @@ async def main():
         # 4. Construct the LangGraph StateGraph
         workflow = StateGraph(AgentState)
         
-        workflow.add_node("agent", call_model)
-        workflow.add_node("tools", tool_node)
+        _ = workflow.add_node("agent", call_model)  # pyright: ignore[reportUnknownMemberType]
+        _ = workflow.add_node("tools", tool_node)  # pyright: ignore[reportUnknownMemberType]
         
-        workflow.add_edge(START, "agent")
-        workflow.add_conditional_edges("agent", route_after_model, ["tools", END])
-        workflow.add_edge("tools", "agent")
+        _ = workflow.add_edge(START, "agent")
+        _ = workflow.add_conditional_edges("agent", route_after_model, ["tools", END])
+        _ = workflow.add_edge("tools", "agent")
         
         # 5. Compile the graph with memory and interrupt_before
         # This tells the graph to pause execution right before running the 'tools' node
         memory = MemorySaver()
-        graph = workflow.compile(
+        graph = workflow.compile(  # pyright: ignore[reportUnknownMemberType]
             checkpointer=memory,
             interrupt_before=["tools"]
         )
@@ -91,14 +101,18 @@ async def main():
         print("⏳ Running agent...")
         
         # Start the graph execution
-        async for event in graph.astream(
+        async for event in graph.astream(  # pyright: ignore[reportUnknownMemberType]
             {"messages": [HumanMessage(content=question)]}, 
             config=thread_config,
             stream_mode="values"
         ):
-            last_msg = event["messages"][-1]
-            if last_msg.content:
-                print(f"🤖 Agent: {last_msg.content}")
+            event_dict = cast(dict[str, object], event)
+            messages = event_dict.get("messages", [])
+            if _is_list(messages) and messages:
+                last_msg = messages[-1]
+                content_obj: object = getattr(last_msg, "content", None)
+                if isinstance(content_obj, str) and content_obj:
+                    print(f"🤖 Agent: {content_obj}")
                 
         # 7. Check if graph execution was interrupted
         state = await graph.aget_state(thread_config)
@@ -107,25 +121,37 @@ async def main():
             print(f"\n⚠️  [PAUSED] Graph execution interrupted before node: {state.next}")
             
             # Retrieve the pending tool call information
-            last_message = state.values["messages"][-1]
-            if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-                for tool_call in last_message.tool_calls:
-                    print(f"👉 Action Requested: {tool_call['name']}({tool_call['args']})")
+            values = state.values
+            if _is_str_dict(values):
+                messages = values.get("messages", [])
+                if _is_list(messages) and messages:
+                    last_message = messages[-1]
+                    tool_calls_obj: object = getattr(last_message, "tool_calls", None)
+                    if _is_list(tool_calls_obj) and tool_calls_obj:
+                        for tool_call in tool_calls_obj:
+                            if _is_str_dict(tool_call):
+                                name = tool_call.get("name")
+                                args = tool_call.get("args")
+                                print(f"👉 Action Requested: {name}({args})")
             
             # Simulate human response/decision
             print("\n👤 Human Action: [Approving action...]")
             
             # To resume, we simply execute the graph again with input=None (keeping the thread config)
             print("⏳ Resuming execution with approval...")
-            async for event in graph.astream(
+            async for event in graph.astream(  # pyright: ignore[reportUnknownMemberType]
                 None,  # Passing None tells LangGraph to resume from the interrupted state
                 config=thread_config,
                 stream_mode="values"
             ):
-                last_msg = event["messages"][-1]
-                if last_msg.content:
-                    print(f"Resumed Response: {last_msg.content}")
-                    
+                event_dict = cast(dict[str, object], event)
+                messages = event_dict.get("messages", [])
+                if _is_list(messages) and messages:
+                    last_msg = messages[-1]
+                    resumed_content_obj: object = getattr(last_msg, "content", None)
+                    if isinstance(resumed_content_obj, str) and resumed_content_obj:
+                        print(f"Resumed Response: {resumed_content_obj}")
+                        
         # Check final state
         final_state = await graph.aget_state(thread_config)
         print(f"\n🏁 Finished! Next nodes to execute: {final_state.next}")

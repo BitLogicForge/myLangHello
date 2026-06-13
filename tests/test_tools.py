@@ -1,4 +1,5 @@
 """Unit tests for agent custom tools using pytest and pytest-asyncio."""
+# pyright: reportAny=false
 
 import pytest
 import sys

@@ -10,6 +10,7 @@ from services import (
     AgentExecutionSettings,
     AgentRunner,
     StreamingOutputFormatter,
+    SupportsAStream,
 )
 from utils import prepare_messages_with_history, setup_logging
 
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 
 class AgentApp:
     """Main application orchestrator - coordinates all components."""
+
+    config: Config
+    execution_settings: AgentExecutionSettings
+    agent_executor: SupportsAStream
+    agent_runner: AgentRunner
+    output_formatter: StreamingOutputFormatter
 
     def __init__(self):
         """Initialize the agent application."""

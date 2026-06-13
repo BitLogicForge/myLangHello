@@ -1,13 +1,16 @@
 """Integration tests for FastAPI endpoints using pytest and mocked agent executor."""
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportAny=false
 
 import sys
 from pathlib import Path
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
 import api
+from main import AgentApp
 from fastapi.testclient import TestClient
 from api import RecipeAndBudgetAnalysis
 
@@ -15,7 +18,7 @@ from api import RecipeAndBudgetAnalysis
 client = TestClient(api.app)
 
 
-def test_root_endpoint():
+def test_root_endpoint() -> None:
     """Test the root API endpoint returns status 200 and basic documentation info."""
     response = client.get("/")
     assert response.status_code == 200
@@ -24,7 +27,7 @@ def test_root_endpoint():
     assert "/docs" in data["docs"]
 
 
-def test_health_endpoint():
+def test_health_endpoint() -> None:
     """Test health check endpoint details."""
     response = client.get("/health")
     assert response.status_code == 200
@@ -33,22 +36,23 @@ def test_health_endpoint():
     assert "agent_loaded" in data
 
 
-def test_structured_query_mocked():
+def test_structured_query_mocked() -> None:
     """Test POST /structured-query with mocked agent execution."""
     # Store original state to restore after test
-    original_loaded = api.AGENT_LOADED
+    original_loaded = api.is_agent_loaded
     original_app = api.agent_app
 
     try:
         # Override globals in api.py
-        api.AGENT_LOADED = True
-        api.agent_app = MagicMock()
+        api.is_agent_loaded = True
+        mock_app = MagicMock()
 
         # Mock the run method to return a standard LangGraph style message dictionary
         mock_msg = MagicMock()
         mock_msg.content = "Mocked recipe recommendation: spinach salad."
         mock_response = {"messages": [mock_msg]}
-        api.agent_app.run = AsyncMock(return_value=mock_response)
+        mock_app.run = AsyncMock(return_value=mock_response)
+        api.agent_app = cast(AgentApp, mock_app)
 
         payload = {
             "basket": ["spinach", "cucumber"],
@@ -66,12 +70,12 @@ def test_structured_query_mocked():
 
     finally:
         # Restore original state
-        api.AGENT_LOADED = original_loaded
+        api.is_agent_loaded = original_loaded
         api.agent_app = original_app
 
 
 @patch("services.llm_factory.LLMFactory.create_llm")
-def test_structured_output_mocked(mock_create_llm):
+def test_structured_output_mocked(mock_create_llm: MagicMock) -> None:
     """Test POST /structured-output with mocked structured LLM invocation."""
     # 1. Setup mock LLM and its with_structured_output return value
     mock_llm = MagicMock()
