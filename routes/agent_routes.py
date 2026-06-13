@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Agent"])
 
 # Module-level variables to be set by main app
-agent_executor: Optional[Any] = None
+agent_executor: Any | None = None
 AGENT_LOADED: bool = False
-telemetry: Optional[Any] = None
+telemetry: Any | None = None
 config = Config()
 
 
-def set_agent_executor(executor: Optional[Any], loaded: bool, telem: Optional[Any] = None) -> None:
+def set_agent_executor(executor: Any | None, loaded: bool, telem: Any | None = None) -> None:
     """Set the agent executor for query handling."""
     global agent_executor, AGENT_LOADED, telemetry
     agent_executor = executor

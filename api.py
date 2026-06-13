@@ -1,7 +1,7 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from typing import Any, Optional, List, cast
+from typing import Any, cast
 from pydantic import BaseModel, Field
 
 import uvicorn
@@ -47,7 +47,7 @@ app.add_middleware(
 )
 
 # Initialize telemetry (self-hosted metrics)
-telemetry: Optional[TelemetryManager] = None
+telemetry: TelemetryManager | None = None
 try:
     telemetry = get_telemetry(
         service_name="chatbot-agent-api",
@@ -60,8 +60,8 @@ except Exception as e:
     telemetry = None
 
 # Initialize agent
-agent_executor: Optional[Any] = None
-agent_app: Optional[AgentApp] = None
+agent_executor: Any | None = None
+agent_app: AgentApp | None = None
 try:
     logger.info("Initializing agent application...")
     agent_app = AgentApp()
@@ -138,7 +138,7 @@ class StructuredInputExample(BaseModel):
 
     Includes a basket of vegetables, amount of money, desire to buy list of groceries, and a query.
     """
-    basket: List[str] = Field(
+    basket: list[str] = Field(
         ...,
         description="List of vegetables currently in the basket",
         json_schema_extra={"example": ["carrot", "cucumber", "spinach"]}
@@ -148,7 +148,7 @@ class StructuredInputExample(BaseModel):
         description="Amount of money available to spend",
         json_schema_extra={"example": 50.0}
     )
-    desire_to_buy: List[str] = Field(
+    desire_to_buy: list[str] = Field(
         ...,
         description="List of groceries that the user wants to buy",
         json_schema_extra={"example": ["milk", "bread", "butter", "cheese"]}
@@ -235,15 +235,15 @@ class RecipeAndBudgetAnalysis(BaseModel):
         ...,
         description="The remaining money after buying the groceries (budget - estimated cost)"
     )
-    affordable_items: List[str] = Field(
+    affordable_items: list[str] = Field(
         ...,
         description="List of desired items that CAN be bought within the budget"
     )
-    missing_items: List[str] = Field(
+    missing_items: list[str] = Field(
         ...,
         description="List of desired items that CANNOT be bought within the budget"
     )
-    suggested_recipes: List[str] = Field(
+    suggested_recipes: list[str] = Field(
         ...,
         description="1-3 recipes we can cook using the vegetables in the basket and/or groceries"
     )

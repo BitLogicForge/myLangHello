@@ -1,7 +1,6 @@
 """Health check route handlers."""
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter
 
@@ -14,12 +13,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Health"])
 
 # Module-level variables to be set by main app
-agent_app: Optional[AgentApp] = None
+agent_app: AgentApp | None = None
 AGENT_LOADED: bool = False
 LANGSERVE_AVAILABLE: bool = False
 
 
-def set_agent_state(app: Optional[AgentApp], loaded: bool, langserve: bool) -> None:
+def set_agent_state(app: AgentApp | None, loaded: bool, langserve: bool) -> None:
     """Set the agent state for health checks."""
     global agent_app, AGENT_LOADED, LANGSERVE_AVAILABLE
     agent_app = app

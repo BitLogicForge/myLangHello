@@ -11,7 +11,7 @@ import asyncio
 import sys
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional, Any, cast
+from typing import Any, cast
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -32,7 +32,7 @@ class MealPlannerInput(BaseModel):
         ..., 
         description="The primary ingredient for the meal (e.g. 'chicken', 'tofu', 'salmon')"
     )
-    vegetables: List[str] = Field(
+    vegetables: list[str] = Field(
         default=[],
         description="A list of vegetables available to include in the recipe"
     )
@@ -40,7 +40,7 @@ class MealPlannerInput(BaseModel):
         default=30,
         description="Maximum preparation time allowed in minutes"
     )
-    dietary_restriction: Optional[str] = Field(
+    dietary_restriction: str | None = Field(
         default=None,
         description="Optional dietary restriction (e.g., 'vegetarian', 'gluten-free', 'vegan')"
     )
@@ -50,9 +50,9 @@ class MealPlannerInput(BaseModel):
 @tool(args_schema=MealPlannerInput)
 def suggest_recipe_tool(
     main_ingredient: str,
-    vegetables: List[str],
+    vegetables: list[str],
     max_prep_time_minutes: int = 30,
-    dietary_restriction: Optional[str] = None
+    dietary_restriction: str | None = None
 ) -> str:
     """Suggests a recipe based on main ingredient, available vegetables, time limits, and dietary options."""
     

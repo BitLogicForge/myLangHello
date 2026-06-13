@@ -1,7 +1,6 @@
 """Configuration route handlers."""
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -13,11 +12,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Configuration"])
 
 # Module-level variables to be set by main app
-agent_app: Optional[AgentApp] = None
+agent_app: AgentApp | None = None
 AGENT_LOADED: bool = False
 
 
-def set_agent_app(app: Optional[AgentApp], loaded: bool) -> None:
+def set_agent_app(app: AgentApp | None, loaded: bool) -> None:
     """Set the agent app for configuration access."""
     global agent_app, AGENT_LOADED
     agent_app = app

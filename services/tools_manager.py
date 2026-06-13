@@ -1,7 +1,6 @@
 """Tools Manager - Handles tool registration and configuration."""
 
 import logging
-from typing import List, Optional
 
 from langchain_core.tools import BaseTool
 
@@ -25,10 +24,10 @@ logger = logging.getLogger(__name__)
 class ToolsManager:
     """Manages tool registration and configuration."""
 
-    _tools: Optional[List[BaseTool]] = None
+    _tools: list[BaseTool] | None = None
 
     @classmethod
-    def get_tools(cls, tool_names: Optional[List[str]] = None) -> List[BaseTool]:
+    def get_tools(cls, tool_names: list[str] | None = None) -> list[BaseTool]:
         """Get registered tools, optionally filtered by name."""
         if cls._tools is None:
             cls._tools = cls._register_tools()
@@ -38,7 +37,7 @@ class ToolsManager:
         return cls._tools
 
     @classmethod
-    def _register_tools(cls) -> List[BaseTool]:
+    def _register_tools(cls) -> list[BaseTool]:
         """Register and configure all tools."""
         logger.debug("Registering tools...")
 
@@ -59,7 +58,7 @@ class ToolsManager:
         return tools_list
 
     @classmethod
-    def reload_tools(cls) -> List[BaseTool]:
+    def reload_tools(cls) -> list[BaseTool]:
         """Force reload of all tools."""
         cls._tools = None
         return cls.get_tools()

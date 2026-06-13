@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
@@ -49,7 +49,7 @@ class ExecutionMonitor:
     """Tracks execution metrics and timings."""
 
     def __init__(self) -> None:
-        self.tool_timings: Dict[str, float] = {}
+        self.tool_timings: dict[str, float] = {}
 
     def start_tool_timing(self, tool_call_id: str) -> None:
         """Record the start time of a tool execution."""
@@ -76,11 +76,11 @@ class MessageFormatter:
         self.content_processor = content_processor
         self.execution_monitor = execution_monitor
 
-    def format_human_message(self, msg: Any) -> List[str]:
+    def format_human_message(self, msg: Any) -> list[str]:
         """Format human/user message with color."""
         return [Fore.BLUE + Style.BRIGHT + f"👤 User: {msg.content}"]
 
-    def format_ai_message(self, msg: Any) -> List[str]:
+    def format_ai_message(self, msg: Any) -> list[str]:
         """Format AI message with optional tool calls and color."""
         lines = []
 
@@ -98,7 +98,7 @@ class MessageFormatter:
 
         return lines
 
-    def format_tool_message(self, msg: Any) -> List[str]:
+    def format_tool_message(self, msg: Any) -> list[str]:
         """Format tool result message with color."""
         tool_name = getattr(msg, "name", "unknown")
         tool_call_id = getattr(msg, "tool_call_id", None)
@@ -121,7 +121,7 @@ class MessageFormatter:
             Fore.WHITE + f"   {content}",
         ]
 
-    def format_default_message(self, msg: Any) -> List[str]:
+    def format_default_message(self, msg: Any) -> list[str]:
         """Format unknown message type with color."""
         content = msg.content if hasattr(msg, "content") else str(msg)
         return [Fore.WHITE + Style.DIM + f"💬 {content}"]
@@ -150,7 +150,7 @@ class StreamRenderer:
         print(Fore.CYAN + Style.BRIGHT + f"\n--- Step {step_count}: {node_name} ---")
 
     @staticmethod
-    def print_lines(lines: List[str]) -> None:
+    def print_lines(lines: list[str]) -> None:
         """Print multiple lines."""
         for line in lines:
             print(line)
@@ -174,7 +174,7 @@ class StreamingOutputFormatter:
         self.renderer.print_footer()
 
     def print_event(
-        self, event: dict, step_count: int, tool_timings: Dict[str, float] | None = None
+        self, event: dict, step_count: int, tool_timings: dict[str, float] | None = None
     ) -> None:
         """
         Print a single streaming event from the agent.
@@ -185,7 +185,7 @@ class StreamingOutputFormatter:
             tool_timings: (Deprecated) Use internal execution monitor instead
         """
         # Message type handlers dispatch dictionary
-        handlers: Dict[str, Callable[[Any], List[str]]] = {
+        handlers: dict[str, Callable[[Any], list[str]]] = {
             "human": self.message_formatter.format_human_message,
             "user": self.message_formatter.format_human_message,
             "ai": self.message_formatter.format_ai_message,

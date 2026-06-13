@@ -11,7 +11,7 @@ import asyncio
 import sys
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional, cast
+from typing import cast
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -32,8 +32,8 @@ class QueryFilter(BaseModel):
 class DatabaseQueryIntent(BaseModel):
     """Structured representation of the database query intent."""
     table: str = Field(..., description="The table name to query (e.g. 'users', 'orders', 'products')")
-    filters: List[QueryFilter] = Field(..., description="List of columns, operators, and values to filter on")
-    limit: Optional[int] = Field(None, description="Optional limit of rows to return")
+    filters: list[QueryFilter] = Field(..., description="List of columns, operators, and values to filter on")
+    limit: int | None = Field(None, description="Optional limit of rows to return")
 
 
 # 2. Static few-shot examples (representing NLP-to-SQL/Filter conversions)

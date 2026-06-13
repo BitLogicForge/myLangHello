@@ -8,7 +8,7 @@ import asyncio
 import sys
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, cast
+from typing import cast
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
@@ -34,15 +34,15 @@ class RecipeAndBudgetAnalysis(BaseModel):
         ..., 
         description="The remaining money after buying the groceries (budget - estimated cost)"
     )
-    affordable_items: List[str] = Field(
+    affordable_items: list[str] = Field(
         ...,
         description="List of desired items that CAN be bought within the budget"
     )
-    missing_items: List[str] = Field(
+    missing_items: list[str] = Field(
         ...,
         description="List of desired items that CANNOT be bought within the budget"
     )
-    suggested_recipes: List[str] = Field(
+    suggested_recipes: list[str] = Field(
         ..., 
         description="1-3 recipes we can cook using the vegetables in the basket and/or groceries"
     )

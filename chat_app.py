@@ -3,7 +3,7 @@
 import chainlit as cl
 from main import AgentApp
 from langchain_core.messages import HumanMessage
-from typing import Dict, cast
+from typing import cast
 
 
 @cl.on_chat_start
@@ -33,7 +33,7 @@ async def main(message: cl.Message):
     final_message = cl.Message(content="")
     
     # Track active steps to update them dynamically
-    active_steps: Dict[str, cl.Step] = {}
+    active_steps: dict[str, cl.Step] = {}
     
     try:
         # Stream events from LangGraph agent executor

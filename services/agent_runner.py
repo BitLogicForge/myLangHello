@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from config import Config
 
@@ -43,8 +43,8 @@ class AgentRunner:
     async def run(
         self,
         agent_input: dict[str, Any],
-        on_event: Optional[Callable[[dict[str, Any], int], None]] = None,
-    ) -> Optional[dict[str, Any]]:
+        on_event: Callable[[dict[str, Any], int], None] | None = None,
+    ) -> dict[str, Any] | None:
         """Run the agent through streaming and return an invoke-shaped response."""
         run_config = {"recursion_limit": self.settings.recursion_limit}
         start_time = time.monotonic()

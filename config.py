@@ -1,7 +1,7 @@
 """Configuration manager - singleton for loading and accessing config."""
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,36 +21,36 @@ class AppSettings(BaseSettings):
     )
 
     # OpenAI Configuration
-    openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
-    openai_organization: Optional[str] = Field(default=None, alias="OPENAI_ORGANIZATION")
-    openai_base_url: Optional[str] = Field(default=None, alias="OPENAI_BASE_URL")
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_organization: str | None = Field(default=None, alias="OPENAI_ORGANIZATION")
+    openai_base_url: str | None = Field(default=None, alias="OPENAI_BASE_URL")
 
     # Database Configuration
     db_enabled: bool = Field(default=False, alias="DB_ENABLED")
-    db_host: Optional[str] = Field(default=None, alias="DB_HOST")
-    db_name: Optional[str] = Field(default=None, alias="DB_NAME")
-    db_username: Optional[str] = Field(default=None, alias="DB_USERNAME")
-    db_password: Optional[str] = Field(default=None, alias="DB_PASSWORD")
+    db_host: str | None = Field(default=None, alias="DB_HOST")
+    db_name: str | None = Field(default=None, alias="DB_NAME")
+    db_username: str | None = Field(default=None, alias="DB_USERNAME")
+    db_password: str | None = Field(default=None, alias="DB_PASSWORD")
     db_use_windows_auth: bool = Field(default=False, alias="DB_USE_WINDOWS_AUTH")
     db_driver: str = Field(default="ODBC Driver 17 for SQL Server", alias="DB_DRIVER")
 
     # Azure OpenAI Configuration
-    azure_openai_api_key: Optional[str] = Field(default=None, alias="AZURE_OPENAI_API_KEY")
-    azure_openai_endpoint: Optional[str] = Field(default=None, alias="AZURE_OPENAI_ENDPOINT")
+    azure_openai_api_key: str | None = Field(default=None, alias="AZURE_OPENAI_API_KEY")
+    azure_openai_endpoint: str | None = Field(default=None, alias="AZURE_OPENAI_ENDPOINT")
     azure_openai_api_version: str = Field(default="2024-02-15-preview", alias="AZURE_OPENAI_API_VERSION")
-    azure_openai_deployment_name: Optional[str] = Field(default=None, alias="AZURE_OPENAI_DEPLOYMENT_NAME")
+    azure_openai_deployment_name: str | None = Field(default=None, alias="AZURE_OPENAI_DEPLOYMENT_NAME")
 
     # LM Studio Configuration
     lmstudio_base_url: str = Field(default="http://localhost:1234/v1", alias="LMSTUDIO_BASE_URL")
     lmstudio_api_key: str = Field(default="lm-studio", alias="LMSTUDIO_API_KEY")
 
     # Ollama Configuration
-    ollama_base_url: Optional[str] = Field(default=None, alias="OLLAMA_BASE_URL")
-    ollama_api_key: Optional[str] = Field(default=None, alias="OLLAMA_API_KEY")
+    ollama_base_url: str | None = Field(default=None, alias="OLLAMA_BASE_URL")
+    ollama_api_key: str | None = Field(default=None, alias="OLLAMA_API_KEY")
 
     # LangChain Tracing
     langchain_tracing_v2: bool = Field(default=False, alias="LANGCHAIN_TRACING_V2")
-    langchain_api_key: Optional[str] = Field(default=None, alias="LANGCHAIN_API_KEY")
+    langchain_api_key: str | None = Field(default=None, alias="LANGCHAIN_API_KEY")
     langchain_project: str = Field(default="default", alias="LANGCHAIN_PROJECT")
 
     # Logging Configuration
@@ -63,8 +63,8 @@ class AppSettings(BaseSettings):
 class Config:
     """Singleton configuration manager that loads config once and caches it."""
 
-    _instance: Optional["Config"] = None
-    _config: Optional[dict[str, Any]] = None
+    _instance: "Config | None" = None
+    _config: dict[str, Any] | None = None
     _config_path: str = "config.json"
 
     def __new__(cls, config_path: str = "config.json"):

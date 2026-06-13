@@ -4,7 +4,7 @@ import logging
 import time
 from contextlib import contextmanager
 from functools import wraps
-from typing import Callable, Optional
+from typing import Callable
 
 from prometheus_client import Counter, Gauge, Histogram, Info, start_http_server
 
@@ -183,7 +183,7 @@ class TelemetryManager:
         input_tokens: int,
         output_tokens: int,
         duration: float,
-        cost: Optional[float] = None,
+        cost: float | None = None,
     ) -> None:
         """
         Track LLM API call metrics.
@@ -262,7 +262,7 @@ class TelemetryManager:
 
 
 # Global telemetry instance (lazy initialization)
-_telemetry_instance: Optional[TelemetryManager] = None
+_telemetry_instance: TelemetryManager | None = None
 
 
 def get_telemetry(

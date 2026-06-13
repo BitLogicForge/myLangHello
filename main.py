@@ -1,7 +1,6 @@
 """Refactored Agent Application with Single Responsibility Principle."""
 
 import logging
-from typing import Any, List, Optional, Tuple
 
 from dotenv import load_dotenv
 
@@ -42,8 +41,8 @@ class AgentApp:
         logger.info("✅ AgentApp initialized successfully")
 
     async def run(
-        self, question: str, history: Optional[List[Tuple[str, str]]] = None
-    ) -> Optional[dict]:
+        self, question: str, history: list[tuple[str, str]] | None = None
+    ) -> dict[str, object] | None:
         """
         Run the agent with a question and optional conversation history.
 
@@ -63,7 +62,7 @@ class AgentApp:
         if history:
             logger.info(f"Including {len(history)} history messages + current question")
 
-        agent_input: dict[str, Any] = {"messages": messages}
+        agent_input: dict[str, object] = {"messages": messages}
 
         try:
             self.output_formatter.print_header()

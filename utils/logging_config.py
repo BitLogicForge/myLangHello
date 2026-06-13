@@ -1,7 +1,6 @@
 """Centralized logging configuration with colorful output."""
 
 import logging
-from typing import Optional
 
 import colorlog
 
@@ -11,7 +10,7 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
-def setup_logging(debug: bool = False, level: Optional[int] = None) -> None:
+def setup_logging(debug: bool = False, level: int | None = None) -> None:
     """Configure colorful logging for the application."""
     root_level = level if level is not None else (logging.DEBUG if debug else logging.INFO)
 

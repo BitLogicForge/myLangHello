@@ -3,7 +3,6 @@
 import asyncio
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -35,7 +34,7 @@ async def main() -> None:
     )
 
     # Optional: Test with conversation history
-    history: Optional[List[Tuple[str, str]]] = None
+    history: list[tuple[str, str]] | None = None
     # Uncomment to test with history:
     history = [
         ("user", "Hello, my name is John and i have sister Jane."),
@@ -45,7 +44,7 @@ async def main() -> None:
     ]
 
     app = AgentApp()
-    await app.run(question=question, history=history)
+    _ = await app.run(question=question, history=history)
 
 
 if __name__ == "__main__":

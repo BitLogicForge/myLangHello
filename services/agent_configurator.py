@@ -1,7 +1,7 @@
 """Agent configuration and initialization service."""
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from config import Config
 
@@ -21,11 +21,11 @@ class AgentConfigurator:
         self.config = Config()
 
         # Component storage
-        self.llm: Optional[Any] = None
-        self.tools_manager: Optional[ToolsManager] = None
-        self.prompt_builder: Optional[PromptBuilder] = None
-        self.system_prompt: Optional[Any] = None
-        self.agent_factory: Optional[AgentFactory] = None
+        self.llm: Any | None = None
+        self.tools_manager: ToolsManager | None = None
+        self.prompt_builder: PromptBuilder | None = None
+        self.system_prompt: Any | None = None
+        self.agent_factory: AgentFactory | None = None
 
     def build_agent(self) -> Any:
         """
