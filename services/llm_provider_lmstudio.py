@@ -9,6 +9,7 @@ from langchain_openai import ChatOpenAI
 logger = logging.getLogger(__name__)
 
 
+# MARK: LM Studio Provider
 class LMStudioLLMProvider:
     """Provider for LM Studio LLM instances."""
 

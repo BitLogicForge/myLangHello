@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 _ = load_dotenv()
 
 
+# MARK: Agent Factory
 @final
 class AgentFactory:
     """Factory for creating and configuring LangGraph ReAct agents."""
@@ -47,6 +48,7 @@ class AgentFactory:
 
         logger.info(f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent")
 
+# MARK: Agent Creation
     def create_db_agent(self) -> object:
         """
         Create a LangGraph agent with a toolkit.

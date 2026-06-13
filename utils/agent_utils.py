@@ -2,6 +2,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from typing import TypeGuard
 
 
+# MARK: Message Prep
 def prepare_messages_with_history(
     question: str, history: list[tuple[str, str]] | None = None
 ) -> list[HumanMessage | AIMessage]:
@@ -32,6 +33,7 @@ def prepare_messages_with_history(
     return messages
 
 
+# MARK: Type Guards
 def is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
     """Type guard to check if a value is a dictionary with string keys."""
     return isinstance(val, dict)

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Agent"])
 
 
+# MARK: State Management
 # Module-level variables to be set by main app
 agent_executor: SupportsAStream | None = None
 agent_loaded_state: bool = False
@@ -31,6 +32,7 @@ def set_agent_executor(executor: SupportsAStream | None, loaded: bool, telem: Te
     telemetry = telem
 
 
+# MARK: Query Endpoint
 @router.post("/query", response_model=QueryResponse)
 async def query_agent(request: QueryRequest):
     """
@@ -50,6 +52,7 @@ async def query_agent(request: QueryRequest):
         return await _process_query(request)
 
 
+# MARK: Query Processor
 async def _process_query(request: QueryRequest) -> QueryResponse:
     """Internal query processing with metrics tracking."""
     if agent_executor is None:

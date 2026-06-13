@@ -10,6 +10,7 @@ from utils import is_str_dict, is_list
 
 
 
+# MARK: Chat Start
 @cl.on_chat_start
 async def start():
     """Fires when a new chat session is established in Chainlit."""
@@ -25,6 +26,7 @@ async def start():
         _ = await cl.Message(content=f"❌ Error initializing Agent: {e}").send()
 
 
+# MARK: Message Handler
 @cl.on_message
 async def main(message: cl.Message):
     """Fires when a user sends a message in the chat."""

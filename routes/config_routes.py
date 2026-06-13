@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="", tags=["Configuration"])
 
+# MARK: State Management
 # Module-level variables to be set by main app
 agent_app: AgentApp | None = None
 agent_loaded_state: bool = False
@@ -24,6 +25,7 @@ def set_agent_app(app: AgentApp | None, loaded: bool) -> None:
     agent_loaded_state = loaded
 
 
+# MARK: Configuration Endpoint
 @router.get("/config")
 async def get_config():
     """Get agent configuration details."""

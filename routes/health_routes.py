@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="", tags=["Health"])
 
+# MARK: State Management
 # Module-level variables to be set by main app
 agent_app: AgentApp | None = None
 agent_loaded_state: bool = False
@@ -26,6 +27,7 @@ def set_agent_state(app: AgentApp | None, loaded: bool, langserve: bool) -> None
     langserve_available_state = langserve
 
 
+# MARK: Health Endpoint
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""

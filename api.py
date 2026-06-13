@@ -31,6 +31,7 @@ except ImportError:
     logger.warning("langserve not installed. Run: pip install langserve[all]")
 
 
+# MARK: App Initialization
 # Initialize FastAPI app
 app = FastAPI(
     title="LangChain Agent API",
@@ -76,6 +77,7 @@ except Exception as e:
     is_agent_loaded = False
 
 
+# MARK: Routes Registration
 # Configure route modules with agent state
 health_routes.set_agent_state(agent_app, is_agent_loaded, is_langserve_available)
 agent_routes.set_agent_executor(agent_executor, is_agent_loaded, telemetry)
@@ -130,10 +132,7 @@ if is_langserve_available and agent_executor and add_routes is not None:
     print("📊 Playground available at http://localhost:8000/agent/playground")
 
 
-# ==========================================
-# MARK: Structured Input Example Route
-# ==========================================
-
+# MARK: Example Routes
 class StructuredInputExample(BaseModel):
     """Example of a structured input payload.
 
@@ -297,6 +296,7 @@ async def structured_output(request: StructuredInputExample):
         )
 
 
+# MARK: Error Handlers
 # Error handlers
 @app.exception_handler(404)
 async def not_found_handler(_request: Request, _exc: Exception):
@@ -316,6 +316,7 @@ async def internal_error_handler(_request: Request, _exc: Exception):
     )
 
 
+# MARK: Main Entrypoint
 def main():
     """Run the FastAPI application."""
     from config import settings

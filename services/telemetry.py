@@ -11,6 +11,7 @@ from prometheus_client import Counter, Gauge, Histogram, Info, start_http_server
 logger = logging.getLogger(__name__)
 
 
+# MARK: Telemetry Manager
 @final
 class TelemetryManager:
     """Self-hosted metrics collection and monitoring."""
@@ -141,6 +142,7 @@ class TelemetryManager:
         if enable_metrics_server:
             self._start_metrics_server()
 
+# MARK: Metrics Server
     def _start_metrics_server(self) -> None:
         """Start HTTP server for Prometheus metrics scraping."""
         try:
@@ -152,6 +154,7 @@ class TelemetryManager:
         except OSError as e:
             logger.warning(f"Metrics server already running or port in use: {e}")
 
+# MARK: Tracking Helpers
     @contextmanager
     def track_request(self, endpoint: str):
         """
@@ -268,6 +271,7 @@ class TelemetryManager:
 _telemetry_instance: TelemetryManager | None = None
 
 
+# MARK: Singleton Access
 def get_telemetry(
     service_name: str = "chatbot-agent",
     metrics_port: int = 9090,

@@ -31,11 +31,13 @@ _ = load_dotenv()
 
 
 # 1. Define the Shared State
+# MARK: Shared State
 class MultiAgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     next_agent: str
 
 
+# MARK: Main Orchestration
 async def main():
     print("🤖 Initializing Multi-Agent Collaboration Example...")
     try:
@@ -47,6 +49,7 @@ async def main():
         research_tools = [weather, calculator]
         research_model = llm.bind_tools(research_tools)
         
+        # MARK: Researcher Agent
         def researcher_agent(state: MultiAgentState):
             print("🔬 [Researcher Agent]: Gathering facts and running calculations...")
             messages = state["messages"]
@@ -57,6 +60,7 @@ async def main():
             }
             
         # Writer Agent (performs creative drafting/writing)
+        # MARK: Writer Agent
         def writer_agent(state: MultiAgentState):
             print("✍️  [Writer Agent]: Creating polished narrative draft...")
             messages = list(state["messages"])
@@ -74,6 +78,7 @@ async def main():
             }
             
         # Supervisor Agent (orchestrates the workflow)
+        # MARK: Supervisor Agent
         def supervisor_agent(state: MultiAgentState):
             print("👑 [Supervisor Agent]: Routing query to the correct expert...")
             messages = list(state["messages"])
@@ -101,6 +106,7 @@ async def main():
             return {"next_agent": next_step}
 
         # 3. Construct the StateGraph
+        # MARK: State Graph
         workflow = StateGraph(MultiAgentState)
         
         # Add nodes
@@ -148,6 +154,7 @@ async def main():
         graph = workflow.compile(checkpointer=memory)  # pyright: ignore[reportUnknownMemberType]
         
         # 4. Run the Multi-Agent setup
+        # MARK: Run Workflow
         thread_config: RunnableConfig = {"configurable": {"thread_id": "multi_agent_session_1"}}
         question = "What is the weather in Poznan? Give me a funny weather report about it."
         

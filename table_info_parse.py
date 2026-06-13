@@ -2,6 +2,7 @@ import json
 from typing import TypedDict, NotRequired, cast
 
 
+# MARK: Type Definitions
 class ColumnInfo(TypedDict):
     name: str
     desc: str
@@ -15,6 +16,7 @@ class TableData(TypedDict):
     common_queries: NotRequired[list[str]]
 
 
+# MARK: Formatting Utilities
 def format_table_info(table_data: TableData) -> str:
     """Convert JSON structure to formatted string."""
     lines = [f"Table: {table_data['description']}"]
@@ -44,6 +46,7 @@ def format_table_info(table_data: TableData) -> str:
     return "\n".join(lines)
 
 
+# MARK: Main Execution
 # Load from file
 with open("table_info.json", "r", encoding="utf-8") as f:
     schema_json = cast(dict[str, TableData], json.load(f))

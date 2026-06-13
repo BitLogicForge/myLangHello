@@ -23,6 +23,7 @@ setup_logging(debug=bool(app_config.get("agent.debug", False)))
 logger = logging.getLogger(__name__)
 
 
+# MARK: Agent Orchestrator
 class AgentApp:
     """Main application orchestrator - coordinates all components."""
 

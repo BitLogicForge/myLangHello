@@ -32,7 +32,7 @@ def _safe_path(user_path: str) -> Path:
 
 
 # ==========================================
-# MARK: calculator tool
+# MARK: Calculator
 # ==========================================
 
 class CalculatorInput(BaseModel):
@@ -89,7 +89,7 @@ async def calculator(expression: str) -> str:
 
 
 # ==========================================
-# MARK: weather tool
+# MARK: Weather
 # ==========================================
 
 class WeatherInput(BaseModel):
@@ -109,7 +109,7 @@ async def weather(city: str) -> str:
 
 
 # ==========================================
-# MARK: read file tools
+# MARK: Read File
 # ==========================================
 
 class ReadFileInput(BaseModel):
@@ -134,7 +134,7 @@ async def read_file(path: str) -> str:
 
 
 # ==========================================
-# MARK: write file tool
+# MARK: Write File
 # ==========================================
 
 class WriteFileInput(BaseModel):
@@ -163,7 +163,7 @@ async def write_file(path: str, content: str) -> str:
 
 
 # ==========================================
-# MARK: current date/time tool
+# MARK: Current Date/Time
 # ==========================================
 
 class CurrentDateInput(BaseModel):
@@ -195,7 +195,7 @@ async def current_date(with_date: bool = True, with_time: bool = False) -> str:
 
 
 # ==========================================
-# MARK: http get tool
+# MARK: HTTP Get
 # ==========================================
 
 class HttpGetInput(BaseModel):
@@ -222,7 +222,7 @@ async def http_get(url: str) -> str:
 
 
 # ==========================================
-# MARK: random joke tool
+# MARK: Random Joke
 # ==========================================
 
 class RandomJokeInput(BaseModel):
@@ -273,7 +273,7 @@ async def random_joke(query: str = "") -> str:
 
 
 # ==========================================
-# MARK: joke formatting tool
+# MARK: Joke Format
 # ==========================================
 
 class JokeFormatInput(BaseModel):
@@ -299,7 +299,7 @@ Best joke for you:
 
 
 # ==========================================
-# MARK: loan calculator tool
+# MARK: Loan Calculator
 # ==========================================
 
 class LoanCalculatorInput(BaseModel):
@@ -364,7 +364,7 @@ Interest Percentage: {(total_interest/principal)*100:.2f}% of principal
 
 
 # ==========================================
-# MARK: currency converter tool
+# MARK: Currency Converter
 # ==========================================
 
 class CurrencyConverterInput(BaseModel):
@@ -448,7 +448,7 @@ Note: These are simulated rates for demonstration
 
 
 # ==========================================
-# MARK: city to coordinates tool
+# MARK: City Coordinates
 # ==========================================
 
 class CityToCoordinatesInput(BaseModel):

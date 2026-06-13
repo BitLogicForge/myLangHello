@@ -10,6 +10,7 @@ from colorama import init as colorama_init
 colorama_init(autoreset=True)
 
 
+# MARK: Content Processor
 class ContentProcessor:
     """Handles content transformation and sanitization."""
 
@@ -45,6 +46,7 @@ class ContentProcessor:
         return error_msg
 
 
+# MARK: Execution Monitor
 class ExecutionMonitor:
     """Tracks execution metrics and timings."""
 
@@ -69,6 +71,7 @@ class ExecutionMonitor:
         return ""
 
 
+# MARK: Message Formatter
 class MessageFormatter:
     """Pure formatting logic for different message types."""
 
@@ -135,6 +138,7 @@ class MessageFormatter:
         return [Fore.WHITE + Style.DIM + f"💬 {content}"]
 
 
+# MARK: Stream Renderer
 class StreamRenderer:
     """Handles output display to console."""
 
@@ -164,6 +168,7 @@ class StreamRenderer:
             print(line)
 
 
+# MARK: Output Formatter
 class StreamingOutputFormatter:
     """Coordinates formatting and display of agent execution events."""
 

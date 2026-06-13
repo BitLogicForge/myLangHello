@@ -9,6 +9,7 @@ from langchain_openai import ChatOpenAI
 logger = logging.getLogger(__name__)
 
 
+# MARK: Ollama Provider
 class OllamaLLMProvider:
     """Provider for Ollama LLM instances via OpenAI-compatible endpoint."""
 

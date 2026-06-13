@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field
 
 
+# MARK: History Schema
 class MessageHistory(BaseModel):
     """Individual message in conversation history."""
 
@@ -10,6 +11,7 @@ class MessageHistory(BaseModel):
     content: str = Field(..., description="Content of the message")
 
 
+# MARK: Query Schema
 class QueryRequest(BaseModel):
     """Request model for agent queries."""
 
@@ -29,6 +31,7 @@ class QueryResponse(BaseModel):
     session_id: str | None = Field(None, description="Session ID")
 
 
+# MARK: Health Schema
 class HealthResponse(BaseModel):
     """Health check response."""
 

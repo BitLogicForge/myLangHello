@@ -8,6 +8,7 @@ from config import Config
 from .agent_configurator import SupportsAStream
 
 
+# MARK: Settings Schema
 @dataclass(frozen=True)
 class AgentExecutionSettings:
     """Runtime settings enforced for each agent request."""
@@ -40,6 +41,7 @@ class AgentExecutionSettings:
         )
 
 
+# MARK: Agent Runner
 class AgentRunner:
     """Execute the agent while enforcing runtime guardrails."""
 
@@ -84,6 +86,7 @@ class AgentRunner:
 
         return {"messages": final_messages}
 
+# MARK: Safeguards
     def _enforce_timeout(self, start_time: float) -> None:
         """Stop execution once the configured timeout is exceeded."""
         timeout_seconds = self.settings.timeout_seconds

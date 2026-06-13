@@ -17,6 +17,7 @@ from .tools_manager import ToolsManager
 logger = logging.getLogger(__name__)
 
 
+# MARK: Protocols
 class SupportsAStream(Protocol):
     """Protocol for objects supporting asynchronous event streaming."""
 
@@ -25,6 +26,7 @@ class SupportsAStream(Protocol):
         ...
 
 
+# MARK: Agent Configurator
 class AgentConfigurator:
     """Handles agent initialization and component setup."""
 

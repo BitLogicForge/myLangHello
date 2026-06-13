@@ -12,6 +12,7 @@ from utils import read_json_file, is_str_dict
 logger = logging.getLogger(__name__)
 
 
+# MARK: Environment Settings
 class AppSettings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
     
@@ -63,6 +64,7 @@ class AppSettings(BaseSettings):
 
 
 
+# MARK: Config Manager
 class Config:
     """Singleton configuration manager that loads config once and caches it."""
 
@@ -144,5 +146,6 @@ class Config:
         cls._config = None
 
 
+# MARK: Settings Instance
 # Global settings instance loaded from environment variables and .env file
 settings = AppSettings()

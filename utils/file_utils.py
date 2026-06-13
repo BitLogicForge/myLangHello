@@ -7,6 +7,7 @@ from typing import cast
 logger = logging.getLogger(__name__)
 
 
+# MARK: JSON Reader
 def read_json_file(file_path: str) -> dict[str, object]:
     """
     Read and parse a JSON file.
@@ -37,6 +38,7 @@ def read_json_file(file_path: str) -> dict[str, object]:
         raise
 
 
+# MARK: Text Reader
 def read_text_file(file_path: str) -> str:
     """
     Read a text file.
