@@ -4,7 +4,9 @@
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
-    "ghcr.io/devcontainers/features/mssql:1":{}
+    "ghcr.io/devcontainers/features/mssql:1":{},
+    "ghcr.io/devcontainers/features/postgres:1":{},
+    "ghcr.io/devcontainers/features/github-cli:1":{}
   },
 
   "runArgs": ["--name=${localWorkspaceFolderBasename}-python-dev"],
