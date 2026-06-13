@@ -2,12 +2,11 @@
 
 import json
 import logging
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def read_json_file(file_path: str) -> dict[str, Any]:
+def read_json_file(file_path: str) -> dict[str, object]:
     """
     Read and parse a JSON file.
 

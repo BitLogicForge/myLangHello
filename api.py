@@ -1,7 +1,7 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from typing import Any, cast
+from typing import cast
 from pydantic import BaseModel, Field
 
 import uvicorn
@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from config import Config
 from main import AgentApp
 from routes import agent_routes, config_routes, health_routes
+from services import SupportsAStream
 from services.telemetry import TelemetryManager, get_telemetry
 from utils import setup_logging
 
@@ -60,7 +61,7 @@ except Exception as e:
     telemetry = None
 
 # Initialize agent
-agent_executor: Any | None = None
+agent_executor: SupportsAStream | None = None
 agent_app: AgentApp | None = None
 try:
     logger.info("Initializing agent application...")
@@ -119,7 +120,7 @@ async def root():
 if LANGSERVE_AVAILABLE and agent_executor:
     add_routes(  # type: ignore
         app,
-        agent_executor,
+        agent_executor,  # type: ignore
         path="/agent",
         # Let LangServe enable all endpoints by default for playground to work
         playground_type="default",  # Default playground works with LangGraph agents

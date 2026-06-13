@@ -2,13 +2,12 @@
 
 import logging
 import time
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
-from services import AgentExecutionSettings, AgentRunner
+from services import AgentExecutionSettings, AgentRunner, TelemetryManager, SupportsAStream
 from utils import prepare_messages_with_history
 
 logger = logging.getLogger(__name__)
@@ -17,13 +16,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["Agent"])
 
 # Module-level variables to be set by main app
-agent_executor: Any | None = None
+agent_executor: SupportsAStream | None = None
 AGENT_LOADED: bool = False
-telemetry: Any | None = None
+telemetry: TelemetryManager | None = None
 config = Config()
 
 
-def set_agent_executor(executor: Any | None, loaded: bool, telem: Any | None = None) -> None:
+def set_agent_executor(executor: SupportsAStream | None, loaded: bool, telem: TelemetryManager | None = None) -> None:
     """Set the agent executor for query handling."""
     global agent_executor, AGENT_LOADED, telemetry
     agent_executor = executor
@@ -78,31 +77,35 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         )
 
         # Track basic metrics if available
+        # Track basic metrics if available
         if telemetry and isinstance(response, dict):
             # Try to extract iteration count from response metadata
-            metadata = response.get("metadata") or {}
-            if "iterations" in metadata:
-                telemetry.track_agent_iterations(metadata["iterations"])
+            metadata = response.get("metadata")
+            if isinstance(metadata, dict) and "iterations" in metadata:
+                iterations = metadata["iterations"]
+                if isinstance(iterations, int):
+                    telemetry.track_agent_iterations(iterations)
 
         # Extract the final message from LangGraph response
         # LangGraph returns {"messages": [...]} where last message is the response
         if isinstance(response, dict) and "messages" in response:
             messages_list = response["messages"]
-            if messages_list and len(messages_list) > 0:
+            if isinstance(messages_list, list) and len(messages_list) > 0:
                 # Get the last message (agent's response)
                 final_message = messages_list[-1]
                 # Extract content from the message
-                if hasattr(final_message, "content"):
-                    output_text = final_message.content
+                content = getattr(final_message, "content", None)
+                if content is not None:
+                    output_text = str(content)
                 elif isinstance(final_message, tuple) and len(final_message) > 1:
-                    output_text = final_message[1]
+                    output_text = str(final_message[1])
                 else:
                     output_text = str(final_message)
             else:
                 output_text = "No response generated"
         elif response is not None:
             # Fallback for old format
-            output_text = response.get("output", str(response))
+            output_text = str(response.get("output", response))
         else:
             output_text = "No response generated"
 

@@ -1,7 +1,8 @@
 """Agent configuration and initialization service."""
 
+from collections.abc import AsyncIterable
 import logging
-from typing import Any
+from typing import Callable, Protocol
 
 from config import Config
 
@@ -13,6 +14,14 @@ from .tools_manager import ToolsManager
 logger = logging.getLogger(__name__)
 
 
+class SupportsAStream(Protocol):
+    """Protocol for objects supporting asynchronous event streaming."""
+
+    @property
+    def astream(self) -> Callable[..., AsyncIterable[dict[str, object]]]:
+        ...
+
+
 class AgentConfigurator:
     """Handles agent initialization and component setup."""
 
@@ -21,13 +30,13 @@ class AgentConfigurator:
         self.config = Config()
 
         # Component storage
-        self.llm: Any | None = None
+        self.llm: object | None = None
         self.tools_manager: ToolsManager | None = None
         self.prompt_builder: PromptBuilder | None = None
-        self.system_prompt: Any | None = None
+        self.system_prompt: object | None = None
         self.agent_factory: AgentFactory | None = None
 
-    def build_agent(self) -> Any:
+    def build_agent(self) -> SupportsAStream:
         """
         Build the complete agent executor by initializing all components in order.
 

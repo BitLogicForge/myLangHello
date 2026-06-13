@@ -1,6 +1,6 @@
 """Services package for agent components."""
 
-from .agent_configurator import AgentConfigurator
+from .agent_configurator import AgentConfigurator, SupportsAStream
 from .agent_factory import AgentFactory
 from .agent_runner import AgentExecutionSettings, AgentRunner
 from .llm_factory import LLMFactory
@@ -26,4 +26,5 @@ __all__ = [
     "AgentConfigurator",
     "TelemetryManager",
     "get_telemetry",
+    "SupportsAStream",
 ]

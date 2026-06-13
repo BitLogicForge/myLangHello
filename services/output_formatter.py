@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Any, Callable
+from typing import Callable
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
@@ -76,20 +76,23 @@ class MessageFormatter:
         self.content_processor = content_processor
         self.execution_monitor = execution_monitor
 
-    def format_human_message(self, msg: Any) -> list[str]:
+    def format_human_message(self, msg: object) -> list[str]:
         """Format human/user message with color."""
-        return [Fore.BLUE + Style.BRIGHT + f"👤 User: {msg.content}"]
+        content = getattr(msg, "content", "")
+        return [Fore.BLUE + Style.BRIGHT + f"👤 User: {content}"]
 
-    def format_ai_message(self, msg: Any) -> list[str]:
+    def format_ai_message(self, msg: object) -> list[str]:
         """Format AI message with optional tool calls and color."""
         lines = []
 
-        if msg.content:
-            lines.append(Fore.MAGENTA + Style.BRIGHT + f"🤖 AI: {msg.content}")
+        content = getattr(msg, "content", "")
+        if content:
+            lines.append(Fore.MAGENTA + Style.BRIGHT + f"🤖 AI: {content}")
 
         # Handle tool calls
-        if hasattr(msg, "tool_calls") and msg.tool_calls:
-            for tool_call in msg.tool_calls:
+        tool_calls = getattr(msg, "tool_calls", None)
+        if tool_calls:
+            for tool_call in tool_calls:
                 tool_call_id = tool_call.get("id", "unknown")
                 tool_name = tool_call.get("name", "unknown")
                 lines.append(Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}")
@@ -98,7 +101,7 @@ class MessageFormatter:
 
         return lines
 
-    def format_tool_message(self, msg: Any) -> list[str]:
+    def format_tool_message(self, msg: object) -> list[str]:
         """Format tool result message with color."""
         tool_name = getattr(msg, "name", "unknown")
         tool_call_id = getattr(msg, "tool_call_id", None)
@@ -108,7 +111,7 @@ class MessageFormatter:
         if tool_call_id:
             exec_time_str = self.execution_monitor.format_execution_time(tool_call_id)
 
-        content = str(msg.content)
+        content = str(getattr(msg, "content", ""))
 
         # Clean up SQL database errors
         if tool_name == "sql_db_query" and "Error:" in content:
@@ -121,9 +124,9 @@ class MessageFormatter:
             Fore.WHITE + f"   {content}",
         ]
 
-    def format_default_message(self, msg: Any) -> list[str]:
+    def format_default_message(self, msg: object) -> list[str]:
         """Format unknown message type with color."""
-        content = msg.content if hasattr(msg, "content") else str(msg)
+        content = getattr(msg, "content", "") if hasattr(msg, "content") else str(msg)
         return [Fore.WHITE + Style.DIM + f"💬 {content}"]
 
 
@@ -185,7 +188,7 @@ class StreamingOutputFormatter:
             tool_timings: (Deprecated) Use internal execution monitor instead
         """
         # Message type handlers dispatch dictionary
-        handlers: dict[str, Callable[[Any], list[str]]] = {
+        handlers: dict[str, Callable[[object], list[str]]] = {
             "human": self.message_formatter.format_human_message,
             "user": self.message_formatter.format_human_message,
             "ai": self.message_formatter.format_ai_message,

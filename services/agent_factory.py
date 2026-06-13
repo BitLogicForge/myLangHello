@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import Any
+
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
@@ -27,7 +27,7 @@ class AgentFactory:
         llm: BaseChatModel,
         tools: list,
         system_prompt: str,
-        checkpointer: Any | None = None,
+        checkpointer: object | None = None,
     ):
         """
         Initialize the agent factory with LangGraph.

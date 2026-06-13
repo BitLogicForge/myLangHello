@@ -1,7 +1,7 @@
 """Configuration manager - singleton for loading and accessing config."""
 
 import logging
-from typing import Any
+
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -64,7 +64,7 @@ class Config:
     """Singleton configuration manager that loads config once and caches it."""
 
     _instance: "Config | None" = None
-    _config: dict[str, Any] | None = None
+    _config: dict[str, object] | None = None
     _config_path: str = "config.json"
 
     def __new__(cls, config_path: str = "config.json"):
@@ -87,7 +87,7 @@ class Config:
         Config._config = read_json_file(Config._config_path)
         logger.info("Configuration loaded successfully")
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: object = None) -> object:
         """
         Get a configuration value.
 
@@ -115,7 +115,7 @@ class Config:
 
         return value
 
-    def get_all(self) -> dict[str, Any]:
+    def get_all(self) -> dict[str, object]:
         """
         Get the entire configuration dictionary.
 

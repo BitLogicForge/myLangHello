@@ -11,7 +11,6 @@ import asyncio
 import sys
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import Any, cast
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -106,7 +105,7 @@ async def main():
         print("⏳ Invoking Agent...")
         
         # Invoke agent
-        response = await agent.ainvoke(cast(Any, {"messages": [HumanMessage(content=question)]}))
+        response = await agent.ainvoke({"messages": [HumanMessage(content=question)]})  # type: ignore
         
         print("\n✅ Agent Output:")
         print("-" * 50)

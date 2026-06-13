@@ -2,9 +2,10 @@
 
 import time
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 
 from config import Config
+from .agent_configurator import SupportsAStream
 
 
 @dataclass(frozen=True)
@@ -20,14 +21,20 @@ class AgentExecutionSettings:
         """Build execution settings from config."""
         timeout_value = config.get("agent.timeout_seconds", 60)
         max_tool_calls_value = config.get("agent.max_tool_calls", 10)
+        recursion_limit_value = config.get("agent.recursion_limit", 15)
 
-        timeout_seconds = float(timeout_value) if timeout_value not in (None, 0) else None
+        timeout_seconds = (
+            float(timeout_value) if isinstance(timeout_value, (int, float, str)) else None
+        )
         max_tool_calls = (
-            int(max_tool_calls_value) if max_tool_calls_value not in (None, 0) else None
+            int(max_tool_calls_value) if isinstance(max_tool_calls_value, (int, str)) else None
+        )
+        recursion_limit = (
+            int(recursion_limit_value) if isinstance(recursion_limit_value, (int, str)) else 15
         )
 
         return cls(
-            recursion_limit=int(config.get("agent.recursion_limit", 15)),
+            recursion_limit=recursion_limit,
             timeout_seconds=timeout_seconds,
             max_tool_calls=max_tool_calls,
         )
@@ -36,21 +43,21 @@ class AgentExecutionSettings:
 class AgentRunner:
     """Execute the agent while enforcing runtime guardrails."""
 
-    def __init__(self, agent_executor: Any, settings: AgentExecutionSettings):
+    def __init__(self, agent_executor: SupportsAStream, settings: AgentExecutionSettings):
         self.agent_executor = agent_executor
         self.settings = settings
 
     async def run(
         self,
-        agent_input: dict[str, Any],
-        on_event: Callable[[dict[str, Any], int], None] | None = None,
-    ) -> dict[str, Any] | None:
+        agent_input: dict[str, object],
+        on_event: Callable[[dict[str, object], int], None] | None = None,
+    ) -> dict[str, object] | None:
         """Run the agent through streaming and return an invoke-shaped response."""
-        run_config = {"recursion_limit": self.settings.recursion_limit}
+        run_config: dict[str, object] = {"recursion_limit": self.settings.recursion_limit}
         start_time = time.monotonic()
         tool_call_count = 0
         step_count = 0
-        final_messages: list[Any] = []
+        final_messages: list[object] = []
 
         # Use async streaming (astream) to support async tool invocation
         async for event in self.agent_executor.astream(agent_input, config=run_config):
@@ -94,23 +101,25 @@ class AgentRunner:
             raise RuntimeError(f"Agent exceeded max_tool_calls limit of {max_tool_calls}")
 
     @staticmethod
-    def _count_tool_calls(event: dict[str, Any]) -> int:
+    def _count_tool_calls(event: dict[str, object]) -> int:
         """Count tool calls in a streamed event."""
         tool_calls = 0
         for node_data in event.values():
-            messages = node_data.get("messages", [])
-            for msg in messages:
-                calls = getattr(msg, "tool_calls", None)
-                if calls:
-                    tool_calls += len(calls)
+            if isinstance(node_data, dict):
+                messages = node_data.get("messages", [])
+                for msg in messages:
+                    calls = getattr(msg, "tool_calls", None)
+                    if calls:
+                        tool_calls += len(calls)
         return tool_calls
 
     @staticmethod
-    def _extract_latest_messages(event: dict[str, Any]) -> list[Any]:
+    def _extract_latest_messages(event: dict[str, object]) -> list[object]:
         """Extract the latest messages payload from a streamed event."""
-        latest_messages: list[Any] = []
+        latest_messages: list[object] = []
         for node_data in event.values():
-            messages = node_data.get("messages", [])
-            if messages:
-                latest_messages = messages
+            if isinstance(node_data, dict):
+                messages = node_data.get("messages", [])
+                if messages:
+                    latest_messages = messages
         return latest_messages
