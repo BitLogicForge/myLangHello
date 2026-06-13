@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, cast
 
 from config import Config
 from .agent_configurator import SupportsAStream
@@ -42,6 +42,9 @@ class AgentExecutionSettings:
 
 class AgentRunner:
     """Execute the agent while enforcing runtime guardrails."""
+
+    agent_executor: SupportsAStream
+    settings: AgentExecutionSettings
 
     def __init__(self, agent_executor: SupportsAStream, settings: AgentExecutionSettings):
         self.agent_executor = agent_executor
@@ -106,10 +109,11 @@ class AgentRunner:
         tool_calls = 0
         for node_data in event.values():
             if isinstance(node_data, dict):
-                messages = node_data.get("messages", [])
+                node_dict: dict[str, object] = cast(dict[str, object], node_data)
+                messages = cast(list[object], node_dict.get("messages", []))
                 for msg in messages:
-                    calls = getattr(msg, "tool_calls", None)
-                    if calls:
+                    calls = cast(list[object] | None, getattr(msg, "tool_calls", None))
+                    if isinstance(calls, list):
                         tool_calls += len(calls)
         return tool_calls
 
@@ -119,7 +123,8 @@ class AgentRunner:
         latest_messages: list[object] = []
         for node_data in event.values():
             if isinstance(node_data, dict):
-                messages = node_data.get("messages", [])
+                node_dict: dict[str, object] = cast(dict[str, object], node_data)
+                messages = cast(list[object], node_dict.get("messages", []))
                 if messages:
                     latest_messages = messages
         return latest_messages

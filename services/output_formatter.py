@@ -2,7 +2,7 @@
 
 import re
 import time
-from typing import Callable
+from typing import Callable, cast
 
 from colorama import Fore, Style
 from colorama import init as colorama_init
@@ -72,6 +72,9 @@ class ExecutionMonitor:
 class MessageFormatter:
     """Pure formatting logic for different message types."""
 
+    content_processor: ContentProcessor
+    execution_monitor: ExecutionMonitor
+
     def __init__(self, content_processor: ContentProcessor, execution_monitor: ExecutionMonitor):
         self.content_processor = content_processor
         self.execution_monitor = execution_monitor
@@ -83,28 +86,30 @@ class MessageFormatter:
 
     def format_ai_message(self, msg: object) -> list[str]:
         """Format AI message with optional tool calls and color."""
-        lines = []
+        lines: list[str] = []
 
         content = getattr(msg, "content", "")
         if content:
             lines.append(Fore.MAGENTA + Style.BRIGHT + f"🤖 AI: {content}")
 
         # Handle tool calls
-        tool_calls = getattr(msg, "tool_calls", None)
-        if tool_calls:
+        tool_calls = cast(list[object] | None, getattr(msg, "tool_calls", None))
+        if isinstance(tool_calls, list):
             for tool_call in tool_calls:
-                tool_call_id = tool_call.get("id", "unknown")
-                tool_name = tool_call.get("name", "unknown")
-                lines.append(Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}")
-                lines.append(Fore.YELLOW + f"   Args: {tool_call.get('args', {})}")
-                self.execution_monitor.start_tool_timing(tool_call_id)
+                if isinstance(tool_call, dict):
+                    tc_dict: dict[str, object] = cast(dict[str, object], tool_call)
+                    tool_call_id = str(tc_dict.get("id", "unknown"))
+                    tool_name = str(tc_dict.get("name", "unknown"))
+                    lines.append(Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}")
+                    lines.append(Fore.YELLOW + f"   Args: {tc_dict.get('args', {})}")
+                    self.execution_monitor.start_tool_timing(tool_call_id)
 
         return lines
 
     def format_tool_message(self, msg: object) -> list[str]:
         """Format tool result message with color."""
         tool_name = getattr(msg, "name", "unknown")
-        tool_call_id = getattr(msg, "tool_call_id", None)
+        tool_call_id = cast(str | None, getattr(msg, "tool_call_id", None))
 
         # Get execution time string
         exec_time_str = ""
@@ -162,6 +167,11 @@ class StreamRenderer:
 class StreamingOutputFormatter:
     """Coordinates formatting and display of agent execution events."""
 
+    content_processor: ContentProcessor
+    execution_monitor: ExecutionMonitor
+    message_formatter: MessageFormatter
+    renderer: StreamRenderer
+
     def __init__(self):
         self.content_processor = ContentProcessor()
         self.execution_monitor = ExecutionMonitor()
@@ -177,7 +187,7 @@ class StreamingOutputFormatter:
         self.renderer.print_footer()
 
     def print_event(
-        self, event: dict, step_count: int, tool_timings: dict[str, float] | None = None
+        self, event: dict[str, object], step_count: int, _tool_timings: dict[str, float] | None = None
     ) -> None:
         """
         Print a single streaming event from the agent.
@@ -201,14 +211,18 @@ class StreamingOutputFormatter:
         for node_name, node_data in event.items():
             self.renderer.print_step_header(step_count, node_name)
 
-            if "messages" not in node_data:
-                continue
+            if isinstance(node_data, dict):
+                node_dict: dict[str, object] = cast(dict[str, object], node_data)
+                if "messages" not in node_dict:
+                    continue
 
-            for msg in node_data["messages"]:
-                msg_type: str = getattr(msg, "type", "default")
+                messages = cast(list[object] | None, node_dict.get("messages"))
+                if isinstance(messages, list):
+                    for msg in messages:
+                        msg_type: str = str(getattr(msg, "type", "default"))
 
-                # Get handler or use default
-                handler = handlers.get(msg_type, self.message_formatter.format_default_message)
+                        # Get handler or use default
+                        handler = handlers.get(msg_type, self.message_formatter.format_default_message)
 
-                # Print all lines returned by handler
-                self.renderer.print_lines(handler(msg))
+                        # Print all lines returned by handler
+                        self.renderer.print_lines(handler(msg))
