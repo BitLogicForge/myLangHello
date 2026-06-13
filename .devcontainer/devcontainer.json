@@ -3,7 +3,8 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.13-bookworm",
 
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/mssql:1":{}
   },
 
   "runArgs": ["--name=${localWorkspaceFolderBasename}-python-dev"],
