@@ -20,12 +20,12 @@ dependencies = [
     "httpx==0.27.0",
     "types-colorama==0.4.15.20260408",
     "uvicorn[standard]==0.44.0",
-    "ruff",
-    "mypy",
-    "pytest",
-    "pytest-asyncio",
-    "pydantic-settings",
-    "chainlit",
+    "ruff==0.15.17",
+    "mypy==2.1.0",
+    "pytest==9.0.3",
+    "pytest-asyncio==1.4.0",
+    "pydantic-settings==2.14.1",
+    "chainlit==2.11.1",
 ]
 
 [tool.uv]
