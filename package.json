@@ -1,0 +1,29 @@
+{
+  "name": "mylanghello",
+  "version": "1.0.0",
+  "description": "A small FastAPI + LangGraph demo project for running a tool-using chat agent with SQL access, configurable LLM providers, and basic telemetry.",
+  "homepage": "https://github.com/BitLogicForge/myLangHello#readme",
+  "bugs": {
+    "url": "https://github.com/BitLogicForge/myLangHello/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BitLogicForge/myLangHello.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dupes": "jscpd . --pattern \"**/*.py\" --ignore \"**/.venv/**,**/node_modules/**,**/__pycache__/**,**/.git/**,**/.mypy_cache/**,**/.pytest_cache/**\""
+  },
+  "devDependencies": {
+    "jscpd": "^4.0.5"
+  }
+}

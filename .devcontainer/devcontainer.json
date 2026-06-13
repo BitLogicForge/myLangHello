@@ -25,7 +25,8 @@
 
   "mounts": [
     "source=${localWorkspaceFolderBasename}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
-    "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume"
+    "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
+     "source=reactTemplate-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
 
   "postCreateCommand": "sudo mkdir -p /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && sudo chown -R vscode:vscode /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && if [ ! -x /home/vscode/.local/bin/uv ]; then curl -LsSf https://astral.sh/uv/install.sh | sh; fi && /home/vscode/.local/bin/uv sync --python /usr/local/bin/python --link-mode=copy",
