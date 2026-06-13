@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 from services.llm_factory import LLMFactory
 from dotenv import load_dotenv
 
-load_dotenv()
+_ = load_dotenv()
 
 
 # 1. Define the Pydantic schema for the structured response we want

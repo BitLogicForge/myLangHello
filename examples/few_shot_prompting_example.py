@@ -19,7 +19,7 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
 from services.llm_factory import LLMFactory
 
-load_dotenv()
+_ = load_dotenv()
 
 
 # 1. Define the Pydantic Schema for target database filters

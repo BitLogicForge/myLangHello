@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
 from main import AgentApp
 
-load_dotenv()
+_ = load_dotenv()
 
 
 async def main() -> None:

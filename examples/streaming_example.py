@@ -16,7 +16,17 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 from services.llm_factory import LLMFactory
 from main import AgentApp
 
-load_dotenv()
+_ = load_dotenv()
+
+from typing import TypeGuard, cast
+
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+def _is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
 
 
 async def stream_llm_tokens():
@@ -62,19 +72,25 @@ async def stream_agent_steps():
             # Each event represents updates from a node in the agent graph (e.g. 'agent' or 'tools')
             for node_name, node_output in event.items():
                 print(f"\n📍 Node: [{node_name}]")
-                messages = node_output.get("messages", [])
-                for msg in messages:
-                    # If it's a tool call request
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
-                        for tool_call in msg.tool_calls:
-                            print(f"   🔧 Tool Call: {tool_call['name']}({tool_call['args']})")
-                    # If it's standard text output
-                    elif hasattr(msg, "content") and msg.content:
-                        # Print preview of the content
-                        preview = msg.content.strip().replace("\n", " ")
-                        if len(preview) > 100:
-                            preview = preview[:100] + "..."
-                        print(f"   💬 Message: {preview}")
+                node_output_dict = cast(dict[str, object], node_output)
+                messages = node_output_dict.get("messages", [])
+                if _is_list(messages):
+                    for msg in messages:
+                        # If it's a tool call request
+                        tool_calls_obj: object = getattr(msg, "tool_calls", None)
+                        if _is_list(tool_calls_obj) and tool_calls_obj:
+                            for tool_call in tool_calls_obj:
+                                if _is_str_dict(tool_call):
+                                    print(f"   🔧 Tool Call: {tool_call.get('name')}({tool_call.get('args')})")
+                        # If it's standard text output
+                        else:
+                            content_obj: object = getattr(msg, "content", None)
+                            if isinstance(content_obj, str) and content_obj:
+                                # Print preview of the content
+                                preview = content_obj.strip().replace("\n", " ")
+                                if len(preview) > 100:
+                                    preview = preview[:100] + "..."
+                                print(f"   💬 Message: {preview}")
         print("\n" + "-" * 40)
         
     except Exception as e:

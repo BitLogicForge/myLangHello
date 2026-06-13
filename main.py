@@ -14,7 +14,7 @@ from services import (
 from utils import prepare_messages_with_history, setup_logging
 
 # Load environment variables
-load_dotenv()
+_ = load_dotenv()
 
 # Configure logging
 app_config = Config()

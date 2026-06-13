@@ -2,6 +2,7 @@
 
 import logging
 
+from typing import ClassVar, TypeGuard
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class AppSettings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
     
-    model_config = SettingsConfigDict(
+    model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"
@@ -58,6 +59,11 @@ class AppSettings(BaseSettings):
 
     # Server Configuration
     port: int = Field(default=8000, alias="PORT")
+
+
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
 
 
 class Config:
@@ -106,7 +112,7 @@ class Config:
         value = Config._config
 
         for k in keys:
-            if isinstance(value, dict):
+            if _is_str_dict(value):
                 value = value.get(k)
                 if value is None:
                     return default

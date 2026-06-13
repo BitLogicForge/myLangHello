@@ -9,7 +9,8 @@ This script shows how to:
 import asyncio
 import sys
 from pathlib import Path
-from typing import TypedDict, Annotated, Sequence
+from typing import TypedDict, Annotated
+from collections.abc import Sequence
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
@@ -19,12 +20,12 @@ from services.llm_factory import LLMFactory
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END  # pyright: ignore[reportMissingTypeStubs]
+from langgraph.graph.message import add_messages  # pyright: ignore[reportMissingTypeStubs]
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
 
-load_dotenv()
+_ = load_dotenv()
 
 
 # 1. Define the Agent State

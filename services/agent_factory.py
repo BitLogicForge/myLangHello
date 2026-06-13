@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load environment variables from .env file
-_= load_dotenv()
+_ = load_dotenv()
 
 
 @final

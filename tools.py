@@ -3,7 +3,7 @@
 import ast
 import asyncio
 import operator
-import os
+
 import random
 from datetime import datetime
 from pathlib import Path
@@ -13,10 +13,22 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-load_dotenv()
+from typing import Callable, TypeGuard
+
+_ = load_dotenv()
 
 # Sandbox folder inside workspace directory
 SANDBOX_DIR = Path(__file__).parent.resolve() / "sandbox"
+
+
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+
+def _is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
 
 
 def _safe_path(user_path: str) -> Path:
@@ -49,18 +61,18 @@ async def calculator(expression: str) -> str:
     """
     try:
         # Define allowed operations
-        allowed_ops = {
+        allowed_ops: dict[type, Callable[..., object]] = {
             ast.Add: operator.add,
             ast.Sub: operator.sub,
             ast.Mult: operator.mul,
-            ast.Div: operator.truediv,
-            ast.Pow: operator.pow,
+            ast.Div: operator.truediv,  # pyright: ignore[reportUnknownMemberType]
+            ast.Pow: operator.pow,  # pyright: ignore[reportUnknownMemberType]
             ast.USub: operator.neg,
         }
 
-        def eval_node(node):
-            if isinstance(node, ast.Num):  # Number
-                return node.n
+        def eval_node(node: ast.AST) -> object:
+            if isinstance(node, ast.Num):  # pyright: ignore[reportDeprecated]
+                return node.n  # pyright: ignore[reportDeprecated]
             elif isinstance(node, ast.Constant):  # Python 3.8+ uses Constant
                 return node.value
             elif isinstance(node, ast.BinOp):  # Binary operation
@@ -152,7 +164,7 @@ async def write_file(path: str, content: str) -> str:
     try:
         safe_p = _safe_path(path)
         await asyncio.to_thread(safe_p.parent.mkdir, parents=True, exist_ok=True)
-        await asyncio.to_thread(safe_p.write_text, content, encoding="utf-8")
+        _ = await asyncio.to_thread(safe_p.write_text, content, encoding="utf-8")
         return f"Wrote {len(content)} bytes to sandbox file: {path}"
     except PermissionError as pe:
         return str(pe)
@@ -466,17 +478,23 @@ async def city_to_coordinates(city: str) -> str:
         if resp.status_code != 200:
             return f"Error: Geocoding API returned status code {resp.status_code}"
 
-        data = resp.json()
+        data: object = resp.json()  # pyright: ignore[reportAny]
+        if not _is_str_dict(data):
+            return "Error: Invalid response format from Geocoding API"
+
         results = data.get("results")
-        if not results:
+        if not _is_list(results) or not results:
             return f"Error: City '{city}' not found."
 
-        loc = results[0]
-        name = loc.get("name")
-        country = loc.get("country", "Unknown")
-        lat = loc.get("latitude")
-        lon = loc.get("longitude")
-        timezone = loc.get("timezone", "Unknown")
+        first_result = results[0]
+        if not _is_str_dict(first_result):
+            return f"Error: Invalid data format for '{city}'"
+
+        name = first_result.get("name")
+        country = first_result.get("country", "Unknown")
+        lat = first_result.get("latitude")
+        lon = first_result.get("longitude")
+        timezone = first_result.get("timezone", "Unknown")
 
         return f"City: {name}, Country: {country}, Latitude: {lat}, Longitude: {lon}, Timezone: {timezone}"
     except Exception as e:

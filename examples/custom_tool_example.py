@@ -19,9 +19,19 @@ sys.path.append(str(Path(__file__).parent.parent.resolve()))
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from services.llm_factory import LLMFactory
-from langchain.agents import create_agent
+from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariableType]
 
-load_dotenv()
+_ = load_dotenv()
+
+from typing import TypeGuard
+
+def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+def _is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
 
 
 # 1. Define the input schema for your tool
@@ -85,7 +95,7 @@ async def main():
         
         # Create a simple agent with our tool
         # (We use the project's base prompt style or a standard react style prompt)
-        agent = create_agent(
+        agent = create_agent(  # pyright: ignore[reportUnknownVariableType]
             model=llm,
             tools=tools,
             system_prompt=(
@@ -105,14 +115,21 @@ async def main():
         print("⏳ Invoking Agent...")
         
         # Invoke agent
-        response = await agent.ainvoke({"messages": [HumanMessage(content=question)]})  # type: ignore
+        response: object = await agent.ainvoke(  # pyright: ignore[reportUnknownMemberType]
+            {"messages": [HumanMessage(content=question)]}
+        )
         
         print("\n✅ Agent Output:")
         print("-" * 50)
-        messages_list = response.get("messages", [])
-        if messages_list:
-            # Print the final assistant message
-            print(messages_list[-1].content)
+        if _is_str_dict(response):
+            messages_list = response.get("messages", [])
+            if _is_list(messages_list) and messages_list:
+                # Print the final assistant message
+                msg = messages_list[-1]
+                content = getattr(msg, "content", None)
+                print(content if content is not None else str(msg))
+            else:
+                print(str(response))
         else:
             print(str(response))
         print("-" * 50)

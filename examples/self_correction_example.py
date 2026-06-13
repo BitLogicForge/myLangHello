@@ -23,7 +23,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 
-load_dotenv()
+_ = load_dotenv()
 
 
 # 1. Define the Graph State

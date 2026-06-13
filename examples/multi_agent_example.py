@@ -26,7 +26,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from tools import weather, calculator
 from langgraph.prebuilt import ToolNode
 
-load_dotenv()
+_ = load_dotenv()
 
 
 # 1. Define the Shared State
