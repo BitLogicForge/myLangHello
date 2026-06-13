@@ -1,6 +1,7 @@
 """LLM Factory - Creates LLM instances based on configuration."""
 
 import logging
+from typing import cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LLMFactory:
     """Factory for creating LLM instances based on provider configuration."""
 
-    SUPPORTED_PROVIDERS = ("azure", "lmstudio", "openai", "ollama")
+    SUPPORTED_PROVIDERS: tuple[str, ...] = ("azure", "lmstudio", "openai", "ollama")
 
     @staticmethod
     def create_llm() -> BaseChatModel:
@@ -29,15 +30,16 @@ class LLMFactory:
         """
         # Load configuration
         config_obj = Config()
-        config = config_obj.get_all()
+        config = config_obj.get_all() or {}
 
         # Determine provider from config
-        selected_provider = config.get("provider", "openai")
+        selected_provider = cast(str, config.get("provider", "openai"))
         logger.info(f"Creating LLM with provider: {selected_provider}")
 
         # Get provider-specific config
-        provider_config = config.get(selected_provider, {}).copy()
-        common_params = config.get("common_params", {})
+        provider_dict = cast(dict[str, object], config.get(selected_provider, {}))
+        provider_config = provider_dict.copy()
+        common_params = cast(dict[str, object], config.get("common_params", {}))
 
         # Merge common params with provider params
         provider_config.update(common_params)
@@ -57,6 +59,5 @@ class LLMFactory:
         else:
             supported = ", ".join(LLMFactory.SUPPORTED_PROVIDERS)
             raise ValueError(
-                f"Unsupported provider: {selected_provider}. "
-                f"Supported providers: {supported}"
+                f"Unsupported provider: {selected_provider}. Supported providers: {supported}"
             )

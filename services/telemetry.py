@@ -4,13 +4,14 @@ import logging
 import time
 from contextlib import contextmanager
 from functools import wraps
-from typing import Callable
+from typing import Callable, final
 
 from prometheus_client import Counter, Gauge, Histogram, Info, start_http_server
 
 logger = logging.getLogger(__name__)
 
 
+@final
 class TelemetryManager:
     """Self-hosted metrics collection and monitoring."""
 
@@ -143,7 +144,7 @@ class TelemetryManager:
     def _start_metrics_server(self) -> None:
         """Start HTTP server for Prometheus metrics scraping."""
         try:
-            start_http_server(self.metrics_port)
+            _ = start_http_server(self.metrics_port)
             logger.info(f"✅ Metrics server started on port {self.metrics_port}")
             logger.info(
                 f"📊 Prometheus metrics available at: http://localhost:{self.metrics_port}/metrics"
@@ -235,7 +236,9 @@ class TelemetryManager:
         self.db_connections_active.set(active)
         self.db_pool_size.set(pool_size)
 
-    def decorator_track_time(self, metric_name: str) -> Callable[[Callable], Callable]:
+    def decorator_track_time(
+        self, metric_name: str
+    ) -> Callable[[Callable[..., object]], Callable[..., object]]:
         """
         Decorator to automatically track function execution time.
 
@@ -245,9 +248,9 @@ class TelemetryManager:
                 pass
         """
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[..., object]) -> Callable[..., object]:
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: object, **kwargs: object) -> object:
                 start_time = time.time()
                 try:
                     result = func(*args, **kwargs)

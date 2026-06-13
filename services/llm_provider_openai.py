@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import cast
 
 from langchain_openai import ChatOpenAI
 
@@ -12,7 +13,7 @@ class OpenAILLMProvider:
     """Provider for OpenAI LLM instances."""
 
     @staticmethod
-    def create(config: dict) -> ChatOpenAI:
+    def create(config: dict[str, object]) -> ChatOpenAI:
         """
         Create an OpenAI LLM instance.
 
@@ -28,9 +29,11 @@ class OpenAILLMProvider:
             - OPENAI_BASE_URL (optional)
         """
         # Get API key and organization from environment if not in config
-        api_key = config.pop("api_key", None) or os.getenv("OPENAI_API_KEY")
-        organization = config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
-        base_url = config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
+        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("OPENAI_API_KEY"))
+        organization = cast(
+            str | None, config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
+        )
+        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL"))
 
         # Validate required parameters
         if not api_key:
@@ -51,4 +54,4 @@ class OpenAILLMProvider:
         logger.info(f"Creating ChatOpenAI with model: {params.get('model', 'default')}")
         logger.debug(f"OpenAI parameters: {list(params.keys())}")
 
-        return ChatOpenAI(**params)
+        return ChatOpenAI(**params)  # pyright: ignore[reportArgumentType]

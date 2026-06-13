@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import cast
 
 from langchain_openai import ChatOpenAI
 
@@ -11,11 +12,11 @@ logger = logging.getLogger(__name__)
 class OllamaLLMProvider:
     """Provider for Ollama LLM instances via OpenAI-compatible endpoint."""
 
-    DEFAULT_BASE_URL = "http://localhost:11434/v1"
-    DEFAULT_API_KEY = "ollama"
+    DEFAULT_BASE_URL: str = "http://localhost:11434/v1"
+    DEFAULT_API_KEY: str = "ollama"
 
     @staticmethod
-    def create(config: dict) -> ChatOpenAI:
+    def create(config: dict[str, object]) -> ChatOpenAI:
         """
         Create an Ollama LLM instance.
 
@@ -29,8 +30,8 @@ class OllamaLLMProvider:
             - OLLAMA_BASE_URL (optional)
             - OLLAMA_API_KEY (optional)
         """
-        base_url = config.pop("base_url", None) or os.getenv("OLLAMA_BASE_URL")
-        api_key = config.pop("api_key", None) or os.getenv("OLLAMA_API_KEY")
+        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("OLLAMA_BASE_URL"))
+        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("OLLAMA_API_KEY"))
 
         params = {
             "base_url": base_url or OllamaLLMProvider.DEFAULT_BASE_URL,
@@ -42,4 +43,4 @@ class OllamaLLMProvider:
         logger.info(f"Creating Ollama ChatOpenAI with model: {params.get('model', 'default')}")
         logger.debug(f"Ollama parameters: {list(params.keys())}")
 
-        return ChatOpenAI(**params)
+        return ChatOpenAI(**params)  # pyright: ignore[reportArgumentType]

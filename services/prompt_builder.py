@@ -13,10 +13,17 @@ logger = logging.getLogger(__name__)
 class PromptBuilder:
     """Builds and configures prompt templates for the agent."""
 
+    system_prompt_path: str
+    system_prompt: str
+
     def __init__(self) -> None:
         """Initialize the prompt builder."""
         config = Config()
-        self.system_prompt_path = config.get("system_prompt_path")
+        path_val = config.get("system_prompt_path")
+        if not isinstance(path_val, str):
+            raise ValueError("system_prompt_path config value must be a string")
+        self.system_prompt_path = path_val
+        self.system_prompt = ""
         logger.debug(f"PromptBuilder initialized with prompt file: {self.system_prompt_path}")
         self._load_system_prompt()
 

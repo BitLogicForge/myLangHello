@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import cast
 
 from langchain_openai import AzureChatOpenAI
 
@@ -12,7 +13,7 @@ class AzureLLMProvider:
     """Provider for Azure OpenAI LLM instances."""
 
     @staticmethod
-    def create(config: dict) -> AzureChatOpenAI:
+    def create(config: dict[str, object]) -> AzureChatOpenAI:
         """
         Create an Azure OpenAI LLM instance.
 
@@ -34,14 +35,15 @@ class AzureLLMProvider:
         api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
         # Get deployment name (REQUIRED for Azure)
-        deployment_name = (
+        deployment_name = cast(
+            str | None,
             config.pop("deployment_name", None)
             or config.pop("azure_deployment", None)
-            or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+            or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
         )
 
         # Remove 'model' from config as Azure uses deployment_name instead
-        config.pop("model", None)
+        _ = config.pop("model", None)
 
         # Validate required parameters
         if not api_key:
@@ -53,8 +55,7 @@ class AzureLLMProvider:
         if not deployment_name:
             logger.error("AZURE_OPENAI_DEPLOYMENT_NAME is required but not found!")
             raise ValueError(
-                "Azure OpenAI requires deployment_name. "
-                "Set it in config or AZURE_OPENAI_DEPLOYMENT_NAME environment variable"
+                "Azure OpenAI requires deployment_name. Set it in config or AZURE_OPENAI_DEPLOYMENT_NAME environment variable"
             )
 
         # Build parameters
@@ -69,4 +70,4 @@ class AzureLLMProvider:
         logger.info(f"Creating AzureChatOpenAI with deployment: {deployment_name}")
         logger.debug(f"Azure parameters: {list(params.keys())}")
 
-        return AzureChatOpenAI(**params)
+        return AzureChatOpenAI(**params)  # pyright: ignore[reportArgumentType]

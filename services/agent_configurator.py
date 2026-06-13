@@ -2,7 +2,10 @@
 
 from collections.abc import AsyncIterable
 import logging
-from typing import Callable, Protocol
+from typing import Callable, Protocol, cast
+
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.tools import BaseTool
 
 from config import Config
 
@@ -25,16 +28,25 @@ class SupportsAStream(Protocol):
 class AgentConfigurator:
     """Handles agent initialization and component setup."""
 
+    config: Config
+    llm: BaseChatModel | None
+    tools_manager: ToolsManager | None
+    tools: list[BaseTool] | None
+    prompt_builder: PromptBuilder | None
+    system_prompt: str | None
+    agent_factory: AgentFactory | None
+
     def __init__(self) -> None:
         """Initialize the agent configurator."""
         self.config = Config()
 
         # Component storage
-        self.llm: object | None = None
-        self.tools_manager: ToolsManager | None = None
-        self.prompt_builder: PromptBuilder | None = None
-        self.system_prompt: object | None = None
-        self.agent_factory: AgentFactory | None = None
+        self.llm = None
+        self.tools_manager = None
+        self.tools = None
+        self.prompt_builder = None
+        self.system_prompt = None
+        self.agent_factory = None
 
     def build_agent(self) -> SupportsAStream:
         """
@@ -55,13 +67,13 @@ class AgentConfigurator:
         logger.info("Building system prompt...")
         self.system_prompt = PromptBuilder().system_prompt
 
-        self.setup_agent_factory()
+        _ = self.setup_agent_factory()
 
         # Create and return executor
         if self.agent_factory is None:
             raise RuntimeError("Agent factory creation failed")
 
-        agent_executor = self.agent_factory.create_db_agent()
+        agent_executor = cast(SupportsAStream, self.agent_factory.create_db_agent())
         logger.info("✅ Agent built successfully")
         return agent_executor
 

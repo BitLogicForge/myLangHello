@@ -2,13 +2,14 @@
 
 import logging
 import os
-
+from typing import cast, final
 
 from dotenv import load_dotenv
-from langchain.agents import create_agent
+from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariableType]
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.tools import BaseTool
 
 from config import Config
 
@@ -16,16 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 # Load environment variables from .env file
-load_dotenv()
+_= load_dotenv()
 
 
+@final
 class AgentFactory:
     """Factory for creating and configuring LangGraph ReAct agents."""
 
     def __init__(
         self,
         llm: BaseChatModel,
-        tools: list,
+        tools: list[BaseTool],
         system_prompt: str,
         checkpointer: object | None = None,
     ):
@@ -45,7 +47,7 @@ class AgentFactory:
 
         logger.info(f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent")
 
-    def create_db_agent(self):
+    def create_db_agent(self) -> object:
         """
         Create a LangGraph agent with a toolkit.
 
@@ -86,8 +88,8 @@ class AgentFactory:
 
             logger.info(f"Database tools enabled. Connecting to database at {db_host}...")
             # Create SQL toolkit with view support enabled
-            toolkit = SQLDatabaseToolkit(
-                db=SQLDatabase.from_uri(
+            toolkit_kwargs: dict[str, object] = {
+                "db": SQLDatabase.from_uri(  # pyright: ignore[reportUnknownMemberType]
                     database_uri=conn_str,
                     # SQLAlchemy engine configuration
                     # engine_args={
@@ -111,18 +113,22 @@ class AgentFactory:
                     # Advanced (rarely needed)
                     # metadata=None,  # SQLAlchemy MetaData object
                 ),
-                llm=self.llm,
-            )
+                "llm": self.llm,
+            }
+            toolkit = SQLDatabaseToolkit(**toolkit_kwargs)  # pyright: ignore[reportArgumentType]
 
             # Combine SQL toolkit tools with custom tools
             all_tools = toolkit.get_tools() + self.tools
 
         # Use create_agent to support custom tools
-        agent = create_agent(
-            model=self.llm,
-            tools=all_tools,
-            system_prompt=self.system_prompt,
-            checkpointer=self.checkpointer,
+        agent = cast(
+            object,
+            create_agent(
+                model=self.llm,
+                tools=all_tools,
+                system_prompt=self.system_prompt,
+                checkpointer=self.checkpointer,  # pyright: ignore[reportArgumentType]
+            ),
         )
 
         return agent

@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import cast
 
 from langchain_openai import ChatOpenAI
 
@@ -11,11 +12,11 @@ logger = logging.getLogger(__name__)
 class LMStudioLLMProvider:
     """Provider for LM Studio LLM instances."""
 
-    DEFAULT_BASE_URL = "http://localhost:1234/v1"
-    DEFAULT_API_KEY = "lm-studio"
+    DEFAULT_BASE_URL: str = "http://localhost:1234/v1"
+    DEFAULT_API_KEY: str = "lm-studio"
 
     @staticmethod
-    def create(config: dict) -> ChatOpenAI:
+    def create(config: dict[str, object]) -> ChatOpenAI:
         """
         Create an LM Studio LLM instance.
 
@@ -29,8 +30,8 @@ class LMStudioLLMProvider:
             - LMSTUDIO_BASE_URL (optional)
             - LMSTUDIO_API_KEY (optional, usually not needed)
         """
-        base_url = config.pop("base_url", None) or os.getenv("LMSTUDIO_BASE_URL")
-        api_key = config.pop("api_key", None) or os.getenv("LMSTUDIO_API_KEY")
+        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("LMSTUDIO_BASE_URL"))
+        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("LMSTUDIO_API_KEY"))
 
         params = {
             "base_url": base_url or LMStudioLLMProvider.DEFAULT_BASE_URL,
@@ -42,4 +43,4 @@ class LMStudioLLMProvider:
         logger.info(f"Creating LM Studio ChatOpenAI with model: {params.get('model', 'default')}")
         logger.debug(f"LM Studio parameters: {list(params.keys())}")
 
-        return ChatOpenAI(**params)
+        return ChatOpenAI(**params)  # pyright: ignore[reportArgumentType]
