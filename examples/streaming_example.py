@@ -18,15 +18,8 @@ from main import AgentApp
 
 _ = load_dotenv()
 
-from typing import TypeGuard, cast
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
+from typing import cast
+from utils import is_str_dict, is_list
 
 
 async def stream_llm_tokens():
@@ -74,13 +67,13 @@ async def stream_agent_steps():
                 print(f"\n📍 Node: [{node_name}]")
                 node_output_dict = cast(dict[str, object], node_output)
                 messages = node_output_dict.get("messages", [])
-                if _is_list(messages):
+                if is_list(messages):
                     for msg in messages:
                         # If it's a tool call request
                         tool_calls_obj: object = getattr(msg, "tool_calls", None)
-                        if _is_list(tool_calls_obj) and tool_calls_obj:
+                        if is_list(tool_calls_obj) and tool_calls_obj:
                             for tool_call in tool_calls_obj:
-                                if _is_str_dict(tool_call):
+                                if is_str_dict(tool_call):
                                     print(f"   🔧 Tool Call: {tool_call.get('name')}({tool_call.get('args')})")
                         # If it's standard text output
                         else:

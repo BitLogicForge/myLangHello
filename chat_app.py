@@ -4,17 +4,8 @@
 import chainlit as cl
 from main import AgentApp
 from langchain_core.messages import HumanMessage
-from typing import cast, TypeGuard
-
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
+from typing import cast
+from utils import is_str_dict, is_list
 
 
 
@@ -51,17 +42,17 @@ async def main(message: cl.Message):
     try:
         # Stream events from LangGraph agent executor
         async for event in agent_app.agent_executor.astream({"messages": [HumanMessage(content=message.content)]}):
-            if _is_str_dict(event):
+            if is_str_dict(event):
                 for node_name, node_output in event.items():
-                    if _is_str_dict(node_output):
+                    if is_str_dict(node_output):
                         messages = node_output.get("messages", [])
-                        if _is_list(messages):
+                        if is_list(messages):
                             for msg in messages:
                                 # 1. Handle tool execution starts (agent requesting a tool)
                                 tool_calls = getattr(msg, "tool_calls", None)
-                                if _is_list(tool_calls) and tool_calls:
+                                if is_list(tool_calls) and tool_calls:
                                     for tool_call in tool_calls:
-                                        if _is_str_dict(tool_call):
+                                        if is_str_dict(tool_call):
                                             call_id = tool_call.get("id")
                                             if isinstance(call_id, str):
                                                 step = cl.Step(name=str(tool_call.get("name", "tool")), type="tool")

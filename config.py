@@ -2,12 +2,12 @@
 
 import logging
 
-from typing import ClassVar, TypeGuard
+from typing import ClassVar
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from utils import read_json_file
+from utils import read_json_file, is_str_dict
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,6 @@ class AppSettings(BaseSettings):
     port: int = Field(default=8000, alias="PORT")
 
 
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
 
 
 class Config:
@@ -112,7 +109,7 @@ class Config:
         value = Config._config
 
         for k in keys:
-            if _is_str_dict(value):
+            if is_str_dict(value):
                 value = value.get(k)
                 if value is None:
                     return default

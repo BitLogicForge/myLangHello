@@ -1,4 +1,5 @@
 from langchain_core.messages import AIMessage, HumanMessage
+from typing import TypeGuard
 
 
 def prepare_messages_with_history(
@@ -29,3 +30,19 @@ def prepare_messages_with_history(
     messages.append(HumanMessage(content=question))
 
     return messages
+
+
+def is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
+    """Type guard to check if a value is a dictionary with string keys."""
+    return isinstance(val, dict)
+
+
+def is_list(val: object) -> TypeGuard[list[object]]:
+    """Type guard to check if a value is a list of objects."""
+    return isinstance(val, list)
+
+
+def is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
+    """Type guard to check if a value is a tuple."""
+    return isinstance(val, tuple)
+

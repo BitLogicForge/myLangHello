@@ -23,15 +23,7 @@ from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariab
 
 _ = load_dotenv()
 
-from typing import TypeGuard
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
+from utils import is_str_dict, is_list
 
 
 # 1. Define the input schema for your tool
@@ -121,9 +113,9 @@ async def main():
         
         print("\n✅ Agent Output:")
         print("-" * 50)
-        if _is_str_dict(response):
+        if is_str_dict(response):
             messages_list = response.get("messages", [])
-            if _is_list(messages_list) and messages_list:
+            if is_list(messages_list) and messages_list:
                 # Print the final assistant message
                 msg = messages_list[-1]
                 content = getattr(msg, "content", None)

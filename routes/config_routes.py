@@ -4,17 +4,13 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from typing import TypeGuard
+from utils import is_list
 from main import AgentApp
 
 logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="", tags=["Configuration"])
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
 
 # Module-level variables to be set by main app
 agent_app: AgentApp | None = None
@@ -45,7 +41,7 @@ async def get_config():
         return {
             "model": str(model_name) if isinstance(model_name, str) else "unknown",
             "temperature": float(temperature) if isinstance(temperature, (int, float)) else 0.0,
-            "tools_count": len(tools) if _is_list(tools) else 0,
+            "tools_count": len(tools) if is_list(tools) else 0,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Config error: {str(e)}")

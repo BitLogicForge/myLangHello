@@ -5,30 +5,15 @@ import time
 
 from fastapi import APIRouter, HTTPException
 
-from typing import TypeGuard
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
 from services import AgentExecutionSettings, AgentRunner, TelemetryManager, SupportsAStream
-from utils import prepare_messages_with_history
+from utils import prepare_messages_with_history, is_str_dict, is_list, is_tuple
 
 logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="", tags=["Agent"])
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
-
-
-def _is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
-    """Type guard to check if a value is a tuple."""
-    return isinstance(val, tuple)
 
 
 # Module-level variables to be set by main app
@@ -96,7 +81,7 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         if telemetry and isinstance(response, dict):
             # Try to extract iteration count from response metadata
             metadata = response.get("metadata")
-            if _is_str_dict(metadata):
+            if is_str_dict(metadata):
                 iterations = metadata.get("iterations")
                 if isinstance(iterations, int):
                     telemetry.track_agent_iterations(iterations)
@@ -105,14 +90,14 @@ async def _process_query(request: QueryRequest) -> QueryResponse:
         # LangGraph returns {"messages": [...]} where last message is the response
         if isinstance(response, dict):
             messages_list = response.get("messages")
-            if _is_list(messages_list) and len(messages_list) > 0:
+            if is_list(messages_list) and len(messages_list) > 0:
                 # Get the last message (agent's response)
                 final_message = messages_list[-1]
                 # Extract content from the message
                 content: object = getattr(final_message, "content", None)
                 if content is not None:
                     output_text = str(content)
-                elif _is_tuple(final_message) and len(final_message) > 1:
+                elif is_tuple(final_message) and len(final_message) > 1:
                     output_text = str(final_message[1])
                 else:
                     output_text = str(final_message)

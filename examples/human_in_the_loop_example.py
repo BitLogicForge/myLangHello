@@ -9,13 +9,14 @@ This script shows how to:
 import asyncio
 import sys
 from pathlib import Path
-from typing import TypedDict, Annotated, TypeGuard, cast
+from typing import TypedDict, Annotated, cast
 from collections.abc import Sequence
 from dotenv import load_dotenv
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
+from utils import is_str_dict, is_list
 from services.llm_factory import LLMFactory
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
@@ -26,16 +27,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
 
 _ = load_dotenv()
-
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
 
 
 # 1. Define the Agent State
@@ -108,7 +99,7 @@ async def main():
         ):
             event_dict = cast(dict[str, object], event)
             messages = event_dict.get("messages", [])
-            if _is_list(messages) and messages:
+            if is_list(messages) and messages:
                 last_msg = messages[-1]
                 content_obj: object = getattr(last_msg, "content", None)
                 if isinstance(content_obj, str) and content_obj:
@@ -122,14 +113,14 @@ async def main():
             
             # Retrieve the pending tool call information
             values = state.values
-            if _is_str_dict(values):
+            if is_str_dict(values):
                 messages = values.get("messages", [])
-                if _is_list(messages) and messages:
+                if is_list(messages) and messages:
                     last_message = messages[-1]
                     tool_calls_obj: object = getattr(last_message, "tool_calls", None)
-                    if _is_list(tool_calls_obj) and tool_calls_obj:
+                    if is_list(tool_calls_obj) and tool_calls_obj:
                         for tool_call in tool_calls_obj:
-                            if _is_str_dict(tool_call):
+                            if is_str_dict(tool_call):
                                 name = tool_call.get("name")
                                 args = tool_call.get("args")
                                 print(f"👉 Action Requested: {name}({args})")
@@ -146,7 +137,7 @@ async def main():
             ):
                 event_dict = cast(dict[str, object], event)
                 messages = event_dict.get("messages", [])
-                if _is_list(messages) and messages:
+                if is_list(messages) and messages:
                     last_msg = messages[-1]
                     resumed_content_obj: object = getattr(last_msg, "content", None)
                     if isinstance(resumed_content_obj, str) and resumed_content_obj:

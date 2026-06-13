@@ -13,22 +13,12 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from typing import Callable, TypeGuard
+from utils import is_str_dict, is_list
 
 _ = load_dotenv()
 
 # Sandbox folder inside workspace directory
 SANDBOX_DIR = Path(__file__).parent.resolve() / "sandbox"
-
-
-def _is_str_dict(val: object) -> TypeGuard[dict[str, object]]:
-    """Type guard to check if a value is a dictionary with string keys."""
-    return isinstance(val, dict)
-
-
-def _is_list(val: object) -> TypeGuard[list[object]]:
-    """Type guard to check if a value is a list of objects."""
-    return isinstance(val, list)
 
 
 def _safe_path(user_path: str) -> Path:
@@ -479,15 +469,15 @@ async def city_to_coordinates(city: str) -> str:
             return f"Error: Geocoding API returned status code {resp.status_code}"
 
         data: object = resp.json()  # pyright: ignore[reportAny]
-        if not _is_str_dict(data):
+        if not is_str_dict(data):
             return "Error: Invalid response format from Geocoding API"
 
         results = data.get("results")
-        if not _is_list(results) or not results:
+        if not is_list(results) or not results:
             return f"Error: City '{city}' not found."
 
         first_result = results[0]
-        if not _is_str_dict(first_result):
+        if not is_str_dict(first_result):
             return f"Error: Invalid data format for '{city}'"
 
         name = first_result.get("name")

@@ -1,7 +1,7 @@
 """FastAPI application with LangServe for LangChain agent streaming."""
 
 import logging
-from typing import cast, TypeGuard
+from typing import cast
 from pydantic import BaseModel, Field
 
 import uvicorn
@@ -14,17 +14,12 @@ from main import AgentApp
 from routes import agent_routes, config_routes, health_routes
 from services import SupportsAStream
 from services.telemetry import TelemetryManager, get_telemetry
-from utils import setup_logging
+from utils import setup_logging, is_tuple
 
 # Configure logging
 api_config = Config()
 setup_logging(debug=bool(api_config.get("agent.debug", False)))
 logger = logging.getLogger(__name__)
-
-
-def _is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
-    """Type guard to check if a value is a tuple."""
-    return isinstance(val, tuple)
 
 
 try:
@@ -211,7 +206,7 @@ async def structured_query(request: StructuredInputExample):
                 content = cast(object, getattr(final_message, "content", None))
                 if content is not None:
                     output_text = str(content)
-                elif _is_tuple(final_message) and len(final_message) > 1:
+                elif is_tuple(final_message) and len(final_message) > 1:
                     final_msg_tuple = cast(tuple[object, ...], final_message)
                     output_text = str(final_msg_tuple[1])
                 else:
