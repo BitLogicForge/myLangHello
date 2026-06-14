@@ -12,7 +12,7 @@ import httpx
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
-
+from typing import Callable
 from utils import is_str_dict, is_list
 
 _ = load_dotenv()
@@ -55,7 +55,8 @@ async def calculator(expression: str) -> str:
             ast.Add: operator.add,
             ast.Sub: operator.sub,
             ast.Mult: operator.mul,
-            ast.Div: operator.truediv,  # pyright: ignore[reportUnknownMemberType]
+     
+            ast.Div: operator.truediv, # pyright: ignore[reportUnknownMemberType]
             ast.Pow: operator.pow,  # pyright: ignore[reportUnknownMemberType]
             ast.USub: operator.neg,
         }

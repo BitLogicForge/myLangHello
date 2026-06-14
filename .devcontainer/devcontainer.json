@@ -1,41 +1,35 @@
 {
   "name": "${localWorkspaceFolderBasename}-python",
   "image": "mcr.microsoft.com/devcontainers/python:3.13-bookworm",
-
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
     "ghcr.io/jlaundry/devcontainer-features/mssql-odbc-driver:1": {},
-    "ghcr.io/itsmechlark/features/postgresql:1":{},
-    "ghcr.io/devcontainers/features/copilot-cli:1":{},
+    "ghcr.io/itsmechlark/features/postgresql:1": {},
+    "ghcr.io/devcontainers/features/copilot-cli:1": {},
     "ghcr.io/aqua/devcontainer-antigravity-cli/antigravity-cli:1": {}
-
   },
-
-  "runArgs": ["--name=${localWorkspaceFolderBasename}-python-dev", "--network=shared-dev"],
-
+  "runArgs": [
+    "--name=${localWorkspaceFolderBasename}-python-dev",
+    "--network=shared-dev"
+  ],
   "containerEnv": {
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
     "UV_LINK_MODE": "copy"
   },
-
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
   },
-
   "remoteUser": "vscode",
-
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-
   "mounts": [
     "source=${localWorkspaceFolderBasename}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
     "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
     "source=reactTemplate-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
-
   "postCreateCommand": "sudo mkdir -p /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && sudo chown -R vscode:vscode /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && if [ ! -x /home/vscode/.local/bin/uv ]; then curl -LsSf https://astral.sh/uv/install.sh | sh; fi && /home/vscode/.local/bin/uv sync --python /usr/local/bin/python --link-mode=copy",
-
-  "forwardPorts": [8000],
-
+  "forwardPorts": [
+    8000
+  ],
   "portsAttributes": {
     "8000": {
       "label": "FastAPI server",
@@ -43,13 +37,13 @@
       "protocol": "http"
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
         "detachhead.basedpyright",
         "ms-python.mypy-type-checker",
-        "ms-python.python"
+        "ms-python.python",
+        "charliermarsh.ruff"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin/python",
