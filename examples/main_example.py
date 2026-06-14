@@ -3,12 +3,14 @@
 import asyncio
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
+
+from main import AgentApp
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
-from main import AgentApp
 
 _ = load_dotenv()
 
@@ -19,8 +21,8 @@ async def main() -> None:
 
     # Example question
     question = (
-        "tell me weather in poznan today, and what date is today, and weather in london"
-        "tell me their coordinetses"
+        # "tell me weather in poznan today, and what date is today, and weather in london"
+        # "tell me their coordinetses"
         # "calculate 2+666*7, and convert 100 USD to EUR"
         # "list first 5 countries on letter B and their codes from db"
         # "then check weather for each country treating them as city"
@@ -30,7 +32,7 @@ async def main() -> None:
         # "calculate loan payment for amount 25000 USD, term 5,7,8,10 years, interest rate 4.5"
         # "tell me 2 jokes, and format it"
         # "check avaiable views in db, plus i want 2 jokes , but funny ones"
-        # "check avaiable views in db"
+        "check avaiable views in db"
     )
 
     # Optional: Test with conversation history
