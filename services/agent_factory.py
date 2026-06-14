@@ -67,8 +67,12 @@ class AgentFactory:
         #     verbose=verbose,
         # )
 
-        enable_db = os.getenv("DB_ENABLED", "false").lower() in ("true", "1")
-        enable_db = enable_db and config.get("agent.enable_db", False)
+        # DB_ENABLED in the environment is the explicit runtime override.
+        db_enabled_env = cast(str | None, os.getenv("DB_ENABLED"))
+        if db_enabled_env is None:
+            enable_db = bool(config.get("agent.enable_db", False))
+        else:
+            enable_db = db_enabled_env.lower() in ("true", "1", "yes", "on")
 
         db_host = os.getenv("DB_HOST")
 
