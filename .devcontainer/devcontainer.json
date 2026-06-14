@@ -13,6 +13,7 @@
     "--network=shared-dev"
   ],
   "containerEnv": {
+    "PYTHONPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
     "UV_LINK_MODE": "copy"
   },
