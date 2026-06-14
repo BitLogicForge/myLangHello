@@ -4,9 +4,9 @@
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
-    "ghcr.io/devcontainers/features/mssql:1":{},
-    "ghcr.io/devcontainers/features/postgres:1":{},
-    "ghcr.io/devcontainers/features/github-cli:1":{}
+    "ghcr.io/devcontainers/features/mssql:1": {},
+    "ghcr.io/devcontainers/features/postgres:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   "runArgs": ["--name=${localWorkspaceFolderBasename}-python-dev"],
@@ -29,7 +29,7 @@
   "mounts": [
     "source=${localWorkspaceFolderBasename}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
     "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
-     "source=reactTemplate-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+    "source=reactTemplate-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
   ],
 
   "postCreateCommand": "sudo mkdir -p /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && sudo chown -R vscode:vscode /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && if [ ! -x /home/vscode/.local/bin/uv ]; then curl -LsSf https://astral.sh/uv/install.sh | sh; fi && /home/vscode/.local/bin/uv sync --python /usr/local/bin/python --link-mode=copy",
@@ -46,7 +46,11 @@
 
   "customizations": {
     "vscode": {
-      "extensions": ["detachhead.basedpyright","ms-python.mypy-type-checker","ms-python.python"],
+      "extensions": [
+        "detachhead.basedpyright",
+        "ms-python.mypy-type-checker",
+        "ms-python.python"
+      ],
       "settings": {
         "python.defaultInterpreterPath": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin/python",
         "python.terminal.activateEnvironment": true
