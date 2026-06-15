@@ -22,8 +22,7 @@ class SupportsAStream(Protocol):
     """Protocol for objects supporting asynchronous event streaming."""
 
     @property
-    def astream(self) -> Callable[..., AsyncIterable[dict[str, object]]]:
-        ...
+    def astream(self) -> Callable[..., AsyncIterable[dict[str, object]]]: ...
 
 
 # MARK: Agent Configurator

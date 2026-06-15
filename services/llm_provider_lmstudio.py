@@ -31,8 +31,12 @@ class LMStudioLLMProvider:
             - LMSTUDIO_BASE_URL (optional)
             - LMSTUDIO_API_KEY (optional, usually not needed)
         """
-        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("LMSTUDIO_BASE_URL"))
-        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("LMSTUDIO_API_KEY"))
+        base_url = cast(
+            str | None, config.pop("base_url", None) or os.getenv("LMSTUDIO_BASE_URL")
+        )
+        api_key = cast(
+            str | None, config.pop("api_key", None) or os.getenv("LMSTUDIO_API_KEY")
+        )
 
         params = {
             "base_url": base_url or LMStudioLLMProvider.DEFAULT_BASE_URL,
@@ -41,7 +45,9 @@ class LMStudioLLMProvider:
             **config,
         }
 
-        logger.info(f"Creating LM Studio ChatOpenAI with model: {params.get('model', 'default')}")
+        logger.info(
+            f"Creating LM Studio ChatOpenAI with model: {params.get('model', 'default')}"
+        )
         logger.debug(f"LM Studio parameters: {list(params.keys())}")
 
         return ChatOpenAI(**params)  # pyright: ignore[reportArgumentType]

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from langserve import add_routes  # pyright: ignore[reportUnknownVariableType]
+
     is_langserve_available = True
 except ImportError:
     add_routes = None
@@ -98,7 +99,9 @@ try:
     async def redirect_to_chat():
         return RedirectResponse(url="/chat/")
 
-    target_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_app.py")
+    target_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "chat_app.py"
+    )
     mount_chainlit(app=app, target=target_path, path="/chat")
     print("✅ Chainlit Chat UI mounted at /chat")
 except Exception as e:
@@ -138,33 +141,37 @@ class StructuredInputExample(BaseModel):
 
     Includes a basket of vegetables, amount of money, desire to buy list of groceries, and a query.
     """
+
     basket: list[str] = Field(
         ...,
         description="List of vegetables currently in the basket",
-        json_schema_extra={"example": ["carrot", "cucumber", "spinach"]}
+        json_schema_extra={"example": ["carrot", "cucumber", "spinach"]},
     )
     amount_of_money: float = Field(
         ...,
         description="Amount of money available to spend",
-        json_schema_extra={"example": 50.0}
+        json_schema_extra={"example": 50.0},
     )
     desire_to_buy: list[str] = Field(
         ...,
         description="List of groceries that the user wants to buy",
-        json_schema_extra={"example": ["milk", "bread", "butter", "cheese"]}
+        json_schema_extra={"example": ["milk", "bread", "butter", "cheese"]},
     )
     query: str = Field(
         ...,
         description="Specific question or query to run with this context",
         json_schema_extra={
-            "example": "Can I afford all the items in my desire list? What recipe can I make with my basket?"}
+            "example": "Can I afford all the items in my desire list? What recipe can I make with my basket?"
+        },
     )
 
 
 class StructuredResponse(BaseModel):
     """Response model for the structured query endpoint."""
-    formatted_prompt: str = Field(...,
-                                  description="The formatted prompt sent to the agent")
+
+    formatted_prompt: str = Field(
+        ..., description="The formatted prompt sent to the agent"
+    )
     output: str = Field(..., description="The agent's response")
     status: str = Field(..., description="Status of the query execution")
 
@@ -173,7 +180,7 @@ class StructuredResponse(BaseModel):
     "/structured-query",
     response_model=StructuredResponse,
     tags=["Examples"],
-    summary="Example endpoint showing how to handle structured inputs (e.g. basket, budget, grocery desires)"
+    summary="Example endpoint showing how to handle structured inputs (e.g. basket, budget, grocery desires)",
 )
 async def structured_query(request: StructuredInputExample):
     """
@@ -181,8 +188,7 @@ async def structured_query(request: StructuredInputExample):
     (basket list, budget, grocery list, and a natural language query) to the agent.
     """
     if not is_agent_loaded or agent_app is None:
-        raise HTTPException(
-            status_code=503, detail="Agent application is not loaded")
+        raise HTTPException(status_code=503, detail="Agent application is not loaded")
 
     # Format the structured parameters into a cohesive prompt for the agent
     formatted_prompt = (
@@ -214,9 +220,7 @@ async def structured_query(request: StructuredInputExample):
             output_text = str(response.get("output", response))
 
         return StructuredResponse(
-            formatted_prompt=formatted_prompt,
-            output=output_text,
-            status="success"
+            formatted_prompt=formatted_prompt, output=output_text, status="success"
         )
     except Exception as e:
         logger.error(f"Error executing structured query: {e}", exc_info=True)
@@ -225,33 +229,31 @@ async def structured_query(request: StructuredInputExample):
 
 class RecipeAndBudgetAnalysis(BaseModel):
     """Structured response containing budget calculation and recipe recommendations."""
+
     can_afford_all: bool = Field(
         ...,
-        description="True if the total estimated cost of all desired groceries is within the budget"
+        description="True if the total estimated cost of all desired groceries is within the budget",
     )
     total_estimated_cost: float = Field(
-        ...,
-        description="The estimated total cost of the desired groceries"
+        ..., description="The estimated total cost of the desired groceries"
     )
     remaining_budget: float = Field(
         ...,
-        description="The remaining money after buying the groceries (budget - estimated cost)"
+        description="The remaining money after buying the groceries (budget - estimated cost)",
     )
     affordable_items: list[str] = Field(
-        ...,
-        description="List of desired items that CAN be bought within the budget"
+        ..., description="List of desired items that CAN be bought within the budget"
     )
     missing_items: list[str] = Field(
-        ...,
-        description="List of desired items that CANNOT be bought within the budget"
+        ..., description="List of desired items that CANNOT be bought within the budget"
     )
     suggested_recipes: list[str] = Field(
         ...,
-        description="1-3 recipes we can cook using the vegetables in the basket and/or groceries"
+        description="1-3 recipes we can cook using the vegetables in the basket and/or groceries",
     )
     explanation: str = Field(
         ...,
-        description="A short explanation of the cost estimates, budget check, and recipe selections"
+        description="A short explanation of the cost estimates, budget check, and recipe selections",
     )
 
 
@@ -259,7 +261,7 @@ class RecipeAndBudgetAnalysis(BaseModel):
     "/structured-output",
     response_model=RecipeAndBudgetAnalysis,
     tags=["Examples"],
-    summary="Example endpoint showing how to get a structured JSON response directly from the LLM"
+    summary="Example endpoint showing how to get a structured JSON response directly from the LLM",
 )
 async def structured_output(request: StructuredInputExample):
     """
@@ -280,19 +282,22 @@ async def structured_output(request: StructuredInputExample):
 
         # Instantiate LLM from factory
         from services.llm_factory import LLMFactory
+
         llm = LLMFactory.create_llm()
 
         # Bind the schema to the LLM to enforce structured output
         structured_llm = llm.with_structured_output(RecipeAndBudgetAnalysis)
 
-        response = cast(RecipeAndBudgetAnalysis, await structured_llm.ainvoke(formatted_prompt))
+        response = cast(
+            RecipeAndBudgetAnalysis, await structured_llm.ainvoke(formatted_prompt)
+        )
         return response
 
     except Exception as e:
         logger.error(f"Error executing structured output: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Structured output error: {str(e)}. (Make sure your configured provider supports structured output)."
+            detail=f"Structured output error: {str(e)}. (Make sure your configured provider supports structured output).",
         )
 
 
@@ -303,8 +308,7 @@ async def not_found_handler(_request: Request, _exc: Exception):
     """Handle 404 errors."""
     return JSONResponse(
         status_code=404,
-        content={
-            "detail": "Endpoint not found. Check /docs for available endpoints."},
+        content={"detail": "Endpoint not found. Check /docs for available endpoints."},
     )
 
 
@@ -312,7 +316,8 @@ async def not_found_handler(_request: Request, _exc: Exception):
 async def internal_error_handler(_request: Request, _exc: Exception):
     """Handle 500 errors."""
     return JSONResponse(
-        status_code=500, content={"detail": "Internal server error. Check logs for details."}
+        status_code=500,
+        content={"detail": "Internal server error. Check logs for details."},
     )
 
 
@@ -320,6 +325,7 @@ async def internal_error_handler(_request: Request, _exc: Exception):
 def main():
     """Run the FastAPI application."""
     from config import settings
+
     port = settings.port
 
     print("\n" + "=" * 60)
@@ -334,8 +340,7 @@ def main():
         print(f"🎮 Playground: http://localhost:{port}/agent/playground")
         print(f"📡 Streaming: POST http://localhost:{port}/agent/stream")
     else:
-        print(
-            "⚠️  LangServe not available - install with: pip install langserve[all]")
+        print("⚠️  LangServe not available - install with: pip install langserve[all]")
         print(f"📡 Query endpoint: POST http://localhost:{port}/query")
 
     print("=" * 60 + "\n")

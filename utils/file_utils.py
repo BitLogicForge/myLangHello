@@ -56,7 +56,9 @@ def read_text_file(file_path: str) -> str:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
-        logger.debug(f"Successfully loaded text file {file_path} ({len(content)} chars)")
+        logger.debug(
+            f"Successfully loaded text file {file_path} ({len(content)} chars)"
+        )
         return content
     except FileNotFoundError:
         logger.error(f"Text file not found: {file_path}")

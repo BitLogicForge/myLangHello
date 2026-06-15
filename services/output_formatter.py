@@ -78,7 +78,9 @@ class MessageFormatter:
     content_processor: ContentProcessor
     execution_monitor: ExecutionMonitor
 
-    def __init__(self, content_processor: ContentProcessor, execution_monitor: ExecutionMonitor):
+    def __init__(
+        self, content_processor: ContentProcessor, execution_monitor: ExecutionMonitor
+    ):
         self.content_processor = content_processor
         self.execution_monitor = execution_monitor
 
@@ -103,7 +105,9 @@ class MessageFormatter:
                     tc_dict: dict[str, object] = cast(dict[str, object], tool_call)
                     tool_call_id = str(tc_dict.get("id", "unknown"))
                     tool_name = str(tc_dict.get("name", "unknown"))
-                    lines.append(Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}")
+                    lines.append(
+                        Fore.YELLOW + Style.BRIGHT + f"🔧 Calling Tool: {tool_name}"
+                    )
                     lines.append(Fore.YELLOW + f"   Args: {tc_dict.get('args', {})}")
                     self.execution_monitor.start_tool_timing(tool_call_id)
 
@@ -180,7 +184,9 @@ class StreamingOutputFormatter:
     def __init__(self):
         self.content_processor = ContentProcessor()
         self.execution_monitor = ExecutionMonitor()
-        self.message_formatter = MessageFormatter(self.content_processor, self.execution_monitor)
+        self.message_formatter = MessageFormatter(
+            self.content_processor, self.execution_monitor
+        )
         self.renderer = StreamRenderer()
 
     def print_header(self) -> None:
@@ -192,7 +198,10 @@ class StreamingOutputFormatter:
         self.renderer.print_footer()
 
     def print_event(
-        self, event: dict[str, object], step_count: int, _tool_timings: dict[str, float] | None = None
+        self,
+        event: dict[str, object],
+        step_count: int,
+        _tool_timings: dict[str, float] | None = None,
     ) -> None:
         """
         Print a single streaming event from the agent.
@@ -227,7 +236,9 @@ class StreamingOutputFormatter:
                         msg_type: str = str(getattr(msg, "type", "default"))
 
                         # Get handler or use default
-                        handler = handlers.get(msg_type, self.message_formatter.format_default_message)
+                        handler = handlers.get(
+                            msg_type, self.message_formatter.format_default_message
+                        )
 
                         # Print all lines returned by handler
                         self.renderer.print_lines(handler(msg))

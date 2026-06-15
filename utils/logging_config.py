@@ -13,7 +13,9 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 # MARK: Logging Setup
 def setup_logging(debug: bool = False, level: int | None = None) -> None:
     """Configure colorful logging for the application."""
-    root_level = level if level is not None else (logging.DEBUG if debug else logging.INFO)
+    root_level = (
+        level if level is not None else (logging.DEBUG if debug else logging.INFO)
+    )
 
     # Create console handler with colors
     console_handler = colorlog.StreamHandler()

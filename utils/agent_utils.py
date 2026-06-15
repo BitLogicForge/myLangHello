@@ -47,4 +47,3 @@ def is_list(val: object) -> TypeGuard[list[object]]:
 def is_tuple(val: object) -> TypeGuard[tuple[object, ...]]:
     """Type guard to check if a value is a tuple."""
     return isinstance(val, tuple)
-

@@ -9,9 +9,11 @@ app = FastAPI()
 
 try:
     from chainlit.utils import mount_chainlit
+
     mount_chainlit(app=app, target="chat_app.py", path="/chat")
     print("✅ mount_chainlit completed successfully!")
-except Exception as e:
+except Exception:
     import traceback
+
     print("❌ mount_chainlit failed with exception:")
     traceback.print_exc()

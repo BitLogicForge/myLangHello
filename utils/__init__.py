@@ -13,4 +13,3 @@ __all__ = [
     "read_text_file",
     "setup_logging",
 ]
-

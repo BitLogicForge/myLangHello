@@ -25,13 +25,19 @@ class AgentExecutionSettings:
         recursion_limit_value = config.get("agent.recursion_limit", 15)
 
         timeout_seconds = (
-            float(timeout_value) if isinstance(timeout_value, (int, float, str)) else None
+            float(timeout_value)
+            if isinstance(timeout_value, (int, float, str))
+            else None
         )
         max_tool_calls = (
-            int(max_tool_calls_value) if isinstance(max_tool_calls_value, (int, str)) else None
+            int(max_tool_calls_value)
+            if isinstance(max_tool_calls_value, (int, str))
+            else None
         )
         recursion_limit = (
-            int(recursion_limit_value) if isinstance(recursion_limit_value, (int, str)) else 15
+            int(recursion_limit_value)
+            if isinstance(recursion_limit_value, (int, str))
+            else 15
         )
 
         return cls(
@@ -48,7 +54,9 @@ class AgentRunner:
     agent_executor: SupportsAStream
     settings: AgentExecutionSettings
 
-    def __init__(self, agent_executor: SupportsAStream, settings: AgentExecutionSettings):
+    def __init__(
+        self, agent_executor: SupportsAStream, settings: AgentExecutionSettings
+    ):
         self.agent_executor = agent_executor
         self.settings = settings
 
@@ -58,7 +66,9 @@ class AgentRunner:
         on_event: Callable[[dict[str, object], int], None] | None = None,
     ) -> dict[str, object] | None:
         """Run the agent through streaming and return an invoke-shaped response."""
-        run_config: dict[str, object] = {"recursion_limit": self.settings.recursion_limit}
+        run_config: dict[str, object] = {
+            "recursion_limit": self.settings.recursion_limit
+        }
         start_time = time.monotonic()
         tool_call_count = 0
         step_count = 0
@@ -86,7 +96,7 @@ class AgentRunner:
 
         return {"messages": final_messages}
 
-# MARK: Safeguards
+    # MARK: Safeguards
     def _enforce_timeout(self, start_time: float) -> None:
         """Stop execution once the configured timeout is exceeded."""
         timeout_seconds = self.settings.timeout_seconds
@@ -95,7 +105,9 @@ class AgentRunner:
 
         elapsed = time.monotonic() - start_time
         if elapsed > timeout_seconds:
-            raise TimeoutError(f"Agent execution exceeded timeout of {timeout_seconds:.1f} seconds")
+            raise TimeoutError(
+                f"Agent execution exceeded timeout of {timeout_seconds:.1f} seconds"
+            )
 
     def _enforce_tool_call_limit(self, tool_call_count: int) -> None:
         """Stop execution once the configured tool-call limit is exceeded."""
@@ -104,7 +116,9 @@ class AgentRunner:
             return
 
         if tool_call_count > max_tool_calls:
-            raise RuntimeError(f"Agent exceeded max_tool_calls limit of {max_tool_calls}")
+            raise RuntimeError(
+                f"Agent exceeded max_tool_calls limit of {max_tool_calls}"
+            )
 
     @staticmethod
     def _count_tool_calls(event: dict[str, object]) -> int:

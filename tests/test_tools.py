@@ -17,7 +17,7 @@ async def test_calculator_basic_math():
     """Test simple addition and multiplication operations."""
     result = await calculator.ainvoke({"expression": "2 + 2"})
     assert "Result: 4" in result
-    
+
     result = await calculator.ainvoke({"expression": "10 - 3"})
     assert "Result: 7" in result
 
@@ -39,11 +39,9 @@ async def test_calculator_invalid():
 @pytest.mark.asyncio
 async def test_currency_converter_supported():
     """Test converting between supported currencies."""
-    result = await currency_converter.ainvoke({
-        "amount": 100.0,
-        "from_currency": "USD",
-        "to_currency": "EUR"
-    })
+    result = await currency_converter.ainvoke(
+        {"amount": 100.0, "from_currency": "USD", "to_currency": "EUR"}
+    )
     assert "100.00 USD" in result
     assert "EUR" in result
 
@@ -51,11 +49,9 @@ async def test_currency_converter_supported():
 @pytest.mark.asyncio
 async def test_currency_converter_unsupported():
     """Test converting with unsupported currencies."""
-    result = await currency_converter.ainvoke({
-        "amount": 100.0,
-        "from_currency": "XYZ",
-        "to_currency": "EUR"
-    })
+    result = await currency_converter.ainvoke(
+        {"amount": 100.0, "from_currency": "XYZ", "to_currency": "EUR"}
+    )
     assert "Error" in result
     assert "not supported" in result
 
@@ -63,11 +59,9 @@ async def test_currency_converter_unsupported():
 @pytest.mark.asyncio
 async def test_loan_calculator_valid():
     """Test valid mortgage loan computation."""
-    result = await loan_calculator.ainvoke({
-        "principal": 10000.0,
-        "annual_rate": 5.0,
-        "years": 1
-    })
+    result = await loan_calculator.ainvoke(
+        {"principal": 10000.0, "annual_rate": 5.0, "years": 1}
+    )
     assert "Monthly Payment:" in result
     assert "Total Interest:" in result
 
@@ -76,11 +70,9 @@ async def test_loan_calculator_valid():
 async def test_loan_calculator_invalid():
     """Test loan calculations with invalid/negative parameters raises ValidationError."""
     with pytest.raises(ValidationError):
-        await loan_calculator.ainvoke({
-            "principal": -1000.0,
-            "annual_rate": 5.0,
-            "years": 5
-        })
+        await loan_calculator.ainvoke(
+            {"principal": -1000.0, "annual_rate": 5.0, "years": 5}
+        )
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,12 @@ from fastapi import APIRouter, HTTPException
 
 from config import Config
 from models.api_models import QueryRequest, QueryResponse
-from services import AgentExecutionSettings, AgentRunner, TelemetryManager, SupportsAStream
+from services import (
+    AgentExecutionSettings,
+    AgentRunner,
+    TelemetryManager,
+    SupportsAStream,
+)
 from utils import prepare_messages_with_history, is_str_dict, is_list, is_tuple
 
 logger = logging.getLogger(__name__)
@@ -24,7 +29,11 @@ telemetry: TelemetryManager | None = None
 config = Config()
 
 
-def set_agent_executor(executor: SupportsAStream | None, loaded: bool, telem: TelemetryManager | None = None) -> None:
+def set_agent_executor(
+    executor: SupportsAStream | None,
+    loaded: bool,
+    telem: TelemetryManager | None = None,
+) -> None:
     """Set the agent executor for query handling."""
     global agent_executor, agent_loaded_state, telemetry
     agent_executor = executor

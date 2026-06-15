@@ -35,10 +35,11 @@ def _safe_path(user_path: str) -> Path:
 # MARK: Calculator
 # ==========================================
 
+
 class CalculatorInput(BaseModel):
     expression: str = Field(
         ...,
-        description="The mathematical expression to evaluate safely (e.g. '2 + 2 * (3 - 1)'). Supports basic operations: +, -, *, /, **"
+        description="The mathematical expression to evaluate safely (e.g. '2 + 2 * (3 - 1)'). Supports basic operations: +, -, *, /, **",
     )
 
 
@@ -46,7 +47,7 @@ class CalculatorInput(BaseModel):
 async def calculator(expression: str) -> str:
     """Evaluate a math expression safely and return the result as a string.
     Supports basic operations: +, -, *, /, ** (power)
-    Use it when you need to perform calculations, but do not use it for anything else. 
+    Use it when you need to perform calculations, but do not use it for anything else.
     Do not execute any code or access files. Just evaluate the math expression and return the result.
     """
     try:
@@ -55,8 +56,7 @@ async def calculator(expression: str) -> str:
             ast.Add: operator.add,
             ast.Sub: operator.sub,
             ast.Mult: operator.mul,
-     
-            ast.Div: operator.truediv, # pyright: ignore[reportUnknownMemberType]
+            ast.Div: operator.truediv,  # pyright: ignore[reportUnknownMemberType]
             ast.Pow: operator.pow,  # pyright: ignore[reportUnknownMemberType]
             ast.USub: operator.neg,
         }
@@ -68,17 +68,16 @@ async def calculator(expression: str) -> str:
                 return node.value
             elif isinstance(node, ast.BinOp):  # Binary operation
                 if type(node.op) not in allowed_ops:
-                    raise ValueError(
-                        f"Unsupported operation: {type(node.op).__name__}")
-                return allowed_ops[type(node.op)](eval_node(node.left), eval_node(node.right))
+                    raise ValueError(f"Unsupported operation: {type(node.op).__name__}")
+                return allowed_ops[type(node.op)](
+                    eval_node(node.left), eval_node(node.right)
+                )
             elif isinstance(node, ast.UnaryOp):  # Unary operation (e.g., -5)
                 if type(node.op) not in allowed_ops:
-                    raise ValueError(
-                        f"Unsupported operation: {type(node.op).__name__}")
+                    raise ValueError(f"Unsupported operation: {type(node.op).__name__}")
                 return allowed_ops[type(node.op)](eval_node(node.operand))
             else:
-                raise ValueError(
-                    f"Unsupported expression type: {type(node).__name__}")
+                raise ValueError(f"Unsupported expression type: {type(node).__name__}")
 
         tree = ast.parse(expression, mode="eval")
         result = eval_node(tree.body)
@@ -93,10 +92,10 @@ async def calculator(expression: str) -> str:
 # MARK: Weather
 # ==========================================
 
+
 class WeatherInput(BaseModel):
     city: str = Field(
-        ...,
-        description="The city name to get weather for (e.g. 'Poznan', 'London')."
+        ..., description="The city name to get weather for (e.g. 'Poznan', 'London')."
     )
 
 
@@ -113,10 +112,11 @@ async def weather(city: str) -> str:
 # MARK: Read File
 # ==========================================
 
+
 class ReadFileInput(BaseModel):
     path: str = Field(
         ...,
-        description="The path of the file to read (relative to the safe sandbox folder)."
+        description="The path of the file to read (relative to the safe sandbox folder).",
     )
 
 
@@ -138,15 +138,13 @@ async def read_file(path: str) -> str:
 # MARK: Write File
 # ==========================================
 
+
 class WriteFileInput(BaseModel):
     path: str = Field(
         ...,
-        description="The path of the file to write to (relative to the safe sandbox folder)."
+        description="The path of the file to write to (relative to the safe sandbox folder).",
     )
-    content: str = Field(
-        ...,
-        description="The text content to write into the file."
-    )
+    content: str = Field(..., description="The text content to write into the file.")
 
 
 @tool(args_schema=WriteFileInput)
@@ -167,14 +165,13 @@ async def write_file(path: str, content: str) -> str:
 # MARK: Current Date/Time
 # ==========================================
 
+
 class CurrentDateInput(BaseModel):
     with_date: bool = Field(
-        default=True,
-        description="Include date (defaults to True)."
+        default=True, description="Include date (defaults to True)."
     )
     with_time: bool = Field(
-        default=False,
-        description="Include time (defaults to False)."
+        default=False, description="Include time (defaults to False)."
     )
 
 
@@ -199,11 +196,9 @@ async def current_date(with_date: bool = True, with_time: bool = False) -> str:
 # MARK: HTTP Get
 # ==========================================
 
+
 class HttpGetInput(BaseModel):
-    url: str = Field(
-        ...,
-        description="The HTTP/HTTPS URL to perform a GET request on."
-    )
+    url: str = Field(..., description="The HTTP/HTTPS URL to perform a GET request on.")
 
 
 @tool(args_schema=HttpGetInput)
@@ -226,10 +221,11 @@ async def http_get(url: str) -> str:
 # MARK: Random Joke
 # ==========================================
 
+
 class RandomJokeInput(BaseModel):
     query: str = Field(
         default="",
-        description="Optional keyword search query to filter jokes by topic (e.g. 'bug', 'Java')."
+        description="Optional keyword search query to filter jokes by topic (e.g. 'bug', 'Java').",
     )
 
 
@@ -255,8 +251,9 @@ async def random_joke(query: str = "") -> str:
         q = query.lower().strip()
         filtered_jokes = [j for j in jokes if q in j.lower()]
 
-    selected_joke = random.choice(
-        filtered_jokes) if filtered_jokes else random.choice(jokes)
+    selected_joke = (
+        random.choice(filtered_jokes) if filtered_jokes else random.choice(jokes)
+    )
 
     # Capitalize the last word to satisfy the docstring instruction
     words = selected_joke.split()
@@ -277,10 +274,10 @@ async def random_joke(query: str = "") -> str:
 # MARK: Joke Format
 # ==========================================
 
+
 class JokeFormatInput(BaseModel):
     joke: str = Field(
-        ...,
-        description="The raw joke text to format with decorative borders."
+        ..., description="The raw joke text to format with decorative borders."
     )
 
 
@@ -303,21 +300,18 @@ Best joke for you:
 # MARK: Loan Calculator
 # ==========================================
 
+
 class LoanCalculatorInput(BaseModel):
     principal: float = Field(
-        ...,
-        gt=0,
-        description="The principal loan amount in USD (must be positive)."
+        ..., gt=0, description="The principal loan amount in USD (must be positive)."
     )
     annual_rate: float = Field(
         ...,
         ge=0,
-        description="The annual interest rate as a percentage (e.g., 5.5 for 5.5%)."
+        description="The annual interest rate as a percentage (e.g., 5.5 for 5.5%).",
     )
     years: int = Field(
-        ...,
-        gt=0,
-        description="The term of the loan in years (must be positive)."
+        ..., gt=0, description="The term of the loan in years (must be positive)."
     )
 
 
@@ -326,7 +320,9 @@ async def loan_calculator(principal: float, annual_rate: float, years: int) -> s
     """Calculate loan payments given principal in USD, annual rate, and term in years."""
     try:
         if principal <= 0 or annual_rate < 0 or years <= 0:
-            return "Error: Principal and years must be positive, rate must be non-negative"
+            return (
+                "Error: Principal and years must be positive, rate must be non-negative"
+            )
 
         # Convert annual rate to monthly and decimal
         monthly_rate = (annual_rate / 100) / 12
@@ -355,7 +351,7 @@ Monthly Payment:     ${monthly_payment:,.2f}
 Total Payment:       ${total_payment:,.2f}
 Total Interest:      ${total_interest:,.2f}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Interest Percentage: {(total_interest/principal)*100:.2f}% of principal
+Interest Percentage: {(total_interest / principal) * 100:.2f}% of principal
 """
         return result
     except ValueError:
@@ -368,28 +364,29 @@ Interest Percentage: {(total_interest/principal)*100:.2f}% of principal
 # MARK: Currency Converter
 # ==========================================
 
+
 class CurrencyConverterInput(BaseModel):
     amount: float = Field(
-        ...,
-        gt=0,
-        description="The currency amount to convert (must be positive)."
+        ..., gt=0, description="The currency amount to convert (must be positive)."
     )
     from_currency: str = Field(
         ...,
         min_length=3,
         max_length=3,
-        description="The 3-letter currency code to convert from (e.g., 'USD')."
+        description="The 3-letter currency code to convert from (e.g., 'USD').",
     )
     to_currency: str = Field(
         ...,
         min_length=3,
         max_length=3,
-        description="The 3-letter currency code to convert to (e.g., 'EUR')."
+        description="The 3-letter currency code to convert to (e.g., 'EUR').",
     )
 
 
 @tool(args_schema=CurrencyConverterInput)
-async def currency_converter(amount: float, from_currency: str, to_currency: str) -> str:
+async def currency_converter(
+    amount: float, from_currency: str, to_currency: str
+) -> str:
     """Convert amount from one currency to another using simulated exchange rates."""
     try:
         from_curr = from_currency.strip().upper()
@@ -421,11 +418,15 @@ async def currency_converter(amount: float, from_currency: str, to_currency: str
 
         if from_curr not in exchange_rates:
             available = ", ".join(sorted(exchange_rates.keys()))
-            return f"Error: '{from_curr}' not supported. Available currencies: {available}"
+            return (
+                f"Error: '{from_curr}' not supported. Available currencies: {available}"
+            )
 
         if to_curr not in exchange_rates:
             available = ", ".join(sorted(exchange_rates.keys()))
-            return f"Error: '{to_curr}' not supported. Available currencies: {available}"
+            return (
+                f"Error: '{to_curr}' not supported. Available currencies: {available}"
+            )
 
         # Convert to USD first, then to target currency
         usd_amount = amount / exchange_rates[from_curr]
@@ -452,10 +453,11 @@ Note: These are simulated rates for demonstration
 # MARK: City Coordinates
 # ==========================================
 
+
 class CityToCoordinatesInput(BaseModel):
     city: str = Field(
         ...,
-        description="The city name to find coordinates for (e.g. 'Paris', 'New York')."
+        description="The city name to find coordinates for (e.g. 'Paris', 'New York').",
     )
 
 

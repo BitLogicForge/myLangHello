@@ -25,14 +25,21 @@ _ = load_dotenv()
 # 1. Define the Pydantic Schema for target database filters
 class QueryFilter(BaseModel):
     column: str = Field(..., description="The name of the database column to filter on")
-    operator: str = Field(..., description="Comparison operator (e.g. '=', '>', '<', 'LIKE')")
+    operator: str = Field(
+        ..., description="Comparison operator (e.g. '=', '>', '<', 'LIKE')"
+    )
     value: str = Field(..., description="The value to compare against")
 
 
 class DatabaseQueryIntent(BaseModel):
     """Structured representation of the database query intent."""
-    table: str = Field(..., description="The table name to query (e.g. 'users', 'orders', 'products')")
-    filters: list[QueryFilter] = Field(..., description="List of columns, operators, and values to filter on")
+
+    table: str = Field(
+        ..., description="The table name to query (e.g. 'users', 'orders', 'products')"
+    )
+    filters: list[QueryFilter] = Field(
+        ..., description="List of columns, operators, and values to filter on"
+    )
     limit: int | None = Field(None, description="Optional limit of rows to return")
 
 
@@ -44,19 +51,17 @@ FEW_SHOT_EXAMPLES = [
             "table": "users",
             "filters": [
                 {"column": "status", "operator": "=", "value": "active"},
-                {"column": "city", "operator": "=", "value": "London"}
-            ]
-        }
+                {"column": "city", "operator": "=", "value": "London"},
+            ],
+        },
     },
     {
         "input": "get the top 5 products cheaper than 20 dollars",
         "output": {
             "table": "products",
-            "filters": [
-                {"column": "price", "operator": "<", "value": "20"}
-            ],
-            "limit": 5
-        }
+            "filters": [{"column": "price", "operator": "<", "value": "20"}],
+            "limit": 5,
+        },
     },
     {
         "input": "show me orders pending delivery shipped after May 1st",
@@ -64,10 +69,10 @@ FEW_SHOT_EXAMPLES = [
             "table": "orders",
             "filters": [
                 {"column": "status", "operator": "=", "value": "pending"},
-                {"column": "ship_date", "operator": ">", "value": "2026-05-01"}
-            ]
-        }
-    }
+                {"column": "ship_date", "operator": ">", "value": "2026-05-01"},
+            ],
+        },
+    },
 ]
 
 
@@ -79,20 +84,16 @@ def build_few_shot_prompt(user_query: str) -> str:
         "query into a structured query intent JSON matching the requested schema. "
         "Study the examples below to understand the expected table names, columns, operators, and formatting:\n\n"
     )
-    
+
     examples_str = ""
     for i, ex in enumerate(FEW_SHOT_EXAMPLES):
-        examples_str += f"### Example {i+1}\n"
+        examples_str += f"### Example {i + 1}\n"
         examples_str += f"Input: {ex['input']}\n"
         # Format output as compact string for the prompt
         examples_str += f"Output Structure:\n{ex['output']}\n\n"
-        
-    prompt_footer = (
-        f"### New Request\n"
-        f"Input: {user_query}\n"
-        f"Output Structure:\n"
-    )
-    
+
+    prompt_footer = f"### New Request\nInput: {user_query}\nOutput Structure:\n"
+
     return prompt_header + examples_str + prompt_footer
 
 
@@ -101,26 +102,26 @@ async def main():
     try:
         # Create LLM
         llm = LLMFactory.create_llm()
-        
+
         # 4. Bind the structured output schema to the LLM
         # This guarantees Pylance/mypy compatibility and forces the model output type
         structured_llm = llm.with_structured_output(DatabaseQueryIntent)
-        
+
         # 5. Define test queries
         test_queries = [
             "find products with stock level greater than 100",
-            "get 10 customers registered after June 15th with status vip"
+            "get 10 customers registered after June 15th with status vip",
         ]
-        
+
         for query in test_queries:
             print(f"\n💬 Natural Language: '{query}'")
-            
+
             # Format the prompt dynamically with few-shot examples
             prompt = build_few_shot_prompt(query)
-            
+
             print("⏳ Translating using structured model + few-shot examples...")
             result = cast(DatabaseQueryIntent, await structured_llm.ainvoke(prompt))
-            
+
             # Print parsed Pydantic output
             print("✅ Parsed Database Intent:")
             print(f"   Table: {result.table}")
@@ -130,10 +131,12 @@ async def main():
             for f in result.filters:
                 print(f"     - {f.column} {f.operator} '{f.value}'")
             print("-" * 50)
-            
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
-        print("Note: Ensure your configured provider supports structured output (e.g. OpenAI or newer Ollama models).")
+        print(
+            "Note: Ensure your configured provider supports structured output (e.g. OpenAI or newer Ollama models)."
+        )
 
 
 if __name__ == "__main__":

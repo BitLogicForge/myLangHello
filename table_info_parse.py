@@ -53,10 +53,10 @@ with open("table_info.json", "r", encoding="utf-8") as f:
 
 # Convert to custom_table_info format
 custom_table_info = {
-    table_name: format_table_info(table_data) for table_name, table_data in schema_json.items()
+    table_name: format_table_info(table_data)
+    for table_name, table_data in schema_json.items()
 }
 
 # print with new lines
 for table, info in custom_table_info.items():
     print(f'"{table}": """\n{info}\n""",')
-

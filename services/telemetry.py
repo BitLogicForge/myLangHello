@@ -142,7 +142,7 @@ class TelemetryManager:
         if enable_metrics_server:
             self._start_metrics_server()
 
-# MARK: Metrics Server
+    # MARK: Metrics Server
     def _start_metrics_server(self) -> None:
         """Start HTTP server for Prometheus metrics scraping."""
         try:
@@ -154,7 +154,7 @@ class TelemetryManager:
         except OSError as e:
             logger.warning(f"Metrics server already running or port in use: {e}")
 
-# MARK: Tracking Helpers
+    # MARK: Tracking Helpers
     @contextmanager
     def track_request(self, endpoint: str):
         """
@@ -202,7 +202,9 @@ class TelemetryManager:
         """
         self.llm_calls_total.labels(model=model, provider=provider).inc()
         self.llm_tokens_total.labels(model=model, token_type="input").inc(input_tokens)
-        self.llm_tokens_total.labels(model=model, token_type="output").inc(output_tokens)
+        self.llm_tokens_total.labels(model=model, token_type="output").inc(
+            output_tokens
+        )
         self.llm_tokens_total.labels(model=model, token_type="total").inc(
             input_tokens + output_tokens
         )
@@ -211,7 +213,9 @@ class TelemetryManager:
         if cost is not None:
             self.llm_cost_total.labels(model=model).inc(cost)
 
-    def track_tool_call(self, tool_name: str, duration: float, success: bool = True) -> None:
+    def track_tool_call(
+        self, tool_name: str, duration: float, success: bool = True
+    ) -> None:
         """
         Track tool invocation metrics.
 

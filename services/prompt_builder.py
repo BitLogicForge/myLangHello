@@ -25,7 +25,9 @@ class PromptBuilder:
             raise ValueError("system_prompt_path config value must be a string")
         self.system_prompt_path = path_val
         self.system_prompt = ""
-        logger.debug(f"PromptBuilder initialized with prompt file: {self.system_prompt_path}")
+        logger.debug(
+            f"PromptBuilder initialized with prompt file: {self.system_prompt_path}"
+        )
         self._load_system_prompt()
 
     def _load_system_prompt(self) -> None:
@@ -37,7 +39,9 @@ class PromptBuilder:
             logger.error(f"System prompt file not found: {self.system_prompt_path}")
             raise
         except Exception as e:
-            logger.error(f"Failed to load system prompt from {self.system_prompt_path}: {e}")
+            logger.error(
+                f"Failed to load system prompt from {self.system_prompt_path}: {e}"
+            )
             raise
 
     def build_prompt(self) -> ChatPromptTemplate:

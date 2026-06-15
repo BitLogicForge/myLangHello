@@ -42,7 +42,9 @@ async def get_config():
 
         return {
             "model": str(model_name) if isinstance(model_name, str) else "unknown",
-            "temperature": float(temperature) if isinstance(temperature, (int, float)) else 0.0,
+            "temperature": float(temperature)
+            if isinstance(temperature, (int, float))
+            else 0.0,
             "tools_count": len(tools) if is_list(tools) else 0,
         }
     except Exception as e:

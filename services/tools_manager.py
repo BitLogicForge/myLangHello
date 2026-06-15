@@ -37,7 +37,7 @@ class ToolsManager:
             return [t for t in cls._tools if t.name in tool_names]
         return cls._tools
 
-# MARK: Tool Registration
+    # MARK: Tool Registration
     @classmethod
     def _register_tools(cls) -> list[BaseTool]:
         """Register and configure all tools."""

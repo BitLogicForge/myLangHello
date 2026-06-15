@@ -12,7 +12,7 @@ toolkit_kwargs: dict[str, object] = {
     "llm": llm,
 }
 
-agent = create_sql_agent( 
+agent = create_sql_agent(
     llm=llm,
     agent_type="openai-tools",
     verbose=True,

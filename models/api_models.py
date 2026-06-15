@@ -16,7 +16,9 @@ class QueryRequest(BaseModel):
     """Request model for agent queries."""
 
     question: str = Field(..., description="Question to ask the agent")
-    session_id: str | None = Field(None, description="Session ID for conversation tracking")
+    session_id: str | None = Field(
+        None, description="Session ID for conversation tracking"
+    )
     user_id: str | None = Field(None, description="User ID for personalization")
     history: list[MessageHistory] | None = Field(
         None,

@@ -15,11 +15,9 @@ logger = logging.getLogger(__name__)
 # MARK: Environment Settings
 class AppSettings(BaseSettings):
     """Application settings loaded from environment variables and .env file."""
-    
+
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
     # OpenAI Configuration
@@ -38,12 +36,20 @@ class AppSettings(BaseSettings):
 
     # Azure OpenAI Configuration
     azure_openai_api_key: str | None = Field(default=None, alias="AZURE_OPENAI_API_KEY")
-    azure_openai_endpoint: str | None = Field(default=None, alias="AZURE_OPENAI_ENDPOINT")
-    azure_openai_api_version: str = Field(default="2024-02-15-preview", alias="AZURE_OPENAI_API_VERSION")
-    azure_openai_deployment_name: str | None = Field(default=None, alias="AZURE_OPENAI_DEPLOYMENT_NAME")
+    azure_openai_endpoint: str | None = Field(
+        default=None, alias="AZURE_OPENAI_ENDPOINT"
+    )
+    azure_openai_api_version: str = Field(
+        default="2024-02-15-preview", alias="AZURE_OPENAI_API_VERSION"
+    )
+    azure_openai_deployment_name: str | None = Field(
+        default=None, alias="AZURE_OPENAI_DEPLOYMENT_NAME"
+    )
 
     # LM Studio Configuration
-    lmstudio_base_url: str = Field(default="http://localhost:1234/v1", alias="LMSTUDIO_BASE_URL")
+    lmstudio_base_url: str = Field(
+        default="http://localhost:1234/v1", alias="LMSTUDIO_BASE_URL"
+    )
     lmstudio_api_key: str = Field(default="lm-studio", alias="LMSTUDIO_API_KEY")
 
     # Ollama Configuration
@@ -60,8 +66,6 @@ class AppSettings(BaseSettings):
 
     # Server Configuration
     port: int = Field(default=8000, alias="PORT")
-
-
 
 
 # MARK: Config Manager

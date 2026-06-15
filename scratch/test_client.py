@@ -7,7 +7,9 @@ import os
 app = FastAPI()
 
 try:
-    target_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../chat_app.py")
+    target_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../chat_app.py"
+    )
     mount_chainlit(app=app, target=target_path, path="/chat")
     print("✅ mount_chainlit called successfully")
 except Exception as e:

@@ -8,8 +8,6 @@ from typing import cast
 from utils import is_str_dict, is_list
 
 
-
-
 # MARK: Chat Start
 @cl.on_chat_start
 async def start():
@@ -18,7 +16,7 @@ async def start():
         # Initialize the shared AgentApp instance
         app = AgentApp()
         cl.user_session.set("agent_app", app)
-        
+
         _ = await cl.Message(
             content="👋 Welcome to your LangGraph Chatbot! Ask me anything, and I'll use my tools (calculator, weather, database, etc.) to help you."
         ).send()
@@ -37,24 +35,26 @@ async def main(message: cl.Message):
 
     # Create a message to accumulate final text
     final_message = cl.Message(content="")
-    
+
     # Track active steps to update them dynamically
     active_steps: dict[str, cl.Step] = {}
-    
+
     try:
         # Stream events from LangGraph agent executor
-        async for event in agent_app.agent_executor.astream({"messages": [HumanMessage(content=message.content)]}):
+        async for event in agent_app.agent_executor.astream(
+            {"messages": [HumanMessage(content=message.content)]}
+        ):
             if not is_str_dict(event):
                 continue
-                
+
             for node_name, node_output in event.items():
                 if not is_str_dict(node_output):
                     continue
-                    
+
                 messages = node_output.get("messages", [])
                 if not is_list(messages):
                     continue
-                    
+
                 for msg in messages:
                     # 1. Handle tool execution starts (agent requesting a tool)
                     tool_calls = getattr(msg, "tool_calls", None)
@@ -62,26 +62,28 @@ async def main(message: cl.Message):
                         for tool_call in tool_calls:
                             if not is_str_dict(tool_call):
                                 continue
-                                
+
                             call_id = tool_call.get("id")
                             if not isinstance(call_id, str):
                                 continue
-                                
-                            step = cl.Step(name=str(tool_call.get("name", "tool")), type="tool")
+
+                            step = cl.Step(
+                                name=str(tool_call.get("name", "tool")), type="tool"
+                            )
                             step.input = str(tool_call.get("args", ""))
                             _ = await step.send()
                             active_steps[call_id] = step
                         continue
-                        
+
                     # 2. Handle tool outputs (tools node finished executing)
                     if node_name == "tools" and getattr(msg, "tool_call_id", None):
                         tool_call_id_val = getattr(msg, "tool_call_id", None)
                         if not isinstance(tool_call_id_val, str):
                             continue
-                            
+
                         call_id = tool_call_id_val
                         msg_content = getattr(msg, "content", "")
-                        
+
                         if call_id in active_steps:
                             step = active_steps[call_id]
                             step.output = str(msg_content)
@@ -90,16 +92,19 @@ async def main(message: cl.Message):
                         else:
                             # Fallback if step wasn't captured in call phase
                             msg_name = getattr(msg, "name", "Tool Output")
-                            step = cl.Step(name=str(msg_name) if msg_name else "Tool Output", type="tool")
+                            step = cl.Step(
+                                name=str(msg_name) if msg_name else "Tool Output",
+                                type="tool",
+                            )
                             step.output = str(msg_content)
                             _ = await step.send()
                         continue
-                        
+
                     # 3. Accumulate final text responses from the agent
                     msg_content = cast(object, getattr(msg, "content", None))
                     msg_tool_calls = getattr(msg, "tool_calls", None)
                     msg_type = getattr(msg, "type", None)
-                    
+
                     if msg_content and not msg_tool_calls:
                         # Avoid adding raw tool feedback back as text message
                         if node_name != "tools" and msg_type == "ai":
@@ -108,6 +113,6 @@ async def main(message: cl.Message):
 
         # Finalize the message stream
         _ = await final_message.send()
-        
+
     except Exception as e:
         _ = await cl.Message(content=f"❌ Error during execution: {e}").send()

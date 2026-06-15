@@ -30,11 +30,16 @@ class OpenAILLMProvider:
             - OPENAI_BASE_URL (optional)
         """
         # Get API key and organization from environment if not in config
-        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("OPENAI_API_KEY"))
-        organization = cast(
-            str | None, config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION")
+        api_key = cast(
+            str | None, config.pop("api_key", None) or os.getenv("OPENAI_API_KEY")
         )
-        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL"))
+        organization = cast(
+            str | None,
+            config.pop("organization", None) or os.getenv("OPENAI_ORGANIZATION"),
+        )
+        base_url = cast(
+            str | None, config.pop("base_url", None) or os.getenv("OPENAI_BASE_URL")
+        )
 
         # Validate required parameters
         if not api_key:

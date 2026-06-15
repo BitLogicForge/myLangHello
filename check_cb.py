@@ -42,7 +42,6 @@ def check_reporting_schema():
     try:
         engine = create_engine(conn_str)
         with engine.connect() as conn:
-
             # 1. Check if REPORTING schema exists
             print("\n1. Checking if REPORTING schema exists...")
             result = conn.execute(
@@ -74,7 +73,9 @@ def check_reporting_schema():
             )
             orders_exists = result.fetchone()
             if orders_exists:
-                print(f"   ✓ Found: {orders_exists[0]} - {orders_exists[1]}.{orders_exists[2]}")
+                print(
+                    f"   ✓ Found: {orders_exists[0]} - {orders_exists[1]}.{orders_exists[2]}"
+                )
             else:
                 print("   ✗ REPORTING.orders NOT FOUND")
                 print("   → Check if it exists in another schema")

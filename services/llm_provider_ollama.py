@@ -31,8 +31,12 @@ class OllamaLLMProvider:
             - OLLAMA_BASE_URL (optional)
             - OLLAMA_API_KEY (optional)
         """
-        base_url = cast(str | None, config.pop("base_url", None) or os.getenv("OLLAMA_BASE_URL"))
-        api_key = cast(str | None, config.pop("api_key", None) or os.getenv("OLLAMA_API_KEY"))
+        base_url = cast(
+            str | None, config.pop("base_url", None) or os.getenv("OLLAMA_BASE_URL")
+        )
+        api_key = cast(
+            str | None, config.pop("api_key", None) or os.getenv("OLLAMA_API_KEY")
+        )
 
         params = {
             "base_url": base_url or OllamaLLMProvider.DEFAULT_BASE_URL,
@@ -41,7 +45,9 @@ class OllamaLLMProvider:
             **config,
         }
 
-        logger.info(f"Creating Ollama ChatOpenAI with model: {params.get('model', 'default')}")
+        logger.info(
+            f"Creating Ollama ChatOpenAI with model: {params.get('model', 'default')}"
+        )
         logger.debug(f"Ollama parameters: {list(params.keys())}")
 
         return ChatOpenAI(**params)  # pyright: ignore[reportArgumentType]

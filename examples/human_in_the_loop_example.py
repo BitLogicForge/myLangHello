@@ -46,56 +46,57 @@ async def main():
     try:
         # Create LLM
         llm = LLMFactory.create_llm()
-        
+
         # Bind tool to the model
         tools = [delete_file_tool]
         model_with_tools = llm.bind_tools(tools)
-        
+
         # 3. Define the node functions
         def call_model(state: AgentState):
             messages = state["messages"]
             response = model_with_tools.invoke(messages)
             return {"messages": [response]}
-        
+
         tool_node = ToolNode(tools)
-        
+
         # Define the conditional routing logic
         def route_after_model(state: AgentState):
             last_message = state["messages"][-1]
             if isinstance(last_message, AIMessage) and last_message.tool_calls:
                 return "tools"
             return END
-        
+
         # 4. Construct the LangGraph StateGraph
         workflow = StateGraph(AgentState)
-        
+
         _ = workflow.add_node("agent", call_model)  # pyright: ignore[reportUnknownMemberType]
         _ = workflow.add_node("tools", tool_node)  # pyright: ignore[reportUnknownMemberType]
-        
+
         _ = workflow.add_edge(START, "agent")
         _ = workflow.add_conditional_edges("agent", route_after_model, ["tools", END])
         _ = workflow.add_edge("tools", "agent")
-        
+
         # 5. Compile the graph with memory and interrupt_before
         # This tells the graph to pause execution right before running the 'tools' node
         memory = MemorySaver()
         graph = workflow.compile(  # pyright: ignore[reportUnknownMemberType]
-            checkpointer=memory,
-            interrupt_before=["tools"]
+            checkpointer=memory, interrupt_before=["tools"]
         )
-        
+
         # 6. First execution run (Thread config is required for checkpointers)
-        thread_config: RunnableConfig = {"configurable": {"thread_id": "user_session_1"}}
+        thread_config: RunnableConfig = {
+            "configurable": {"thread_id": "user_session_1"}
+        }
         question = "Please delete the file named sensitive_data.csv"
-        
+
         print(f"\n💬 User: {question}")
         print("⏳ Running agent...")
-        
+
         # Start the graph execution
         async for event in graph.astream(  # pyright: ignore[reportUnknownMemberType]
-            {"messages": [HumanMessage(content=question)]}, 
+            {"messages": [HumanMessage(content=question)]},
             config=thread_config,
-            stream_mode="values"
+            stream_mode="values",
         ):
             event_dict = cast(dict[str, object], event)
             messages = event_dict.get("messages", [])
@@ -104,13 +105,15 @@ async def main():
                 content_obj: object = getattr(last_msg, "content", None)
                 if isinstance(content_obj, str) and content_obj:
                     print(f"🤖 Agent: {content_obj}")
-                
+
         # 7. Check if graph execution was interrupted
         state = await graph.aget_state(thread_config)
-        
+
         if state.next:
-            print(f"\n⚠️  [PAUSED] Graph execution interrupted before node: {state.next}")
-            
+            print(
+                f"\n⚠️  [PAUSED] Graph execution interrupted before node: {state.next}"
+            )
+
             # Retrieve the pending tool call information
             values = state.values
             if is_str_dict(values):
@@ -124,16 +127,16 @@ async def main():
                                 name = tool_call.get("name")
                                 args = tool_call.get("args")
                                 print(f"👉 Action Requested: {name}({args})")
-            
+
             # Simulate human response/decision
             print("\n👤 Human Action: [Approving action...]")
-            
+
             # To resume, we simply execute the graph again with input=None (keeping the thread config)
             print("⏳ Resuming execution with approval...")
             async for event in graph.astream(  # pyright: ignore[reportUnknownMemberType]
                 None,  # Passing None tells LangGraph to resume from the interrupted state
                 config=thread_config,
-                stream_mode="values"
+                stream_mode="values",
             ):
                 event_dict = cast(dict[str, object], event)
                 messages = event_dict.get("messages", [])
@@ -142,11 +145,11 @@ async def main():
                     resumed_content_obj: object = getattr(last_msg, "content", None)
                     if isinstance(resumed_content_obj, str) and resumed_content_obj:
                         print(f"Resumed Response: {resumed_content_obj}")
-                        
+
         # Check final state
         final_state = await graph.aget_state(thread_config)
         print(f"\n🏁 Finished! Next nodes to execute: {final_state.next}")
-        
+
     except Exception as e:
         print(f"\n❌ Error running Human-in-the-Loop example: {e}")
 

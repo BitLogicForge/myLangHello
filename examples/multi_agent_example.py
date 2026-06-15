@@ -43,12 +43,12 @@ async def main():
     try:
         # Create LLM
         llm = LLMFactory.create_llm()
-        
+
         # 2. Define specialized agent behaviors
         # Researcher Agent (uses tools to gather facts)
         research_tools = [weather, calculator]
         research_model = llm.bind_tools(research_tools)
-        
+
         # MARK: Researcher Agent
         def researcher_agent(state: MultiAgentState):
             print("🔬 [Researcher Agent]: Gathering facts and running calculations...")
@@ -56,15 +56,15 @@ async def main():
             response = research_model.invoke(messages)
             return {
                 "messages": [response],
-                "next_agent": "tools" if response.tool_calls else "supervisor"
+                "next_agent": "tools" if response.tool_calls else "supervisor",
             }
-            
+
         # Writer Agent (performs creative drafting/writing)
         # MARK: Writer Agent
         def writer_agent(state: MultiAgentState):
             print("✍️  [Writer Agent]: Creating polished narrative draft...")
             messages = list(state["messages"])
-            
+
             writer_prompt = (
                 "You are an expert copywriter. Take the raw factual information provided "
                 "by the Researcher and draft a friendly, professional summary. Do not "
@@ -72,17 +72,14 @@ async def main():
             )
             messages.append(HumanMessage(content=writer_prompt))
             response = llm.invoke(messages)
-            return {
-                "messages": [response],
-                "next_agent": "supervisor"
-            }
-            
+            return {"messages": [response], "next_agent": "supervisor"}
+
         # Supervisor Agent (orchestrates the workflow)
         # MARK: Supervisor Agent
         def supervisor_agent(state: MultiAgentState):
             print("👑 [Supervisor Agent]: Routing query to the correct expert...")
             messages = list(state["messages"])
-            
+
             # Formulate the routing prompt
             route_prompt = (
                 "You are the team lead supervisor. Decide what to do next based on history. "
@@ -94,30 +91,30 @@ async def main():
             )
             messages.append(HumanMessage(content=route_prompt))
             decision = str(llm.invoke(messages).content).strip().upper()
-            
+
             if "RESEARCHER" in decision:
                 next_step = "researcher"
             elif "WRITER" in decision:
                 next_step = "writer"
             else:
                 next_step = "finish"
-                
+
             print(f"   Route Decision: -> {next_step.upper()}")
             return {"next_agent": next_step}
 
         # 3. Construct the StateGraph
         # MARK: State Graph
         workflow = StateGraph(MultiAgentState)
-        
+
         # Add nodes
         _ = workflow.add_node("supervisor", supervisor_agent)  # pyright: ignore[reportUnknownMemberType]
         _ = workflow.add_node("researcher", researcher_agent)  # pyright: ignore[reportUnknownMemberType]
         _ = workflow.add_node("writer", writer_agent)  # pyright: ignore[reportUnknownMemberType]
         _ = workflow.add_node("tools", ToolNode(research_tools))  # pyright: ignore[reportUnknownMemberType]
-        
+
         # Add routing edges
         _ = workflow.add_edge(START, "supervisor")
-        
+
         # Supervisor routes to researcher, writer, or ends
         def route_supervisor(state: MultiAgentState):
             decision = state["next_agent"]
@@ -126,54 +123,68 @@ async def main():
             elif decision == "writer":
                 return "writer"
             return END
-            
+
         _ = workflow.add_conditional_edges(
-            "supervisor", 
-            route_supervisor, 
-            {"researcher": "researcher", "writer": "writer", END: END}
+            "supervisor",
+            route_supervisor,
+            {"researcher": "researcher", "writer": "writer", END: END},
         )
-        
+
         # Researcher routes to tools or back to supervisor
         def route_researcher(state: MultiAgentState):
             return state["next_agent"]
-            
+
         _ = workflow.add_conditional_edges(
             "researcher",
             route_researcher,
-            {"tools": "tools", "supervisor": "supervisor"}
+            {"tools": "tools", "supervisor": "supervisor"},
         )
-        
+
         # Tools always route back to researcher to evaluate findings
         _ = workflow.add_edge("tools", "researcher")
-        
+
         # Writer routes back to supervisor for final check
         _ = workflow.add_edge("writer", "supervisor")
-        
+
         # Compile
         memory = MemorySaver()
         graph = workflow.compile(checkpointer=memory)  # pyright: ignore[reportUnknownMemberType]
-        
+
         # 4. Run the Multi-Agent setup
         # MARK: Run Workflow
-        thread_config: RunnableConfig = {"configurable": {"thread_id": "multi_agent_session_1"}}
-        question = "What is the weather in Poznan? Give me a funny weather report about it."
-        
+        thread_config: RunnableConfig = {
+            "configurable": {"thread_id": "multi_agent_session_1"}
+        }
+        question = (
+            "What is the weather in Poznan? Give me a funny weather report about it."
+        )
+
         print(f"\nUser Question: {question}\n")
-        
-        result = cast(MultiAgentState, await graph.ainvoke(  # pyright: ignore[reportUnknownMemberType]
-            {"messages": [HumanMessage(content=question)], "next_agent": "supervisor"},
-            config=thread_config
-        ))
-        
+
+        result = cast(
+            MultiAgentState,
+            await graph.ainvoke(  # pyright: ignore[reportUnknownMemberType]
+                {
+                    "messages": [HumanMessage(content=question)],
+                    "next_agent": "supervisor",
+                },
+                config=thread_config,
+            ),
+        )
+
         print("\n🏁 Final Multi-Agent Output:")
         print("-" * 50)
         # Find the last message that isn't the supervisor prompt message
         for msg in reversed(result["messages"]):
-            if msg.content and str(msg.content).strip().upper() not in ["RESEARCHER", "WRITER", "FINISH"]:
+            if msg.content and str(msg.content).strip().upper() not in [
+                "RESEARCHER",
+                "WRITER",
+                "FINISH",
+            ]:
                 print(msg.content)
                 break
         print("-" * 50)
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}")
 
