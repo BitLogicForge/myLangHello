@@ -8,7 +8,9 @@ This includes:
 import asyncio
 import sys
 from pathlib import Path
+from typing import cast
 from dotenv import load_dotenv
+from utils import is_str_dict, is_list
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
@@ -17,9 +19,6 @@ from services.llm_factory import LLMFactory
 from main import AgentApp
 
 _ = load_dotenv()
-
-from typing import cast
-from utils import is_str_dict, is_list
 
 
 async def stream_llm_tokens():

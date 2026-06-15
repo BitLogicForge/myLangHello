@@ -20,10 +20,9 @@ from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from services.llm_factory import LLMFactory
 from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariableType]
+from utils import is_str_dict, is_list
 
 _ = load_dotenv()
-
-from utils import is_str_dict, is_list
 
 
 # 1. Define the input schema for your tool
