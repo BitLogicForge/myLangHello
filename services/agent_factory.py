@@ -46,9 +46,11 @@ class AgentFactory:
         self.system_prompt = system_prompt
         self.checkpointer = checkpointer
 
-        logger.info(f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent")
+        logger.info(
+            f"AgentFactory initialized with {len(tools)} tools using LangGraph ReAct agent"
+        )
 
-# MARK: Agent Creation
+    # MARK: Agent Creation
     def create_db_agent(self) -> object:
         """
         Create a LangGraph agent with a toolkit.
@@ -68,7 +70,7 @@ class AgentFactory:
         # )
 
         # DB_ENABLED in the environment is the explicit runtime override.
-        db_enabled_env = cast(str | None, os.getenv("DB_ENABLED"))
+        db_enabled_env = os.getenv("DB_ENABLED")
         if db_enabled_env is None:
             enable_db = bool(config.get("agent.enable_db", False))
         else:
@@ -77,7 +79,9 @@ class AgentFactory:
         db_host = os.getenv("DB_HOST")
 
         if not enable_db or not db_host:
-            logger.info("Database tools are disabled or DB_HOST is not configured. Starting agent with utility tools only.")
+            logger.info(
+                "Database tools are disabled or DB_HOST is not configured. Starting agent with utility tools only."
+            )
             all_tools = self.tools
         else:
             db_name = os.getenv("DB_NAME")
@@ -92,7 +96,9 @@ class AgentFactory:
             include_tables = config.get("agent.sql.include_tables", [])
             include_tables = include_tables if include_tables else None
 
-            logger.info(f"Database tools enabled. Connecting to database at {db_host}...")
+            logger.info(
+                f"Database tools enabled. Connecting to database at {db_host}..."
+            )
             # Create SQL toolkit with view support enabled
             toolkit_kwargs: dict[str, object] = {
                 "db": SQLDatabase.from_uri(  # pyright: ignore[reportUnknownMemberType]
