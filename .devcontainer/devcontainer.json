@@ -30,7 +30,8 @@
     "source=devScripts,target=/workspaces/dev_scripts,type=volume"
   ],
   // "postCreateCommand": "sudo mkdir -p /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && sudo chown -R vscode:vscode /home/vscode/.cache/uv ${containerWorkspaceFolder}/.venv && if [ ! -x /home/vscode/.local/bin/uv ]; then curl -LsSf https://astral.sh/uv/install.sh | sh; fi && /home/vscode/.local/bin/uv sync --python /usr/local/bin/python --link-mode=copy",
-  "postCreateCommand": "/workspaces/dev_scripts/setup_python.sh",
+  "onCreateCommand": "/workspaces/dev_scripts/setup_python.sh",
+  "postCreateCommand": "/workspaces/dev_scripts/post_create.sh",
   "forwardPorts": [
     8000
   ],
