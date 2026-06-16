@@ -13,8 +13,8 @@
     "--network=shared-dev"
   ],
   "containerEnv": {
-    "PROJECTPATH": "${containerWorkspaceFolder}",
-    "PYTHONPATH": "${containerWorkspaceFolder}",
+    "PROJECTPATH": "/workspaces/${localWorkspaceFolderBasename}",
+    "PYTHONPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
     "UV_LINK_MODE": "copy"
   },
@@ -24,8 +24,8 @@
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "mounts": [
-    "source=${containerWorkspaceFolder}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
-    "source=${containerWorkspaceFolder}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
+    "source=${localWorkspaceFolderBasename}-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
+    "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
     "source=reactTemplate-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
     "source=devScripts,target=/workspaces/dev_scripts,type=volume"
   ],
