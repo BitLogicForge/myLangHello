@@ -15,10 +15,10 @@
     "PYTHONPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
     "UV_LINK_MODE": "copy",
-    "NPM_CONFIG_PREFIX": "/home/node/.npm-global"
+    "NPM_CONFIG_PREFIX": "/home/vscode/.npm-global"
   },
   "remoteEnv": {
-    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
+    "PATH": "/home/vscode/.npm-global/bin:${containerEnv:PATH}"
   },
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -27,8 +27,8 @@
     "source=${localWorkspaceFolderBasename}-uv-cache,target=/home/vscode/.cache/uv,type=volume",
     "source=shared-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
     "source=devScripts,target=/workspaces/dev_scripts,type=volume",
-    "source=npm-global-node,target=/home/node/.npm-global,type=volume",
-    "source=claude-config,target=/home/node/.claude,type=volume"
+    "source=npm-global-node,target=/home/vscode/.npm-global,type=volume",
+    "source=claude-config,target=/home/vscode/.claude,type=volume"
   ],
   "onCreateCommand": "/workspaces/dev_scripts/setup_python.sh",
   "postCreateCommand": "/workspaces/dev_scripts/post_create.sh",
