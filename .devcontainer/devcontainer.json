@@ -2,7 +2,9 @@
   "name": "${localWorkspaceFolderBasename}-python",
   "image": "my-python-dev:13",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "installMethod": "direct"
+    },
     "ghcr.io/jlaundry/devcontainer-features/mssql-odbc-driver:1": {},
     "ghcr.io/itsmechlark/features/postgresql:1": {}
   },
@@ -14,7 +16,8 @@
     "PROJECTPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "PYTHONPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
-    "UV_LINK_MODE": "copy"
+    "UV_LINK_MODE": "copy",
+    "NPM_CONFIG_PREFIX": "/home/vscode/.npm-global"
   },
   "remoteEnv": {
     "PATH": "/home/vscode/.npm-global/bin:/home/vscode/.local/bin:${containerEnv:PATH}"
