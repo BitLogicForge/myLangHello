@@ -18,7 +18,7 @@
     "NPM_CONFIG_PREFIX": "/home/vscode/.npm-global"
   },
   "remoteEnv": {
-    "PATH": "/home/vscode/.local/bin:${containerEnv:PATH}"
+    "PATH": "/home/vscode/.npm-global/bin:/home/vscode/.local/bin:${containerEnv:PATH}"
   },
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -30,6 +30,7 @@
     "source=npm-global-node,target=/home/vscode/.npm-global,type=volume",
     "source=claude-config,target=/home/vscode/.claude,type=volume"
   ],
+  "initializeCommand": "mkdir -p ${localWorkspaceFolder}/.devcontainer/_init && true",
   "onCreateCommand": "/workspaces/dev_scripts/setup_python.sh",
   "postCreateCommand": "/workspaces/dev_scripts/post_create.sh",
   "postStartCommand": "/workspaces/dev_scripts/post_start.sh && /workspaces/dev_scripts/copy_config.sh specific_python",
