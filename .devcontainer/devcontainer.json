@@ -14,8 +14,7 @@
     "PROJECTPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "PYTHONPATH": "/workspaces/${localWorkspaceFolderBasename}",
     "UV_CACHE_DIR": "/home/vscode/.cache/uv",
-    "UV_LINK_MODE": "copy",
-    "NPM_CONFIG_PREFIX": "/home/vscode/.npm-global"
+    "UV_LINK_MODE": "copy"
   },
   "remoteEnv": {
     "PATH": "/home/vscode/.npm-global/bin:/home/vscode/.local/bin:${containerEnv:PATH}"
