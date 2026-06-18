@@ -18,7 +18,7 @@
     "NPM_CONFIG_PREFIX": "/home/vscode/.npm-global"
   },
   "remoteEnv": {
-    "PATH": "/home/vscode/.npm-global/bin:${containerEnv:PATH}"
+    "PATH": "/home/vscode/.local/bin:${containerEnv:PATH}"
   },
   "remoteUser": "vscode",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
