@@ -1,0 +1,333 @@
+{
+  "stocks": {
+    "description": "Stock master data and company information for market analysis",
+    "usage_notes": "Core reference table for all stock-related queries and analysis. Contains fundamental company data.",
+    "columns": [
+      {
+        "name": "symbol",
+        "desc": "Stock ticker symbol (primary key) - e.g. 'AAPL', 'MSFT', 'GOOGL'"
+      },
+      {
+        "name": "company_name",
+        "desc": "Full company name for display and analysis"
+      },
+      {
+        "name": "sector",
+        "desc": "Industry sector (Technology, Healthcare, Finance, etc.) - used for sector analysis and diversification"
+      },
+      {
+        "name": "industry",
+        "desc": "Specific industry within sector - e.g. 'Software', 'Semiconductors', 'Biotechnology'"
+      },
+      {
+        "name": "market_cap",
+        "desc": "Market capitalization in billions - used for size classification (Large/Mid/Small cap)"
+      },
+      {
+        "name": "ipo_date",
+        "desc": "Initial public offering date for historical analysis and company age calculation"
+      },
+      {
+        "name": "headquarters_city",
+        "desc": "Company headquarters location for geographic analysis"
+      },
+      {
+        "name": "employee_count",
+        "desc": "Number of employees - useful for company size analysis"
+      }
+    ],
+    "business_rules": [
+      "Each symbol is unique and serves as the primary key",
+      "Sector classification follows standard GICS methodology",
+      "Market cap updated daily based on closing price and outstanding shares"
+    ],
+    "common_queries": [
+      "Get tech stocks: SELECT * FROM stocks WHERE sector = 'Technology'",
+      "Large cap stocks: SELECT * FROM stocks WHERE market_cap > 100000000000",
+      "Market cap leaders: SELECT TOP 10 * FROM stocks ORDER BY market_cap DESC",
+      "Sector breakdown: SELECT sector, COUNT(*) as stock_count, AVG(market_cap) as_avg_cap FROM stocks GROUP BY sector"
+    ]
+  },
+  "stock_prices": {
+    "description": "Historical and current stock price data for performance analysis and technical indicators",
+    "usage_notes": "Use date range filtering for time series analysis, performance calculations, and technical analysis. Contains OHLC daily data.",
+    "columns": [
+      {
+        "name": "symbol",
+        "desc": "Stock ticker symbol (foreign key references stocks.symbol)"
+      },
+      {
+        "name": "price_date",
+        "desc": "Date of the price data - primary time dimension for analysis"
+      },
+      {
+        "name": "open_price",
+        "desc": "Opening price for the trading day - used for gap analysis and overnight performance"
+      },
+      {
+        "name": "high_price",
+        "desc": "Highest price during the trading day - used for range and volatility analysis"
+      },
+      {
+        "name": "low_price",
+        "desc": "Lowest price during the trading day - used for range and volatility analysis"
+      },
+      {
+        "name": "close_price",
+        "desc": "Closing price (most commonly used for analysis) - primary price for calculations"
+      },
+      {
+        "name": "volume",
+        "desc": "Trading volume for the day - used for liquidity analysis and volume indicators"
+      },
+      {
+        "name": "adjusted_close",
+        "desc": "Close price adjusted for splits and dividends - used for long-term performance analysis"
+      }
+    ],
+    "business_rules": [
+      "One record per symbol per trading day",
+      "Weekends and holidays have no records (market closed)",
+      "Splits and dividends reflected in adjusted_close column",
+      "Data updated daily after market close"
+    ],
+    "common_queries": [
+      "Recent prices: SELECT TOP 30 * FROM stock_prices WHERE symbol = 'AAPL' ORDER BY price_date DESC",
+      "Price range: SELECT * FROM stock_prices WHERE symbol = 'MSFT' AND price_date BETWEEN '2024-01-01' AND '2024-12-31' ORDER BY price_date",
+      "Daily change: SELECT close_price - open_price as daily_change, ((close_price - open_price) / open_price) * 100 as daily_percent FROM stock_prices WHERE symbol = 'GOOGL' ORDER BY price_date DESC",
+      "Volume analysis: SELECT AVG(volume) as avg_volume, MAX(volume) as max_volume FROM stock_prices WHERE symbol = 'TSLA' AND price_date >= DATEADD(day, -30, GETDATE())",
+      "Moving averages: SELECT AVG(close_price) FROM stock_prices WHERE symbol = 'AAPL' AND price_date >= DATEADD(day, -50, GETDATE())"
+    ]
+  },
+  "financial_ratios": {
+    "description": "Key financial metrics and ratios for fundamental analysis",
+    "usage_notes": "Updated quarterly with earnings reports. Essential for valuation analysis and financial health assessment.",
+    "columns": [
+      {
+        "name": "symbol",
+        "desc": "Stock ticker symbol (foreign key references stocks.symbol)"
+      },
+      {
+        "name": "report_date",
+        "desc": "Date of the financial report (quarterly earnings)"
+      },
+      {
+        "name": "pe_ratio",
+        "desc": "Price to earnings ratio - valuation metric (lower can indicate undervalued)"
+      },
+      {
+        "name": "peg_ratio",
+        "desc": "Price/earnings to growth ratio - accounts for growth rate"
+      },
+      {
+        "name": "price_to_book",
+        "desc": "Market price relative to book value per share"
+      },
+      {
+        "name": "dividend_yield",
+        "desc": "Annual dividend as percentage of stock price"
+      },
+      {
+        "name": "eps",
+        "desc": "Earnings per share - profitability metric"
+      },
+      {
+        "name": "revenue_growth",
+        "desc": "Revenue growth rate percentage (year-over-year)"
+      },
+      {
+        "name": "profit_margin",
+        "desc": "Net profit margin percentage - profitability efficiency"
+      },
+      {
+        "name": "debt_to_equity",
+        "desc": "Debt to equity ratio - financial leverage measure"
+      },
+      {
+        "name": "current_ratio",
+        "desc": "Current assets to current liabilities - liquidity measure"
+      },
+      {
+        "name": "return_on_equity",
+        "desc": "ROE - profitability relative to shareholder equity"
+      },
+      {
+        "name": "beta",
+        "desc": "Beta coefficient - volatility relative to overall market"
+      }
+    ],
+    "business_rules": [
+      "Data updated quarterly after earnings releases",
+      "Most recent quarter should be used for analysis",
+      "Historical data available for trend analysis",
+      "Missing values indicate data not available or not applicable"
+    ],
+    "common_queries": [
+      "Latest metrics: SELECT TOP 1 * FROM financial_ratios WHERE symbol = 'AAPL' ORDER BY report_date DESC",
+      "Value stocks: SELECT * FROM financial_ratios WHERE pe_ratio < 15 AND debt_to_equity < 1.0 ORDER BY profit_margin DESC",
+      "High growth: SELECT * FROM financial_ratios WHERE revenue_growth > 20 AND peg_ratio < 1.5",
+      "Dividend stocks: SELECT * FROM financial_ratios WHERE dividend_yield > 3.0 AND profit_margin > 10 ORDER BY dividend_yield DESC"
+    ]
+  },
+  "user_portfolios": {
+    "description": "User investment portfolios for tracking and analysis",
+    "usage_notes": "Each user can have multiple portfolios for different investment strategies or goals.",
+    "columns": [
+      {
+        "name": "portfolio_id",
+        "desc": "Unique portfolio identifier (primary key)"
+      },
+      {
+        "name": "user_id",
+        "desc": "User account identifier (foreign key to users table)"
+      },
+      {
+        "name": "portfolio_name",
+        "desc": "User-defined name for the portfolio"
+      },
+      {
+        "name": "portfolio_type",
+        "desc": "Portfolio strategy: 'growth', 'income', 'balanced', 'speculative'"
+      },
+      {
+        "name": "initial_capital",
+        "desc": "Starting investment amount"
+      },
+      {
+        "name": "created_at",
+        "desc": "Portfolio creation date"
+      },
+      {
+        "name": "last_updated",
+        "desc": "Last modification date"
+      }
+    ],
+    "business_rules": [
+      "Each user can create multiple portfolios",
+      "Portfolio names must be unique per user",
+      "Initial capital cannot be negative"
+    ],
+    "common_queries": [
+      "User portfolios: SELECT * FROM user_portfolios WHERE user_id = 'user123'",
+      "Portfolio summary: SELECT portfolio_name, initial_capital, created_at FROM user_portfolios WHERE portfolio_id = 'PORT_1234'"
+    ]
+  },
+  "portfolio_holdings": {
+    "description": "Individual stock holdings within portfolios",
+    "usage_notes": "Core table for portfolio analysis and performance tracking. Links portfolios to individual stocks.",
+    "columns": [
+      {
+        "name": "holding_id",
+        "desc": "Unique holding identifier (primary key)"
+      },
+      {
+        "name": "portfolio_id",
+        "desc": "Portfolio identifier (foreign key to user_portfolios)"
+      },
+      {
+        "name": "symbol",
+        "desc": "Stock ticker symbol (foreign key to stocks.symbol)"
+      },
+      {
+        "name": "shares",
+        "desc": "Number of shares held (can be fractional for some securities)"
+      },
+      {
+        "name": "average_cost",
+        "desc": "Average purchase price per share (updated on each buy)"
+      },
+      {
+        "name": "purchase_date",
+        "desc": "Date shares were acquired"
+      },
+      {
+        "name": "last_updated",
+        "desc": "Last time this holding was modified"
+      }
+    ],
+    "business_rules": [
+      "Multiple holdings of same symbol are consolidated into single record",
+      "Average cost updated using weighted average method",
+      "Shares cannot be negative (short selling not supported)"
+    ],
+    "common_queries": [
+      "Portfolio holdings: SELECT ph.symbol, ph.shares, ph.average_cost, s.company_name FROM portfolio_holdings ph JOIN stocks s ON ph.symbol = s.symbol WHERE ph.portfolio_id = 'PORT_1234'",
+      "Portfolio value: SELECT SUM(ph.shares * sp.close_price) as total_value FROM portfolio_holdings ph JOIN stock_prices sp ON ph.symbol = sp.symbol WHERE ph.portfolio_id = 'PORT_1234' AND sp.price_date = (SELECT MAX(price_date) FROM stock_prices)",
+      "Concentration risk: SELECT symbol, SUM(shares * average_cost) as total_cost FROM portfolio_holdings WHERE portfolio_id = 'PORT_1234' GROUP BY symbol ORDER BY total_cost DESC"
+    ]
+  },
+  "market_indices": {
+    "description": "Major market index data for benchmark comparison",
+    "usage_notes": "Contains daily values for major indices like S&P 500, DOW, NASDAQ for performance comparison.",
+    "columns": [
+      {
+        "name": "index_name",
+        "desc": "Index identifier ('S&P_500', 'DOW_JONES', 'NASDAQ', 'RUSSELL_2000')"
+      },
+      {
+        "name": "price_date",
+        "desc": "Date of index value"
+      },
+      {
+        "name": "index_value",
+        "desc": "Closing value of the index"
+      },
+      {
+        "name": "daily_change",
+        "desc": "Point change from previous day"
+      },
+      {
+        "name": "daily_change_percent",
+        "desc": "Percentage change from previous day"
+      },
+      {
+        "name": "volume",
+        "desc": "Trading volume for the index"
+      }
+    ],
+    "business_rules": [
+      "One record per index per trading day",
+      "Data updated daily after market close",
+      "Used for benchmark comparison and relative performance analysis"
+    ],
+    "common_queries": [
+      "Latest indices: SELECT * FROM market_indices WHERE price_date = (SELECT MAX(price_date) FROM market_indices) ORDER BY index_name",
+      "Index performance: SELECT index_name, AVG(daily_change_percent) as avg_daily_return FROM market_indices WHERE price_date >= DATEADD(day, -30, GETDATE()) GROUP BY index_name"
+    ]
+  },
+  "sectors": {
+    "description": "Sector performance data for market analysis",
+    "usage_notes": "Daily sector performance data for sector rotation analysis and diversification insights.",
+    "columns": [
+      {
+        "name": "sector_name",
+        "desc": "Sector name ('Technology', 'Healthcare', 'Finance', etc.)"
+      },
+      {
+        "name": "performance_date",
+        "desc": "Date of sector performance data"
+      },
+      {
+        "name": "daily_return_percent",
+        "desc": "Sector performance for the day"
+      },
+      {
+        "name": "volume",
+        "desc": "Total trading volume for sector"
+      },
+      {
+        "name": "market_cap_weight",
+        "desc": "Percentage of total market cap represented by this sector"
+      }
+    ],
+    "business_rules": [
+      "Updated daily with market close",
+      "Used for sector rotation strategies",
+      "Helps identify market leadership and lagging areas"
+    ],
+    "common_queries": [
+      "Today's sector performance: SELECT * FROM sectors WHERE performance_date = (SELECT MAX(performance_date) FROM sectors) ORDER BY daily_return_percent DESC",
+      "Sector leaders: SELECT TOP 3 sector_name, AVG(daily_return_percent) as avg_return FROM sectors WHERE performance_date >= DATEADD(day, -30, GETDATE()) GROUP BY sector_name ORDER BY avg_return DESC"
+    ]
+  }
+}

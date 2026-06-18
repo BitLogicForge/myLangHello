@@ -9,11 +9,20 @@ from tools import (
     city_to_coordinates,
     currency_converter,
     current_date,
+    financial_metrics_calculator,
     http_get,
     joke_format,
     loan_calculator,
+    market_data,
+    portfolio_add_stock,
+    portfolio_analyze,
+    portfolio_create,
     random_joke,
     read_file,
+    risk_assessment,
+    stock_comparison,
+    stock_price_query,
+    technical_analysis,
     weather,
     write_file,
 )
@@ -44,19 +53,33 @@ class ToolsManager:
         logger.debug("Registering tools...")
 
         tools_list = [
+            # Stock Analysis Tools
+            stock_price_query,
+            financial_metrics_calculator,
+            portfolio_create,
+            portfolio_add_stock,
+            portfolio_analyze,
+            technical_analysis,
+            risk_assessment,
+            market_data,
+            stock_comparison,
+
+            # General Utility Tools
             calculator,
-            city_to_coordinates,
-            weather,
+            current_date,
+            http_get,
             read_file,
             write_file,
-            http_get,
+
+            # Demo Tools (kept for entertainment)
+            weather,
             random_joke,
-            current_date,
+            joke_format,
             loan_calculator,
             currency_converter,
-            joke_format,
+            city_to_coordinates,
         ]
-        logger.info(f"Registered {len(tools_list)} utility tools")
+        logger.info(f"Registered {len(tools_list)} tools (stock analysis + utilities)")
         return tools_list
 
     @classmethod
