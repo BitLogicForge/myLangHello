@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from config import Config
 from main import AgentApp
-from routes import agent_routes, config_routes, health_routes
+from routes import agent_routes, config_routes, health_routes, structured_query_routes
 from services import SupportsAStream
 from services.telemetry import TelemetryManager, get_telemetry
 from utils import setup_logging, is_tuple
@@ -83,11 +83,13 @@ except Exception as e:
 health_routes.set_agent_state(agent_app, is_agent_loaded, is_langserve_available)
 agent_routes.set_agent_executor(agent_executor, is_agent_loaded, telemetry)
 config_routes.set_agent_app(agent_app, is_agent_loaded)
+structured_query_routes.set_agent_executor(agent_executor, is_agent_loaded)
 
 # Register routers
 app.include_router(health_routes.router)
 app.include_router(agent_routes.router)
 app.include_router(config_routes.router)
+app.include_router(structured_query_routes.router)
 
 # Mount Chainlit Chat UI
 try:
@@ -112,12 +114,20 @@ except Exception as e:
 async def root():
     """Root endpoint."""
     return {
-        "message": "LangChain Agent API",
+        "message": "LangChain Agent API with Structured Query Support",
         "docs": "/docs",
         "health": "/health",
         "agent_endpoint": "/agent" if is_langserve_available else "/query",
         "playground": "/agent/playground" if is_langserve_available else None,
         "metrics": "http://localhost:9090/metrics" if telemetry else None,
+        "structured_queries": {
+            "general": "/structured/query",
+            "stock_analysis": "/structured/stock-analysis",
+            "portfolio_analysis": "/structured/portfolio-analysis",
+            "market_overview": "/structured/market-overview",
+            "stock_comparison": "/structured/stock-comparison",
+            "investment_recommendation": "/structured/investment-recommendation"
+        }
     }
 
 
