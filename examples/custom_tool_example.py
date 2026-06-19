@@ -10,17 +10,19 @@ This script shows how to:
 import asyncio
 import sys
 from pathlib import Path
-from pydantic import BaseModel, Field
+
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
-from langchain_core.tools import tool
-from langchain_core.messages import HumanMessage
-from services.llm_factory import LLMFactory
 from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariableType]
-from utils import is_str_dict, is_list
+from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
+
+from services.llm_factory import LLMFactory
+from utils import is_list, is_str_dict
 
 _ = load_dotenv()
 
