@@ -2,16 +2,21 @@
 
 import ast
 import asyncio
+import json
 import operator
+import os
+import re
 
 import random
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import httpx
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+from sqlalchemy import create_engine, text
 from typing import Callable
 from utils import is_str_dict, is_list
 
@@ -190,6 +195,108 @@ async def current_date(with_date: bool = True, with_time: bool = False) -> str:
         return now.strftime("%H:%M:%S")
     else:
         return now.strftime("%Y-%m-%d")  # Default to date if both are False
+
+
+# ==========================================
+# MARK: Database Select
+# ==========================================
+
+
+class DatabaseSelectInput(BaseModel):
+    query: str = Field(
+        ...,
+        description="A single read-only SQL SELECT query to run against the configured database.",
+    )
+    limit: int = Field(
+        default=50,
+        ge=1,
+        le=200,
+        description="Maximum number of rows to return from the result set.",
+    )
+
+
+def _validate_read_only_select(query: str) -> str:
+    """Return normalized SQL when it is a single read-only SELECT statement."""
+    normalized = query.strip()
+    if not normalized:
+        raise ValueError("Query cannot be empty.")
+
+    without_trailing_semicolon = normalized[:-1].strip() if normalized.endswith(";") else normalized
+    if ";" in without_trailing_semicolon:
+        raise ValueError("Only one SQL statement is allowed.")
+
+    lowered = without_trailing_semicolon.lower()
+    if not re.match(r"^(select|with)\b", lowered):
+        raise ValueError("Only read-only SELECT queries are allowed.")
+
+    forbidden_keywords = (
+        "insert",
+        "update",
+        "delete",
+        "drop",
+        "alter",
+        "create",
+        "truncate",
+        "merge",
+        "exec",
+        "execute",
+        "grant",
+        "revoke",
+        "into",
+    )
+    for keyword in forbidden_keywords:
+        if re.search(rf"\b{keyword}\b", lowered):
+            raise ValueError("Only read-only SELECT queries are allowed.")
+
+    return without_trailing_semicolon
+
+
+def _database_url_from_env() -> str:
+    """Build the SQLAlchemy database URL from the current DB_* environment."""
+    db_host = os.getenv("DB_HOST")
+    db_name = os.getenv("DB_NAME")
+    db_user = os.getenv("DB_USERNAME")
+    db_password = os.getenv("DB_PASSWORD")
+    db_driver = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+
+    if not all([db_host, db_name, db_user, db_password]):
+        raise ValueError(
+            "Database configuration is missing. Set DB_HOST, DB_NAME, DB_USERNAME, and DB_PASSWORD."
+        )
+
+    return (
+        f"mssql+pyodbc://{quote_plus(db_user)}:{quote_plus(db_password)}@"
+        f"{db_host}/{db_name}?driver={quote_plus(db_driver)}&TrustServerCertificate=yes"
+    )
+
+
+def _run_database_select(query: str, limit: int) -> str:
+    sql = _validate_read_only_select(query)
+    engine = create_engine(_database_url_from_env())
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(sql))
+            columns = list(result.keys())
+            rows = [dict(zip(columns, row)) for row in result.fetchmany(limit)]
+    finally:
+        dispose = getattr(engine, "dispose", None)
+        if callable(dispose):
+            dispose()
+
+    return "Rows returned: " + str(len(rows)) + "\n" + json.dumps(
+        rows, ensure_ascii=False, default=str
+    )
+
+
+@tool(args_schema=DatabaseSelectInput)
+async def database_select(query: str, limit: int = 50) -> str:
+    """Run a single read-only SELECT query using the configured SQLAlchemy database."""
+    try:
+        return await asyncio.to_thread(_run_database_select, query, limit)
+    except ValueError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Database SELECT error: {e}"
 
 
 # ==========================================

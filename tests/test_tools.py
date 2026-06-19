@@ -9,7 +9,13 @@ from pydantic import ValidationError
 # Add parent directory to path to allow importing modules
 sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
-from tools import calculator, currency_converter, loan_calculator, current_date
+from tools import (
+    calculator,
+    currency_converter,
+    database_select,
+    loan_calculator,
+    current_date,
+)
 
 
 @pytest.mark.asyncio
@@ -85,3 +91,76 @@ async def test_current_date():
     assert len(parts[0]) == 4  # Year
     assert len(parts[1]) == 2  # Month
     assert len(parts[2]) == 2  # Day
+
+
+@pytest.mark.asyncio
+async def test_database_select_runs_select_with_current_sqlalchemy_config(monkeypatch):
+    """Test database_select executes a read-only query and returns rows."""
+
+    class FakeResult:
+        def keys(self):
+            return ["id", "name"]
+
+        def fetchmany(self, limit):
+            assert limit == 2
+            return [(1, "Ada"), (2, "Grace")]
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def execute(self, statement):
+            assert str(statement) == "SELECT id, name FROM dbo.Users"
+            return FakeResult()
+
+    class FakeEngine:
+        def connect(self):
+            return FakeConnection()
+
+    created_urls = []
+
+    def fake_create_engine(url):
+        created_urls.append(url)
+        return FakeEngine()
+
+    monkeypatch.setenv("DB_HOST", "localhost")
+    monkeypatch.setenv("DB_NAME", "appdb")
+    monkeypatch.setenv("DB_USERNAME", "dbuser")
+    monkeypatch.setenv("DB_PASSWORD", "secret")
+    monkeypatch.setenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
+    monkeypatch.setattr("tools.create_engine", fake_create_engine)
+
+    result = await database_select.ainvoke(
+        {"query": "SELECT id, name FROM dbo.Users", "limit": 2}
+    )
+
+    assert "Rows returned: 2" in result
+    assert '"id": 1' in result
+    assert '"name": "Grace"' in result
+    assert created_urls == [
+        "mssql+pyodbc://dbuser:secret@localhost/appdb?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_database_select_rejects_write_statement():
+    """Test database_select refuses non-SELECT SQL."""
+    result = await database_select.ainvoke({"query": "DELETE FROM dbo.Users"})
+
+    assert "Error" in result
+    assert "Only read-only SELECT queries are allowed" in result
+
+
+@pytest.mark.asyncio
+async def test_database_select_requires_database_configuration(monkeypatch):
+    """Test database_select reports missing DB settings before connecting."""
+    for env_name in ["DB_HOST", "DB_NAME", "DB_USERNAME", "DB_PASSWORD"]:
+        monkeypatch.delenv(env_name, raising=False)
+
+    result = await database_select.ainvoke({"query": "SELECT 1"})
+
+    assert "Error" in result
+    assert "Database configuration is missing" in result
